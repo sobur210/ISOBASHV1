@@ -1,21 +1,29 @@
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { RealtimeService } from './realtime.service';
 
 @WebSocketGateway({ cors: true })
-export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger('Realtime');
+
+  constructor(private readonly realtime: RealtimeService) {}
 
   @WebSocketServer()
   server!: Server;
+
+  afterInit(server: Server) {
+    this.realtime.attach(server);
+  }
 
   handleConnection(client: Socket) {
     this.logger.log(JSON.stringify({ event: 'connect', socketId: client.id }));

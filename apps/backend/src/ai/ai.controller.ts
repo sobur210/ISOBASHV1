@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, UsePipes, ValidationPipe } from '@nestjs/c
 import { AiProviderRegistry } from './provider.registry';
 import { AiModelRegistry } from './model.registry';
 import { AiCapabilityRegistry } from './capability.registry';
+import { AiToolsRegistry } from './tools.registry';
 import { GenerateRequestDto } from './dto/generate-request.dto';
 
 @Controller('ai')
@@ -10,6 +11,7 @@ export class AiController {
     private readonly registry: AiProviderRegistry,
     private readonly models: AiModelRegistry,
     private readonly capabilities: AiCapabilityRegistry,
+    private readonly tools: AiToolsRegistry,
   ) {}
 
   @Get('providers')
@@ -30,6 +32,11 @@ export class AiController {
   @Get('capabilities')
   listCapabilities() {
     return this.capabilities.list(this.registry.capabilities());
+  }
+
+  @Get('tools')
+  listTools() {
+    return this.tools.list();
   }
 
   @Post('generate')

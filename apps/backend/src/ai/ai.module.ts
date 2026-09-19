@@ -6,6 +6,7 @@ import { OllamaProvider } from './ollama.provider';
 import { AiModelRegistry } from './model.registry';
 import { OpenAiProvider } from './openai.provider';
 import { AiCapabilityRegistry } from './capability.registry';
+import { AiToolsRegistry } from './tools.registry';
 
 @Module({
   controllers: [AiController],
@@ -15,6 +16,7 @@ import { AiCapabilityRegistry } from './capability.registry';
     OpenAiProvider,
     AiModelRegistry,
     AiCapabilityRegistry,
+    AiToolsRegistry,
     {
       provide: 'AI_PROVIDER_REGISTRATION',
       inject: [AiProviderRegistry, AiModelRegistry, OllamaProvider, OpenAiProvider],
@@ -43,6 +45,6 @@ import { AiCapabilityRegistry } from './capability.registry';
       },
     },
   ],
-  exports: [AiProviderRegistry, AiModelRegistry],
+  exports: [AiProviderRegistry, AiModelRegistry, AiToolsRegistry],
 })
 export class AiModule {}

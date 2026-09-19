@@ -16,9 +16,9 @@ const surfaces = [
   {
     href: "/app/chat",
     title: "Chat",
-    description: "Conversational AI powered by the providers configured on this account.",
+    description: "Live conversations with streamed responses, persisted to PostgreSQL.",
     icon: <ChatIcon className="h-5 w-5" />,
-    phase: "Phase 10",
+    phase: "Live now",
   },
   {
     href: "/app/research",

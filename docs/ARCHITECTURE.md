@@ -14,14 +14,23 @@ Runtime data (uploads, media, temp, logs, cache, knowledge, and models) is exter
 
 ## Backend layers
 
-- `src/ai` — provider-agnostic AI bridge from Phase 2: capability registry, model registry, provider registry, and real adapters (Ollama; OpenAI-compatible when configured).
+- `src/ai` — provider-agnostic AI bridge from Phase 2: capability registry, model registry, provider registry, tool registry, and real adapters (Ollama with streaming; OpenAI-compatible when configured).
+- `src/chat` — conversation orchestration: persists conversations and messages to PostgreSQL, drives the AI engine, and streams tokens over SSE (`POST /chat/stream`).
+- `src/realtime` — Socket.IO gateway (connection/join/ping) plus a small `RealtimeService` that emits session-scoped events such as `chat:updated`.
 - `src/shared/config` — typed environment configuration. Missing/invalid environment variables fail the process at startup (fail-fast per secrets-management policy).
 - `src/shared/storage` — filesystem storage abstraction over runtime roots with path-traversal-safe resolution.
 - `src/shared/logging` — structured HTTP request logging with an `x-request-id` correlation header.
 - `src/shared/errors` — global exception filter that normalizes every error response.
 - `src/prisma` — Prisma client lifecycle.
 - `src/queues` — Redis + BullMQ queue producer with job defaults (retries, backoff, retention).
-- `src/app.gateway.ts` — Socket.IO gateway for realtime events.
+
+## Chat engine (Phase 5)
+
+- Each conversation is tied to a `clientSessionId` (from the `x-client-session` header the browser persists in localStorage until authentication binds it to an account). Ownership is enforced on every read/delete.
+- `POST /chat/stream` validates the message DTO, persists the user message, streams provider tokens as newline-delimited JSON events (`meta` → `delta`* → `done`/`error`), and persists the assistant message with provider/model/usage metadata.
+- Providers expose an optional `stream(request, signal)`; the registry picks a healthy provider for the capability and falls back to buffered execution. Streaming is abortable via `AbortSignal`.
+- Realtime: after persistence the gateway broadcasts `chat:updated` to the session room; the conversation list refreshes from the server (no simulated state).
+- `GET /ai/tools` reports the registered tool surface (truthfully empty until the agents phase registers tools).
 
 ## Request pipeline
 
@@ -59,8 +68,8 @@ The UI is a single app with route groups: `/` (landing), `/login`, `/register`, 
 
 ### Surface boundaries
 
-Workspace surfaces (chat, research, agents, projects, files, media, billing, settings) are route shells with truthful empty states until their dedicated phase. Error and unavailable states reflect real backend responses.
+Workspace surfaces (research, agents, projects, files, media, billing, settings) are route shells with truthful empty states until their dedicated phase. Chat is live from Phase 5: the `/app/chat` surface renders persisted conversations, streams responses token-by-token, and shows real API errors.
 
 ## Phase boundaries
 
-Phases 1–4 establish the foundation and complete product UI architecture: routes, provider bridge, infrastructure services, design system, and truthful empty states. AI workflows, authentication, authorization, media, and billing are implemented in their dedicated phases — nothing is simulated before it is real.
+Phases 1–5 establish the foundation and live chat: routes, provider bridge, infrastructure services, design system, truthful empty states, and a real streaming, persisted chat surface. Authentication, authorization, media, and billing are implemented in their dedicated phases — nothing else is simulated before it is real.

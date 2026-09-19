@@ -82,3 +82,33 @@ model Notification {
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
 }
+
+model Conversation {
+  id              String    @id @default(cuid())
+  title           String    @default("New conversation")
+  status          String    @default("active")
+  clientSessionId String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  messages Message[]
+
+  @@index([clientSessionId, updatedAt])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  role           String
+  content        String       @default("")
+  provider       String?
+  model          String?
+  inputTokens    Int?
+  outputTokens   Int?
+  error          String?
+  createdAt      DateTime     @default(now())
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String
+
+  @@index([conversationId, createdAt])
+}

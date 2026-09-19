@@ -3,13 +3,14 @@ import { ConfigModule as NestConfigModule } from '@nestjs/config';
 import { APP_PIPE } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AppGateway } from './app.gateway';
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { QueueModule } from './queues/queue.module';
 import { AiModule } from './ai/ai.module';
-import { ConfigModule as IsoConfigModule, loadConfiguredConfig } from './shared/config/config.module';
+import { ChatModule } from './chat/chat.module';
+import { RealtimeModule } from './realtime/realtime.module';
+import { ConfigModule as IsoConfigModule } from './shared/config/config.module';
 import { resolveEnvFile } from './shared/config/configuration';
 import { StorageModule } from './shared/storage/storage.module';
 import { RequestLoggingMiddleware } from './shared/logging/request-logging.middleware';
@@ -25,11 +26,12 @@ import { RequestLoggingMiddleware } from './shared/logging/request-logging.middl
     PrismaModule,
     QueueModule,
     AiModule,
+    ChatModule,
+    RealtimeModule,
   ],
   controllers: [AppController, HealthController],
   providers: [
     AppService,
-    AppGateway,
     HealthService,
     {
       provide: APP_PIPE,

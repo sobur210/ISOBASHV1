@@ -6,6 +6,7 @@ import {
   AiProviderHealth,
   AiRequest,
   AiResponse,
+  AiStreamChunk,
 } from './provider.types';
 
 @Injectable()
@@ -64,5 +65,53 @@ export class AiProviderRegistry {
   private findProviders(capability: AiCapability, model?: string) {
     const candidates = [...this.providers.values()].filter((provider) => provider.capabilities.includes(capability));
     return model ? candidates.filter((provider) => provider.name === model || model.startsWith(`${provider.name}:`)) : candidates;
+  }
+
+  async *stream(request: AiRequest, signal?: AbortSignal): AsyncGenerator<AiStreamChunk> {
+    const candidates = this.findProviders(request.capability, request.model);
+    if (candidates.length === 0) {
+      throw new AiProviderError(
+        `No configured provider supports ${request.capability}.`,
+        'registry',
+        'NO_PROVIDER_AVAILABLE',
+      );
+    }
+
+    for (const provider of candidates) {
+      const status = await provider.health();
+      if (status.status !== 'healthy') continue;
+
+      if (!provider.stream) {
+        try {
+          const response = await provider.execute(request);
+          yield { type: 'delta', text: response.output };
+          yield { type: 'done', provider: response.provider, model: response.model, usage: response.usage };
+        } catch (error) {
+          yield {
+            type: 'error',
+            code: error instanceof AiProviderError ? error.code : 'PROVIDER_EXECUTION_FAILED',
+            message: error instanceof Error ? error.message : 'Provider execution failed.',
+          };
+        }
+        return;
+      }
+
+      try {
+        yield *provider.stream(request, signal);
+      } catch (error) {
+        yield {
+          type: 'error',
+          code: error instanceof AiProviderError ? error.code : 'PROVIDER_STREAM_FAILED',
+          message: error instanceof Error ? error.message : 'Provider stream failed.',
+        };
+      }
+      return;
+    }
+
+    throw new AiProviderError(
+      `No healthy provider supports ${request.capability}.`,
+      'registry',
+      'NO_HEALTHY_PROVIDER',
+    );
   }
 }

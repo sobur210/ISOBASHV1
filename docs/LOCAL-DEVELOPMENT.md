@@ -39,7 +39,8 @@ Run the runtime check against a live stack:
 
 ```bash
 node scripts/verify-phase1.mjs   # routes, health, AI, database, queue+worker, realtime
-node scripts/verify-phase3.mjs   # configuration, storage, error format, health components, realtime, web surface
+node scripts/verify-phase3.mjs   # configuration, storage, error format, health components, realtime
+node scripts/verify-phase5.mjs   # chat streaming, persistence, ownership, validation, tools, chat UI
 ```
 
 Both scripts report pass/fail per check and exit non-zero on any failure. The application must report dependency failures truthfully — a passing frontend build does not prove that PostgreSQL or Redis is running.

@@ -34,11 +34,17 @@ export type AiProviderHealth = {
   detail?: string;
 };
 
+export type AiStreamChunk =
+  | { type: 'delta'; text: string }
+  | { type: 'done'; provider: string; model: string; usage?: { inputTokens?: number; outputTokens?: number } }
+  | { type: 'error'; code: string; message: string };
+
 export interface AiProvider {
   readonly name: string;
   readonly capabilities: readonly AiCapability[];
   health(): Promise<AiProviderHealth>;
   execute(request: AiRequest): Promise<AiResponse>;
+  stream?(request: AiRequest, signal?: AbortSignal): AsyncIterable<AiStreamChunk>;
 }
 
 export class AiProviderError extends Error {

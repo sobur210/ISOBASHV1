@@ -193,3 +193,25 @@ export const ClockIcon = ({ className }: IconProps) => (
     <path d="M12 6v6l4 2" />
   </Icon>
 );
+
+export const PlusIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M12 5v14M5 12h14" />
+  </Icon>
+);
+
+export const SendIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="m22 2-7 20-4-9-9-4Z" />
+    <path d="M22 2 11 13" />
+  </Icon>
+);
+
+export const TrashIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M3 6h18" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <path d="M10 11v6M14 11v6" />
+  </Icon>
+);
