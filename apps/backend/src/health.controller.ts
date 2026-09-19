@@ -1,13 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
+import { HealthService } from './health.service';
 
 @Controller('health')
 export class HealthController {
+  constructor(private readonly health: HealthService) {}
+
   @Get()
   getLiveness() {
-    return {
-      status: 'ok',
-      service: 'isobash-api',
-      timestamp: new Date().toISOString(),
-    };
+    return this.health.check();
   }
 }

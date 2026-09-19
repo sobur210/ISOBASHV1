@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AiProviderRegistry } from './provider.registry';
 import { AiModelRegistry } from './model.registry';
 import { AiCapabilityRegistry } from './capability.registry';
+import { GenerateRequestDto } from './dto/generate-request.dto';
 
 @Controller('ai')
 export class AiController {
@@ -32,7 +33,8 @@ export class AiController {
   }
 
   @Post('generate')
-  generate(@Body() request: { capability: 'language'; input: string; model?: string }) {
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: false }))
+  generate(@Body() request: GenerateRequestDto) {
     return this.registry.execute(request);
   }
 }

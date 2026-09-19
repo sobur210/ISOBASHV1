@@ -1,6 +1,9 @@
+import { Logger } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -8,9 +11,19 @@ import {
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({ cors: true })
-export class AppGateway {
+export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  private readonly logger = new Logger('Realtime');
+
   @WebSocketServer()
   server!: Server;
+
+  handleConnection(client: Socket) {
+    this.logger.log(JSON.stringify({ event: 'connect', socketId: client.id }));
+  }
+
+  handleDisconnect(client: Socket) {
+    this.logger.log(JSON.stringify({ event: 'disconnect', socketId: client.id }));
+  }
 
   @SubscribeMessage('ping')
   handlePing(@MessageBody() data: unknown): { event: string; data: unknown } {

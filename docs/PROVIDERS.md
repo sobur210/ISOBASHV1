@@ -20,6 +20,8 @@ Phase 2 establishes the provider contract and registry in `apps/backend/src/ai`.
 - `GET /ai/capabilities`
 - `POST /ai/generate` with `{ "capability": "language", "input": "..." }`
 
-Local configuration uses `OLLAMA_ENABLED`, `OLLAMA_BASE_URL`, and `OLLAMA_MODEL` in `.env`. Provider credentials, when added for cloud adapters, must remain server-side and must be validated at startup.
+Requests are validated with class-validator DTOs. Invalid input returns `400` with `code: VALIDATION_FAILED`; provider execution failures surface through the normalized error format.
+
+Local configuration uses `OLLAMA_ENABLED`, `OLLAMA_BASE_URL`, and `OLLAMA_MODEL` in `.env`. Provider credentials, when added for cloud adapters, must remain server-side and must be validated at startup (the process fails fast when `OPENAI_ENABLED` is set without `OPENAI_API_KEY`).
 
 The capability endpoint reports unsupported vision, embeddings, image, video, and research features as unavailable until a real adapter is configured. It never reports simulated success.

@@ -1,133 +1,80 @@
-# Status of extraction when limit hit: COMPLETE.
-
-# pg16 folder confirmed to contain bin, doc, include, lib,
-
-# pgAdmin 4, StackBuilder — standard full PG16 install layout.
-
-# No 'data' folder yet — expected, created by initdb (not run yet).
-
-# 
-
 # ISOBASH Project Memory
 
-Last updated: 2026-09-17
+Last updated: 2026-09-19
 
 ## Current status
 
-- Phase 1 foundation: implemented and runtime-verified.
-- Phase 2 provider bridge: implemented and runtime-verified.
-- Website and development servers were stopped at the end of the session.
-- The current UI is only a rough foundation. The next session should redesign the colors, typography, navigation, and URL experience before adding more product features.
+- Phase 1 (project foundation): implemented and runtime-verified.
+- Phase 2 (AI provider bridge): implemented and runtime-verified.
+- Phase 3 (core infrastructure/services): implemented and runtime-verified.
+- Frontend visual redesign applied: ISOBASH brand identity (primary `#3B82F6`, accent `#0EA5FF`, dark `#111827`, light `#F8FAFC`, gray `#6B7280`), light/dark mode toggle with cookie persistence, responsive workspace and admin shells built on route layouts.
+- Git repository initialized; all work is committed.
+- All services verified live: frontend (3000), backend (3001), PostgreSQL (5432), Redis 5 (6380), Ollama (11434), BullMQ worker, Socket.IO.
 
 ## Stack
 
-- Frontend: Next.js 16, React, TypeScript, Tailwind CSS
-- Backend: Node.js, NestJS, TypeScript
-- Database: PostgreSQL 18, Prisma
-- Jobs: Redis 5.0.14.1, BullMQ
+- Frontend: Next.js 16, React, TypeScript, Tailwind CSS v4
+- Backend: Node.js, NestJS 10, TypeScript
+- Database: PostgreSQL (Laragon), Prisma 5
+- Jobs: Redis 5.0.14.1 (port 6380), BullMQ 5
 - Realtime: Socket.IO
 - Local AI: Ollama with `llama3.2:latest`
 - Workspace: `C:\laragon\www\Isobash`
 
 ## Implemented structure
 
-- `apps/frontend`: Next.js application and route shells
-- `apps/backend`: NestJS API, Prisma service, Socket.IO gateway, AI provider bridge
-- `apps/worker`: dedicated BullMQ worker
-- `prisma`: schema and applied migration
-- `docs`: architecture, local development, and provider documentation
-- `packages/shared`, `scripts`, `tests`, `configuration`, `public`: foundation directories
-
-## Frontend routes
-
-- `/`
-- `/login`
-- `/register`
-- `/app`
-- `/app/chat`
-- `/app/agents`
-- `/app/projects`
-- `/app/files`
-- `/app/media`
-- `/app/settings`
-- `/admin`
-- `/admin/users`
-- `/admin/analytics`
-- `/admin/settings`
-
-These are truthful foundation shells. They do not pretend that authentication, chat, media, or AI features are complete.
+- `apps/frontend`: Next.js app — landing, auth, `/app` and `/admin` route groups with layouts; `components/` UI primitives (button, icons, page-header, placeholder-card, sidebar-nav, theme-toggle)
+- `apps/backend`: NestJS API — `src/ai` (provider bridge), `src/shared/config` (typed env, fail-fast), `src/shared/storage` (externalized roots, traversal-safe), `src/shared/logging` (structured HTTP log + `x-request-id`), `src/shared/errors` (normalized error filter), `src/prisma`, `src/queues`, `src/app.gateway.ts`
+- `apps/worker`: BullMQ worker
+- `prisma`: schema + applied migration
+- `scripts/`: `clean-dev.js` (preflight port cleanup), `verify-phase1.mjs`, `verify-phase3.mjs`
+- `docs/`: ARCHITECTURE, LOCAL-DEVELOPMENT, PROVIDERS, README
 
 ## Backend endpoints
 
-- `GET /health`
-- `GET /ai/providers`
-- `GET /ai/providers/health`
-- `GET /ai/models`
-- `GET /ai/capabilities`
-- `POST /ai/generate`
+- `GET /health` — component health (database, redis)
+- `GET /ai/providers`, `GET /ai/providers/health`, `GET /ai/models`, `GET /ai/capabilities`
+- `POST /ai/generate` — validated DTO; `400 VALIDATION_FAILED` on invalid input
 
-## AI provider status
+## Error format (all responses)
 
-- Ollama is enabled locally.
-- Base URL: `http://127.0.0.1:11434`
-- Model: `llama3.2:latest`
-- Language generation was tested successfully.
-- OpenAI-compatible adapter exists but is disabled because no API key is configured.
-- Vision, embeddings, image generation, video generation, and research are reported as unavailable. They must not be faked.
+```json
+{ "error": { "code": "...", "message": "...", "status": 400, "requestId": "uuid", "path": "...", "timestamp": "..." } }
+```
 
-## Local services
+## Runtime data (externalized)
 
-- Website: `http://localhost:3000`
-- Backend: `http://localhost:3001`
-- PostgreSQL: `localhost:5432`
-- Redis 5: `localhost:6380`
-- The older Redis 3 service remains on `localhost:6379` and was not stopped because it runs elevated.
+- `DATA_ROOT=C:/laragon/www/ISOBASH-DATA` (uploads/, media/, temp/, logs/, cache/, knowledge/, generated/)
+- `MODEL_ROOT=C:/laragon/www/ISOBASH-MODELS`
 
 ## Environment
 
-The local `.env` contains the PostgreSQL password supplied during setup and must never be committed or copied into documentation.
+`.env` is local-only, never committed. `.env.example` documents every variable. Startup validates required vars and fails fast (e.g. `OPENAI_ENABLED=true` without `OPENAI_API_KEY`).
 
-Important values:
+## Verification
 
-- `DATABASE_URL` points to PostgreSQL on port `5432`.
-- `REDIS_URL` points to Redis on port `6380`.
-- `OLLAMA_ENABLED=true`.
-- `OLLAMA_MODEL=llama3.2:latest`.
+```bash
+node scripts/verify-phase1.mjs   # 23 checks: routes, health, AI, Prisma, BullMQ + worker, Socket.IO
+node scripts/verify-phase3.mjs   # 9 checks: env config, storage roots, health components, error format, realtime
+```
 
-## Verification completed
-
-- Prisma client generated.
-- Prisma migration `20260917234452_phase1` applied successfully.
-- Real Prisma query succeeded.
-- PostgreSQL service accepted connections.
-- Redis returned `PONG`.
-- BullMQ processed a real queue job.
-- NestJS API health returned `200`.
-- Frontend routes returned `200`.
-- Frontend, backend, and worker builds passed.
-- Ollama health returned healthy.
-- Real local AI generation returned `ISOBASH local provider works.`.
+Both exit non-zero on failure. Last run: all green.
 
 ## Start commands
 
-From `C:\laragon\www\Isobash`:
+From `C:\laragon\www\Isobash`: `npm run dev`
 
-```bash
-npm run dev
-```
+Preflight `npm run clean:dev` clears stale listeners on 3000-3005. PostgreSQL, Redis (port 6380), and Ollama must be running first.
 
-This starts the frontend, backend, and worker together. PostgreSQL, Redis, and Ollama should already be running.
+## Services start notes
+
+- Redis 5 (port 6380): `C:\laragon\bin\redis\redis-x64-5.0.14.1\redis-server.exe --port 6380 --bind 127.0.0.1 --dir C:\laragon\Isobash-Redis`
+- Old Redis 3 service remains on 6379 (elevated) — unused by the app.
+- Ollama: start the Ollama app (serves 127.0.0.1:11434).
 
 ## Next session priorities
 
-1. Redesign the frontend visual language before expanding functionality.
-2. Replace the rough green foundation palette with a deliberate product identity.
-3. Improve typography, spacing, navigation, page hierarchy, and route naming.
-4. Review the homepage and workspace shell on desktop and mobile.
-5. Keep all empty states truthful; do not add fake AI, media, or authentication success.
-6. Continue only after reviewing the current repository and this memory file.
-
-# Current task: Run initdb to create data directory, then start
-
-# Postgres server and confirm it's listening.
-
+1. Phase 4: complete product UI architecture (design real state surfaces: dashboard, chat, agents, media) — still keep empty states truthful until each feature phase.
+2. Then Phase 5: backend + AI engine foundation (orchestration, streaming, tools, persistence).
+3. Continue phase-by-phase per the master spec. Do not skip phases or build fake functionality.
+4. When starting: review git status and the master specification before writing code.

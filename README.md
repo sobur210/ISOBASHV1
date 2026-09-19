@@ -1,60 +1,69 @@
-# Isobash
+# ISOBASH
 
-A starter monorepo for:
-- Frontend: Next.js + React + TypeScript + Tailwind
+Your AI. Your Agents. Your Workspace.
+
+ISOBASH is an AI operating platform: chat, reasoning, autonomous agents, memory, projects, web research, files, document intelligence, image and video generation — backed by a provider-agnostic engine that runs locally, in the cloud, or both.
+
+## Stack
+
+- Frontend: Next.js + React + TypeScript + Tailwind CSS
 - Backend: Node.js + NestJS + TypeScript
 - Database: PostgreSQL + Prisma
 - Jobs: Redis + BullMQ
 - Realtime: Socket.IO
+- Local AI: Ollama
 
 ## Structure
 
-- apps/frontend
-- apps/backend
-- apps/worker
-- packages/shared
-- prisma/
-- docs/
-- tests/
-- scripts/
-- configuration/
-- docker-compose.yml
+```
+apps/frontend    Next.js application (landing, auth, workspace, admin)
+apps/backend     NestJS API, AI bridge, realtime, jobs producer
+apps/worker      Dedicated BullMQ worker
+packages/shared  Shared contracts (foundation)
+prisma/          Database schema and migrations
+scripts/         Dev tooling and runtime verification
+docs/            Architecture and operational documentation
+configuration/   Static configuration notes
+```
+
+Runtime data is externalized to `ISOBASH-DATA/` and `ISOBASH-MODELS/` beside the repository. The source tree stays well under the 400 MB limit.
 
 ## Quick start
 
-1. Install dependencies:
-   npm install
+1. `npm install`
+2. Copy `.env.example` to `.env` and set `DATABASE_URL`.
+3. Start PostgreSQL and Redis (see `docs/LOCAL-DEVELOPMENT.md`).
+4. `npx prisma migrate dev`
+5. `npm run dev`
 
-2. Start PostgreSQL and Redis:
-   npm run docker:up
-
-3. Configure environment variables:
-   - create `.env` in the project root
-   - set `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/isobash?schema=public"`
-
-4. Create database tables:
-   npx prisma migrate dev --name init
-
-5. Start the app and worker:
-   npm run dev
+`npm run dev` runs `npm run clean:dev` (clears stale listeners on dev ports) before starting frontend, backend, and worker together.
 
 ## URLs
 
 - Frontend: http://localhost:3000
 - Backend: http://localhost:3001
+- Health: http://localhost:3001/health
 - PostgreSQL: localhost:5432
-- Redis: localhost:6379
-
-## Phase 1 routes
-
-The frontend includes truthful foundation boundaries for `/`, `/login`, `/register`, `/app`, `/app/chat`, `/app/agents`, `/app/projects`, `/app/files`, `/app/media`, `/app/settings`, `/admin`, `/admin/users`, `/admin/analytics`, and `/admin/settings`.
-
-These routes do not simulate AI, media, authentication, or job success. They provide the structure for the phases that implement those capabilities.
+- Redis: localhost:6380
+- Ollama: 127.0.0.1:11434
 
 ## Verification
 
-Run `npm run build:frontend`, `npm run build:backend`, `npm run build:worker`, and `npx prisma validate`. Full runtime verification additionally requires PostgreSQL and Redis to be running.
+```bash
+npm run build:frontend
+npm run build:backend
+npm run build:worker
+npx prisma validate
+node scripts/verify-phase1.mjs   # routes, health, AI, database, queue+worker, realtime
+node scripts/verify-phase3.mjs   # configuration, storage, error format, health components
+```
 
-## Notes
+## Status
 
-Phase 1 establishes the application shell, route boundaries, role/session schema foundation, API liveness endpoint, queue producer, dedicated worker process, Prisma schema, and local development documentation. Authentication, authorization, AI, media, billing, and production security are intentionally implemented in their dedicated phases.
+Phases 1–3 are implemented and runtime-verified:
+
+- Phase 1: project foundation, route shells, Prisma schema, BullMQ worker, Socket.IO.
+- Phase 2: provider-agnostic AI bridge with a real Ollama adapter.
+- Phase 3: typed configuration (fail-fast), storage abstraction over externalized roots, structured request logging, normalized error format, component health, DTO validation.
+
+Frontend carries the ISOBASH brand identity with light/dark mode and responsive workspace and admin shells. All empty states are truthful — no capability is claimed before its dedicated phase implements it.

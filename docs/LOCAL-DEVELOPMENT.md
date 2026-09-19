@@ -2,14 +2,48 @@
 
 ## Services
 
-- Web: `http://localhost:3000`
-- API: `http://localhost:3001`
-- API liveness: `http://localhost:3001/health`
-- PostgreSQL: `localhost:5432`
-- Redis: `localhost:6380` for the verified Laragon Redis 5 runtime
+| Service | Location | Notes |
+| --- | --- | --- |
+| Web | `http://localhost:3000` | Next.js dev server |
+| API | `http://localhost:3001` | NestJS API |
+| API health | `http://localhost:3001/health` | Reports database + Redis component status |
+| PostgreSQL | `localhost:5432` | Laragon PostgreSQL 18 |
+| Redis | `localhost:6380` | Laragon Redis 5 (`C:\laragon\bin\redis\redis-x64-5.0.14.1`) |
+| Local AI | `http://127.0.0.1:11434` | Ollama with `llama3.2:latest` |
 
 ## Start
 
-Install Node.js dependencies with `npm install`. Start PostgreSQL and Redis with `npm run docker:up` when Docker Desktop is available. Then run `npx prisma generate`, apply a migration with `npx prisma migrate dev --name init`, and start the applications with `npm run dev`.
+1. Install dependencies: `npm install`
+2. Start PostgreSQL and Redis. PostgreSQL runs as a Laragon service. Redis 5 runs on port `6380`:
+   ```bash
+   "C:\laragon\bin\redis\redis-x64-5.0.14.1\redis-server.exe" --port 6380 --bind 127.0.0.1 --dir C:\laragon\Isobash-Redis
+   ```
+3. Start Ollama: run the Ollama application (serving on `127.0.0.1:11434`).
+4. Apply the database schema: `npx prisma migrate dev` (after copying `.env.example` to `.env`).
+5. Start the full stack: `npm run dev`
 
-The application must report dependency failures truthfully. A passing frontend build does not prove that PostgreSQL or Redis is running.
+`npm run dev` runs a preflight step (`npm run clean:dev`) that stops stale Node processes still holding app ports before launching frontend, backend, and worker together.
+
+## Runtime data
+
+Runtime data lives outside the source directory:
+
+- `ISOBASH-DATA/` — `uploads/`, `media/`, `temp/`, `logs/`, `cache/`, `knowledge/`, `generated/`
+- `ISOBASH-MODELS/` — local model files
+
+These roots are resolved from `DATA_ROOT`, `UPLOAD_ROOT`, `MEDIA_ROOT`, `TEMP_ROOT`, `LOGS_ROOT`, `CACHE_ROOT`, `KNOWLEDGE_ROOT`, and `MODEL_ROOT` in `.env`, defaulting to directories beside the repository.
+
+## Verification
+
+Run the runtime check against a live stack:
+
+```bash
+node scripts/verify-phase1.mjs   # routes, health, AI, database, queue+worker, realtime
+node scripts/verify-phase3.mjs   # configuration, storage, error format, health components, realtime, web surface
+```
+
+Both scripts report pass/fail per check and exit non-zero on any failure. The application must report dependency failures truthfully — a passing frontend build does not prove that PostgreSQL or Redis is running.
+
+## Environment
+
+`.env` is local-only and never committed. `.env.example` documents every variable, including `DATABASE_URL`, `REDIS_URL`, Ollama configuration, and the runtime-data roots.
