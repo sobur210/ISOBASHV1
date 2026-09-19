@@ -1,30 +1,99 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #10211f;
-  --foreground: #10211f;
-  --text: #edf5ed;
-  --muted: #9eb2aa;
-  --panel: #17302d;
-  --line: rgba(237, 245, 237, 0.13);
-  --accent: #8de4b8;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --foreground: #111827;
+  --muted-foreground: #6b7280;
+  --border: rgba(17, 24, 39, 0.1);
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-foreground: #ffffff;
+  --accent: #0ea5ff;
+  --accent-soft: rgba(14, 165, 255, 0.12);
+  --ring: #3b82f6;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: #111827;
+  --surface: #182235;
+  --foreground: #f8fafc;
+  --muted-foreground: #94a3b8;
+  --border: rgba(248, 250, 252, 0.1);
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-foreground: #ffffff;
+  --accent: #0ea5ff;
+  --accent-soft: rgba(14, 165, 255, 0.16);
+  --ring: #3b82f6;
+  --danger: #f87171;
+  --success: #4ade80;
+  --warning: #fbbf24;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-ring: var(--ring);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-body {
-  background: var(--background);
-  color: var(--text);
-  font-family: var(--font-geist-sans), sans-serif;
-  background-image: linear-gradient(135deg, #10211f 0%, #17302d 55%, #25463d 100%);
-}
+@layer base {
+  * {
+    border-color: var(--border);
+  }
 
-::selection {
-  background: var(--accent);
-  color: var(--foreground);
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--muted-foreground) 35%, transparent);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
