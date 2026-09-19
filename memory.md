@@ -7,7 +7,9 @@ Last updated: 2026-09-19
 - Phase 1 (project foundation): implemented and runtime-verified.
 - Phase 2 (AI provider bridge): implemented and runtime-verified.
 - Phase 3 (core infrastructure/services): implemented and runtime-verified.
+- Phase 4 (complete product UI architecture): implemented and runtime-verified.
 - Frontend visual redesign applied: ISOBASH brand identity (primary `#3B82F6`, accent `#0EA5FF`, dark `#111827`, light `#F8FAFC`, gray `#6B7280`), light/dark mode toggle with cookie persistence, responsive workspace and admin shells built on route layouts.
+- Phase 4 UI: design-system primitives (`ui/card`, `ui/badge`, `ui/status-chip`, `ui/skeleton`), real-state workspace dashboard at `/app` (`health-panel` fetches `/health` + `/ai/providers/health` with 30s auto-refresh; `capabilities-panel` fetches `/ai/capabilities`), new surfaces `/app/research` (Phase 11) and `/app/billing` (Phase 16), route `loading.tsx`/`error.tsx` for `/app` and `/admin`, `lib/api.ts` client with normalized error extraction, expanded icon set (credit-card, activity, alert-triangle, clock).
 - Git repository initialized; all work is committed.
 - All services verified live: frontend (3000), backend (3001), PostgreSQL (5432), Redis 5 (6380), Ollama (11434), BullMQ worker, Socket.IO.
 
@@ -23,7 +25,7 @@ Last updated: 2026-09-19
 
 ## Implemented structure
 
-- `apps/frontend`: Next.js app — landing, auth, `/app` and `/admin` route groups with layouts; `components/` UI primitives (button, icons, page-header, placeholder-card, sidebar-nav, theme-toggle)
+- `apps/frontend`: Next.js app — landing, auth, `/app` and `/admin` route groups with layouts, loading + error boundaries, live dashboard panels, surfaces (chat, research, agents, projects, files, media, billing, settings); `components/` (ui primitives + page-header, sidebar-nav, theme-toggle, feature-card, route-error, health-panel, capabilities-panel) and `lib/api.ts`
 - `apps/backend`: NestJS API — `src/ai` (provider bridge), `src/shared/config` (typed env, fail-fast), `src/shared/storage` (externalized roots, traversal-safe), `src/shared/logging` (structured HTTP log + `x-request-id`), `src/shared/errors` (normalized error filter), `src/prisma`, `src/queues`, `src/app.gateway.ts`
 - `apps/worker`: BullMQ worker
 - `prisma`: schema + applied migration
@@ -74,7 +76,6 @@ Preflight `npm run clean:dev` clears stale listeners on 3000-3005. PostgreSQL, R
 
 ## Next session priorities
 
-1. Phase 4: complete product UI architecture (design real state surfaces: dashboard, chat, agents, media) — still keep empty states truthful until each feature phase.
-2. Then Phase 5: backend + AI engine foundation (orchestration, streaming, tools, persistence).
-3. Continue phase-by-phase per the master spec. Do not skip phases or build fake functionality.
-4. When starting: review git status and the master specification before writing code.
+1. Phase 5: backend + AI engine foundation (orchestration, streaming, tools, persistence) — chat surface becomes real.
+2. Then Phase 6 (authentication), Phase 7 (authorization), etc., per the master spec. Do not skip phases or build fake functionality.
+3. When starting: review git status and the master specification before writing code.

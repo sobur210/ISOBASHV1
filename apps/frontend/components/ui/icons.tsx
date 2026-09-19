@@ -165,3 +165,31 @@ export const DatabaseIcon = ({ className }: IconProps) => (
     <path d="M3 12a9 3 0 0 0 18 0" />
   </Icon>
 );
+
+export const CreditCardIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <rect x="1" y="4" width="22" height="16" rx="2" />
+    <path d="M1 10h22" />
+    <path d="M6 15h4" />
+  </Icon>
+);
+
+export const ActivityIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+  </Icon>
+);
+
+export const AlertTriangleIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+    <path d="M12 9v4M12 17h.01" />
+  </Icon>
+);
+
+export const ClockIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 6v6l4 2" />
+  </Icon>
+);

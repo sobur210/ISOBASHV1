@@ -49,6 +49,18 @@ Any error passes through `AllExceptionsFilter`, which emits a stable shape:
 
 The UI is a single app with route groups: `/` (landing), `/login`, `/register`, `/app/*` (workspace shell with sidebar + mobile navigation), and `/admin/*` (admin shell). Light and dark mode use the ISOBASH brand tokens (primary `#3B82F6`, accent `#0EA5FF`, dark `#111827`, light `#F8FAFC`, gray `#6B7280`) and persist the choice in a cookie.
 
+### Frontend layers (Phase 4)
+
+- `components/ui/*` — primitives: `button`, `badge`, `card`, `skeleton`, `status-chip`, `icons`.
+- `components/` — composition: `page-header`, `sidebar-nav`, `theme-toggle`, `feature-card`, `route-error`, `health-panel`, `capabilities-panel`.
+- `lib/api.ts` — frontend API client (base URL from `NEXT_PUBLIC_API_URL`), normalized error extraction, always reads the live backend.
+- Route groups each declare `loading.tsx` (server skeleton state) and `error.tsx` (client error boundary with `retry`).
+- The `/app` workspace home is a real-state dashboard: `health-panel` fetches `/health` + `/ai/providers/health` (auto-refreshing) and `capabilities-panel` fetches `/ai/capabilities`. Both render live API data truthfully — no simulated state.
+
+### Surface boundaries
+
+Workspace surfaces (chat, research, agents, projects, files, media, billing, settings) are route shells with truthful empty states until their dedicated phase. Error and unavailable states reflect real backend responses.
+
 ## Phase boundaries
 
-Phases 1–3 establish the foundation: routes, provider bridge, infrastructure services, and truthful empty states. AI workflows, authentication, authorization, media, and billing are implemented in their dedicated phases — nothing is simulated before it is real.
+Phases 1–4 establish the foundation and complete product UI architecture: routes, provider bridge, infrastructure services, design system, and truthful empty states. AI workflows, authentication, authorization, media, and billing are implemented in their dedicated phases — nothing is simulated before it is real.

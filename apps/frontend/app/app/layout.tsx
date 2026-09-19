@@ -4,21 +4,25 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import {
   BotIcon,
   ChatIcon,
+  CreditCardIcon,
   FileIcon,
   FolderIcon,
   GridIcon,
   ImageIcon,
   LogoutIcon,
+  SearchIcon,
   SettingsIcon,
 } from "@/components/ui/icons";
 
 const workspaceNav = [
   { href: "/app", label: "Workspace", icon: <GridIcon className="h-4 w-4" /> },
   { href: "/app/chat", label: "Chat", icon: <ChatIcon className="h-4 w-4" /> },
+  { href: "/app/research", label: "Research", icon: <SearchIcon className="h-4 w-4" /> },
   { href: "/app/agents", label: "Agents", icon: <BotIcon className="h-4 w-4" /> },
   { href: "/app/projects", label: "Projects", icon: <FolderIcon className="h-4 w-4" /> },
   { href: "/app/files", label: "Files", icon: <FileIcon className="h-4 w-4" /> },
   { href: "/app/media", label: "Media", icon: <ImageIcon className="h-4 w-4" /> },
+  { href: "/app/billing", label: "Billing", icon: <CreditCardIcon className="h-4 w-4" /> },
   { href: "/app/settings", label: "Settings", icon: <SettingsIcon className="h-4 w-4" /> },
 ];
 
