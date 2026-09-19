@@ -40,10 +40,15 @@ Run the runtime check against a live stack:
 ```bash
 node scripts/verify-phase1.mjs   # routes, health, AI, database, queue+worker, realtime
 node scripts/verify-phase3.mjs   # configuration, storage, error format, health components, realtime
-node scripts/verify-phase5.mjs   # chat streaming, persistence, ownership, validation, tools, chat UI
+node scripts/verify-phase5.mjs   # chat streaming, persistence, ownership, validation, tools, chat UI + auth gate
+node scripts/verify-phase6.mjs   # auth: register/me/duplicates/login/logout/validation + frontend gating
 ```
 
-Both scripts report pass/fail per check and exit non-zero on any failure. The application must report dependency failures truthfully — a passing frontend build does not prove that PostgreSQL or Redis is running.
+All scripts report pass/fail per check and exit non-zero on any failure. The application must report dependency failures truthfully — a passing frontend build does not prove that PostgreSQL or Redis is running.
+
+## Authentication (Phase 6)
+
+Accounts are stored in PostgreSQL (`User` with bcrypt hash, `Session` with 30-day expiry). Register/login/httpOnly-cookie flows: sign in or register at `http://localhost:3000/login` / `/register`. Once signed in, `/app/*` and `/admin/*` render; signed-out visits redirect to `/login`. A logout button in the header revokes the session server-side.
 
 ## Environment
 

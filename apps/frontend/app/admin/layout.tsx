@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SignOutButton } from "@/components/sign-out-button";
+import { requireUser } from "@/lib/auth-server";
 import {
   ChartIcon,
   HomeIcon,
-  LogoutIcon,
   SettingsIcon,
   ShieldIcon,
   UsersIcon,
@@ -17,7 +18,9 @@ const adminNav = [
   { href: "/admin/settings", label: "System settings", icon: <SettingsIcon className="h-4 w-4" /> },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const user = await requireUser();
+
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
@@ -39,14 +42,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               Back to workspace
             </Link>
+            <span className="hidden max-w-48 truncate items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground sm:inline-flex">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
+              {user.email}
+            </span>
             <ThemeToggle />
-            <Link
-              href="/login"
-              aria-label="Sign out"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-danger/50 hover:text-danger"
-            >
-              <LogoutIcon className="h-4 w-4" />
-            </Link>
+            <SignOutButton />
           </div>
         </div>
       </header>

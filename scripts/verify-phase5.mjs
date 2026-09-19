@@ -112,10 +112,27 @@ const realtimeProbe = await fetch(`${API}/health`);
 const realtimeHealth = await realtimeProbe.json();
 check("health still reports all components ok", realtimeHealth.status === "ok", realtimeHealth.status);
 
-const chatPage = await fetch(`${WEB}/app/chat`);
-const chatHtml = await chatPage.text();
-check("frontend /app/chat serves 200", chatPage.status === 200, `status=${chatPage.status}`);
-check("chat page renders the real composer", chatHtml.includes("New conversation") && chatHtml.length > 1000);
+const chatPage = await fetch(`${WEB}/app/chat`, { redirect: "manual" });
+check("unauthenticated /app/chat redirects to login (auth gate)", chatPage.status >= 300 && chatPage.status < 400,
+  `status=${chatPage.status} location=${chatPage.headers.get("location") ?? "none"}`);
+
+const gateEmail = `p5-${randomUUID()}@isobash.dev`;
+const gatePassword = "phase5pass123";
+const gateRegister = await fetch(`${API}/auth/register`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ email: gateEmail, password: gatePassword }),
+});
+check("auth register succeeds for the gated page check", gateRegister.status >= 200 && gateRegister.status < 300,
+  `status=${gateRegister.status}`);
+const setCookie = gateRegister.headers.get("set-cookie") ?? "";
+const gateSession = setCookie.match(/isobash_session=([^;]+)/)?.[1];
+check("register issues a session cookie", Boolean(gateSession), gateSession ? "cookie present" : "no cookie");
+
+const chatAuthed = await fetch(`${WEB}/app/chat`, { headers: { cookie: `isobash_session=${gateSession}` } });
+const chatAuthedHtml = await chatAuthed.text();
+check("authenticated /app/chat serves the real composer", chatAuthed.status === 200 && chatAuthedHtml.includes("New conversation"),
+  `status=${chatAuthed.status}`);
 
 console.log("");
 const failed = results.filter((r) => !r.passed);

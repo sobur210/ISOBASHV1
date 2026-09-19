@@ -14,8 +14,8 @@ export default function AdminUsersPage() {
       <PlaceholderCard
         icon={<UsersIcon className="h-5 w-5" />}
         title="No user directory yet"
-        description="Real user records arrive with authentication. Management actions here will be authorization-checked and logged."
-        feature="Integrated in Phase 8 — auth"
+        description="User records exist since authentication (Phase 6). Directory views and role changes arrive with the authorization phase and will be authorization-checked and logged."
+        feature="Integrated in Phase 8 — user management"
       />
       <PlaceholderCard
         icon={<ShieldIcon className="h-5 w-5" />}

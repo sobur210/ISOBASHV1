@@ -57,16 +57,18 @@ npx prisma validate
 node scripts/verify-phase1.mjs   # routes, health, AI, database, queue+worker, realtime
 node scripts/verify-phase3.mjs   # configuration, storage, error format, health components
 node scripts/verify-phase5.mjs   # chat streaming, persistence, ownership, validation, tools, chat UI
+node scripts/verify-phase6.mjs   # auth: register/me/duplicates/login/logout/validation, frontend gating
 ```
 
 ## Status
 
-Phases 1–5 are implemented and runtime-verified:
+Phases 1–6 are implemented and runtime-verified:
 
 - Phase 1: project foundation, route shells, Prisma schema, BullMQ worker, Socket.IO.
 - Phase 2: provider-agnostic AI bridge with a real Ollama adapter.
 - Phase 3: typed configuration (fail-fast), storage abstraction over externalized roots, structured request logging, normalized error format, component health, DTO validation.
 - Phase 4: complete product UI architecture — design-system primitives, real-state workspace dashboard (live system + AI capability panels), research/billing surfaces, route loading/error states, responsive navigation.
 - Phase 5: live chat — conversation + message persistence (Conversation/Message models), streaming orchestration (`POST /chat/stream` SSE via a provider `stream()`), ownership by client session, realtime `chat:updated` events, and a real `/app/chat` surface with a working composer.
+- Phase 6: authentication — register/login/logout with bcrypt hashing and server-side sessions (httpOnly cookie), `/app` and `/admin` gated behind a real session, real login/register forms.
 
 All empty states are truthful — nothing is simulated before its phase makes it real.
