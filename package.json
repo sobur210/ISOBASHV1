@@ -1,0 +1,24 @@
+{
+  "name": "isobash",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:frontend": "npm --workspace apps/frontend run dev",
+    "dev:backend": "npm --workspace apps/backend run start:dev",
+    "dev:worker": "npm --workspace apps/worker run start:dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:worker\"",
+    "build:frontend": "npm --workspace apps/frontend run build",
+    "build:backend": "npm --workspace apps/backend run build",
+    "build:worker": "npm --workspace apps/worker run build",
+    "db:generate": "npx prisma generate",
+    "db:migrate": "npx prisma migrate dev --name init",
+    "docker:up": "node -e \"const {execSync}=require('child_process'); try { execSync('docker --version', {stdio:'inherit'}); execSync('docker compose up -d postgres redis', {stdio:'inherit'}); } catch (e) { console.error('Docker is not installed or not available on PATH. Install Docker Desktop or ensure Docker is running, then retry.'); process.exit(1); }\"",
+    "docker:down": "node -e \"const {execSync}=require('child_process'); try { execSync('docker --version', {stdio:'inherit'}); execSync('docker compose down', {stdio:'inherit'}); } catch (e) { console.error('Docker is not installed or not available on PATH. Install Docker Desktop or ensure Docker is running, then retry.'); process.exit(1); }\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
