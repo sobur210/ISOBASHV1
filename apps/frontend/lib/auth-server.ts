@@ -3,6 +3,22 @@ import { redirect } from "next/navigation";
 import { AUTH_COOKIE_NAME, SessionUser, apiUrl } from "./auth";
 
 export async function requireUser(redirectTo = "/login"): Promise<SessionUser> {
+  const user = await getUser();
+  if (!user) {
+    redirect(redirectTo);
+  }
+  return user;
+}
+
+export async function requireAdmin(redirectTo = "/app"): Promise<SessionUser> {
+  const user = await requireUser("/login");
+  if (user.role !== "ADMIN") {
+    redirect(redirectTo);
+  }
+  return user;
+}
+
+export async function getUser(): Promise<SessionUser | null> {
   const store = await cookies();
   const sessionId = store.get(AUTH_COOKIE_NAME)?.value;
 
@@ -23,5 +39,5 @@ export async function requireUser(redirectTo = "/login"): Promise<SessionUser> {
     }
   }
 
-  redirect(redirectTo);
+  return null;
 }

@@ -44,6 +44,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
       } else if (status === HttpStatus.UNAUTHORIZED) {
         code = 'UNAUTHORIZED';
         message = exception.message;
+      } else if (status === HttpStatus.FORBIDDEN) {
+        code = 'FORBIDDEN';
+        message = exception.message;
       } else if (status === HttpStatus.CONFLICT) {
         code = 'CONFLICT';
         message = exception.message;

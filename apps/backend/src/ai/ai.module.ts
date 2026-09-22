@@ -7,6 +7,7 @@ import { AiModelRegistry } from './model.registry';
 import { OpenAiProvider } from './openai.provider';
 import { AiCapabilityRegistry } from './capability.registry';
 import { AiToolsRegistry } from './tools.registry';
+import { GeminiProvider } from './gemini.provider';
 
 @Module({
   controllers: [AiController],
@@ -14,13 +15,20 @@ import { AiToolsRegistry } from './tools.registry';
     AiProviderRegistry,
     OllamaProvider,
     OpenAiProvider,
+    GeminiProvider,
     AiModelRegistry,
     AiCapabilityRegistry,
     AiToolsRegistry,
     {
       provide: 'AI_PROVIDER_REGISTRATION',
-      inject: [AiProviderRegistry, AiModelRegistry, OllamaProvider, OpenAiProvider],
-      useFactory: (registry: AiProviderRegistry, models: AiModelRegistry, ollama: OllamaProvider, openai: OpenAiProvider) => {
+      inject: [AiProviderRegistry, AiModelRegistry, OllamaProvider, OpenAiProvider, GeminiProvider],
+      useFactory: (
+        registry: AiProviderRegistry,
+        models: AiModelRegistry,
+        ollama: OllamaProvider,
+        openai: OpenAiProvider,
+        gemini: GeminiProvider,
+      ) => {
         if (process.env.OLLAMA_ENABLED === 'true') {
           registry.register(ollama);
           models.register({
@@ -38,6 +46,16 @@ import { AiToolsRegistry } from './tools.registry';
             provider: openai.name,
             capabilities: ['language'],
             modes: ['online', 'hybrid'],
+          });
+        }
+        if (process.env.GEMINI_ENABLED === 'true') {
+          registry.register(gemini);
+          models.register({
+            id: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+            provider: gemini.name,
+            capabilities: ['language'],
+            modes: ['online', 'hybrid'],
+            contextWindow: 1048576,
           });
         }
         if (registry.list().length === 0) registry.register(new UnconfiguredAiProvider());

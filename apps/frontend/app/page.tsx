@@ -92,8 +92,8 @@ export default function Home() {
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_-10%,rgba(59,130,246,0.18),transparent)]"
           />
-          <div className="mx-auto grid w-full max-w-7xl gap-14 px-4 py-20 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8 lg:py-28">
-            <div>
+          <div className="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+            <div className="mx-auto max-w-3xl text-left">
               <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent-soft px-3 py-1.5 font-mono text-xs uppercase tracking-[0.2em] text-accent">
                 <SparklesIcon className="h-3.5 w-3.5" />
                 AI operating platform
@@ -116,32 +116,6 @@ export default function Home() {
                   Admin control center
                 </ButtonLink>
               </div>
-            </div>
-
-            <div className="rounded-3xl border border-border bg-surface p-6 shadow-[0_32px_90px_rgba(0,0,0,0.25)] lg:p-8">
-              <div className="flex items-center justify-between border-b border-border pb-4">
-                <span className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  Platform status
-                </span>
-                <span className="inline-flex items-center gap-2 font-mono text-xs text-success">
-                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
-                  Foundation live
-                </span>
-              </div>
-              <dl className="mt-6 grid gap-5">
-                {[
-                  ["Frontend", "Next.js + Tailwind"],
-                  ["Backend", "NestJS API"],
-                  ["Database", "PostgreSQL + Prisma"],
-                  ["Jobs & realtime", "Redis, BullMQ, Socket.IO"],
-                  ["Local AI", "Ollama"],
-                ].map(([label, value]) => (
-                  <div key={label} className="flex items-center justify-between gap-4">
-                    <dt className="text-sm text-muted-foreground">{label}</dt>
-                    <dd className="text-right font-mono text-sm text-foreground">{value}</dd>
-                  </div>
-                ))}
-              </dl>
             </div>
           </div>
         </section>

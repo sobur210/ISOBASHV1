@@ -2,7 +2,7 @@ import Link from "next/link";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
-import { requireUser } from "@/lib/auth-server";
+import { requireAdmin } from "@/lib/auth-server";
 import {
   ChartIcon,
   HomeIcon,
@@ -19,7 +19,7 @@ const adminNav = [
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireUser();
+  const user = await requireAdmin();
 
   return (
     <div className="min-h-screen">

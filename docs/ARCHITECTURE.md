@@ -14,7 +14,7 @@ Runtime data (uploads, media, temp, logs, cache, knowledge, and models) is exter
 
 ## Backend layers
 
-- `src/auth` — authentication from Phase 6: bcrypt-hashed credentials, server-side `Session` rows, httpOnly `isobash_session` cookie (SameSite=Lax, 30-day TTL), `register`/`login`/`logout`/`me`, plus `AuthGuard` and `@CurrentUser()` ready for Phase 7 role gates.
+- `src/auth` — authentication from Phase 6: bcrypt-hashed credentials, server-side `Session` rows, httpOnly `isobash_session` cookie (SameSite=Lax, 30-day TTL), `register`/`login`/`logout`/`me`, plus `AuthGuard`, `AdminGuard`, and `@CurrentUser()` for role gates. The first account registered on an empty database is bootstrapped as `ADMIN`.
 - `src/ai` — provider-agnostic AI bridge from Phase 2: capability registry, model registry, provider registry, tool registry, and real adapters (Ollama with streaming; OpenAI-compatible when configured).
 - `src/chat` — conversation orchestration: persists conversations and messages to PostgreSQL, drives the AI engine, and streams tokens over SSE (`POST /chat/stream`).
 - `src/realtime` — Socket.IO gateway (connection/join/ping) plus a small `RealtimeService` that emits session-scoped events such as `chat:updated`.
@@ -40,6 +40,7 @@ Runtime data (uploads, media, temp, logs, cache, knowledge, and models) is exter
 - `POST /auth/logout` revokes the server-side session (row gains `revokedAt`) and clears the cookie.
 - `GET /auth/me` always returns `{ user }` — the cookie resolves to a sanitized `{ id, email, name, role, createdAt }` or `null`. It never 401s, so the frontend can gate on it.
 - The frontend gates `/app/*` and `/admin/*` server-side: each layout calls `requireUser()`, which verifies the cookie against `/auth/me` and `redirect`s to `/login`. The login and register pages are real forms; the header shows the signed-in user and a working sign-out button.
+- The `/admin` layout additionally calls `requireAdmin()`, which redirects non-`ADMIN` sessions to `/app`. The public landing hero no longer contains a platform-status panel; that surface moved into the admin dashboard as the live `SystemHealthPanel`.
 - Cookies work cross-port on localhost (`SameSite=Lax`); CORS is credentialed (`origin: true, credentials: true`) and the frontend sends `credentials: "include"`.
 - Chat remains scoped to the browser-local `clientSessionId`; Phase 7 authorization layers roles/entitlements on top.
 
@@ -65,6 +66,19 @@ Any error passes through `AllExceptionsFilter`, which emits a stable shape:
 
 `GET /health` reports real component status — database (Prisma `SELECT 1`) and Redis (PING) — returning `ok` only when both are healthy.
 
+## Admin system health
+
+`GET /admin/system-health` is guarded by `AdminGuard` (valid session + `role === 'ADMIN'`; otherwise `401 UNAUTHORIZED` or `403 FORBIDDEN`). It checks six components live in parallel, each with status, detail, and latency in ms:
+
+- `frontend` — HTTP GET of `WEB_URL` (the Next.js server)
+- `backend` — the responding API itself
+- `database` — Prisma `SELECT 1`
+- `redis` — Redis `PING`
+- `job-queue` — BullMQ `getJobCounts()` + `getWorkers()` (reports worker liveness and job counts)
+- `ollama` — HTTP GET `OLLAMA_BASE_URL/api/tags` (reports installed model count)
+
+No values are hardcoded. Individual checks run under a 5s timeout so a single stalled dependency can never hang the panel. The admin dashboard renders this as a live auto-refreshing `SystemHealthPanel` (10s interval, `credentials: "include"`).
+
 ## Frontend
 
 The UI is a single app with route groups: `/` (landing), `/login`, `/register`, `/app/*` (workspace shell with sidebar + mobile navigation), and `/admin/*` (admin shell). Light and dark mode use the ISOBASH brand tokens (primary `#3B82F6`, accent `#0EA5FF`, dark `#111827`, light `#F8FAFC`, gray `#6B7280`) and persist the choice in a cookie.
@@ -83,4 +97,4 @@ Workspace surfaces (research, agents, projects, files, media, billing, settings)
 
 ## Phase boundaries
 
-Phases 1–5 establish the foundation and live chat: routes, provider bridge, infrastructure services, design system, truthful empty states, and a real streaming, persisted chat surface. Phase 6 adds real authentication (register/login/logout with server-side sessions) and gates the product UI behind it. Authorization, media, and billing are implemented in their dedicated phases — nothing else is simulated before it is real.
+Phases 1–5 establish the foundation and live chat: routes, provider bridge, infrastructure services, design system, truthful empty states, and a real streaming, persisted chat surface. Phase 6 adds real authentication (register/login/logout with server-side sessions) and gates the product UI behind it. Admin role gating ships early with the system-health surface: the public hero panel was removed and rebuilt as a live, admin-only system health panel, and `AdminGuard` + `requireAdmin()` enforce the `ADMIN` role server- and client-side. Full entitlements, media, and billing follow in their dedicated phases — nothing else is simulated before it is real.

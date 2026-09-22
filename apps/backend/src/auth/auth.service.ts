@@ -28,8 +28,16 @@ export class AuthService {
   async register(dto: RegisterDto): Promise<{ user: SessionUser; session: AuthSession }> {
     const passwordHash = await hash(dto.password, this.saltRounds);
     try {
+      // Bootstrap rule: the first account on an empty database becomes ADMIN so the
+      // admin surface is reachable. Every later account defaults to USER.
+      const isFirstUser = (await this.prisma.user.count()) === 0;
       const user = await this.prisma.user.create({
-        data: { email: dto.email.toLowerCase(), name: dto.name?.trim() || null, passwordHash },
+        data: {
+          email: dto.email.toLowerCase(),
+          name: dto.name?.trim() || null,
+          passwordHash,
+          role: isFirstUser ? 'ADMIN' : 'USER',
+        },
       });
       const session = await this.createSession(user.id);
       return { user: this.sanitize(user), session };

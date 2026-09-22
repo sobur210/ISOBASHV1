@@ -49,6 +49,10 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     return this.queue.getJobCounts();
   }
 
+  async getWorkers() {
+    return this.queue.getWorkers();
+  }
+
   async onModuleDestroy() {
     try {
       await this.queue.close();

@@ -3,7 +3,6 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusChip } from "@/components/ui/status-chip";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertTriangleIcon,
   BotIcon,
@@ -15,9 +14,11 @@ import {
 import {
   ConversationItem,
   MessageItem,
+  ProviderInfo,
   deleteConversation,
   fetchConversation,
   fetchConversations,
+  fetchProviders,
   streamChat,
 } from "@/lib/api";
 
@@ -46,6 +47,8 @@ export function ChatPanel() {
   const [loadingThread, setLoadingThread] = useState(false);
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [providers, setProviders] = useState<ProviderInfo[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState<string>("ollama");
   const bottomRef = useRef<HTMLDivElement>(null);
   const activeIdRef = useRef<string | null>(null);
 
@@ -71,6 +74,17 @@ export function ChatPanel() {
         setError(err instanceof Error ? err.message : "Could not load conversations.");
       })
       .finally(() => setLoadingList(false));
+    fetchProviders(controller.signal)
+      .then((list) => {
+        const languageProviders = list.filter((p) => p.capabilities.includes("language"));
+        setProviders(languageProviders);
+        const hasOllama = languageProviders.some((p) => p.provider === "ollama");
+        const fallback = languageProviders[0]?.provider ?? "ollama";
+        setSelectedProvider(hasOllama ? "ollama" : fallback);
+      })
+      .catch(() => {
+        // provider list is non-critical; the picker falls back to Ollama
+      });
     return () => controller.abort();
   }, []);
 
@@ -151,7 +165,12 @@ export function ChatPanel() {
     };
 
     try {
-      const { response, onEvent, consume } = await streamChat(inputText, activeIdRef.current ?? undefined, controller.signal);
+      const { response, onEvent, consume } = await streamChat(
+        inputText,
+        activeIdRef.current ?? undefined,
+        controller.signal,
+        selectedProvider,
+      );
 
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
@@ -292,7 +311,26 @@ export function ChatPanel() {
           {isStreaming ? (
             <StatusChip tone="warning" label="Generating…" />
           ) : (
-            <Badge tone="neutral">Local provider · Ollama</Badge>
+            <label className="inline-flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Provider</span>
+              <select
+                value={selectedProvider}
+                onChange={(e) => setSelectedProvider(e.target.value)}
+                disabled={isStreaming}
+                aria-label="AI provider"
+                className="rounded-full border border-foreground/10 bg-background px-3 py-1.5 text-xs font-medium capitalize text-foreground focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+              >
+                {providers.length === 0 ? (
+                  <option value="ollama">ollama</option>
+                ) : (
+                  providers.map((provider) => (
+                    <option key={provider.provider} value={provider.provider}>
+                      {provider.provider}
+                    </option>
+                  ))
+                )}
+              </select>
+            </label>
           )}
         </header>
 

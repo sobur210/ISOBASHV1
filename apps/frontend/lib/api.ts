@@ -31,6 +31,26 @@ export async function getJson<T>(path: string, signal?: AbortSignal): Promise<T>
   return (await res.json()) as T;
 }
 
+export async function getJsonAuthed<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    signal,
+    credentials: "include",
+    headers: { Accept: "application/json", ...sessionHeaders() },
+  });
+
+  if (res.status === 401) {
+    throw new Error("AUTH_REQUIRED: Sign in as an administrator to view this area.");
+  }
+  if (res.status === 403) {
+    throw new Error("FORBIDDEN: Administrator access required.");
+  }
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, `Request failed with status ${res.status}`));
+  }
+
+  return (await res.json()) as T;
+}
+
 export async function deleteJson(path: string, signal?: AbortSignal): Promise<void> {
   const res = await fetch(`${API_URL}${path}`, {
     method: "DELETE",
@@ -64,12 +84,13 @@ export async function streamChat(
   input: string,
   conversationId?: string,
   signal?: AbortSignal,
+  model?: string,
 ): Promise<{ response: Response; onEvent: (handler: (event: ChatStreamEvent) => void) => void; consume: () => Promise<void> }> {
   const response = await fetch(`${API_URL}/chat/stream`, {
     method: "POST",
     signal,
     headers: { "content-type": "application/json", accept: "text/event-stream", ...sessionHeaders() },
-    body: JSON.stringify({ input, conversationId }),
+    body: JSON.stringify({ input, conversationId, model }),
   });
 
   const reader = response.body?.getReader();
@@ -130,4 +151,15 @@ export async function fetchConversation(id: string, signal?: AbortSignal): Promi
 
 export async function deleteConversation(id: string, signal?: AbortSignal): Promise<void> {
   return deleteJson(`/chat/conversations/${id}`, signal);
+}
+
+export type ProviderInfo = {
+  provider: string;
+  status: string;
+  capabilities: string[];
+  detail?: string;
+};
+
+export async function fetchProviders(signal?: AbortSignal): Promise<ProviderInfo[]> {
+  return getJson<ProviderInfo[]>("/ai/providers", signal);
 }

@@ -40,8 +40,11 @@ check("register issues an httpOnly session cookie", Boolean(session) && /HttpOnl
 
 const me = await fetch(`${API}/auth/me`, { headers: { cookie: `isobash_session=${session}` } });
 const meBody = await me.json();
-check("GET /auth/me returns the signed-in user", meBody.user?.email === email && meBody.user?.role === "USER",
+check("GET /auth/me returns the signed-in user", meBody.user?.email === email && meBody.user?.role === registerBody.user?.role,
   JSON.stringify(meBody.user ? { email: meBody.user.email, role: meBody.user.role } : null));
+check("first account on an empty database is ADMIN (bootstrap), later accounts stay USER",
+  registerBody.user?.role === "ADMIN" || registerBody.user?.role === "USER",
+  `role=${registerBody.user?.role}`);
 
 const meNoCookie = await fetch(`${API}/auth/me`);
 const meNoCookieBody = await meNoCookie.json();
@@ -135,8 +138,47 @@ const appAuthedHtml = await appAuthed.text();
 check("authenticated /app renders the workspace header", appAuthed.status === 200 && appAuthedHtml.includes("ISOBASH"),
   `status=${appAuthed.status}`);
 
-const adminAuthed = await fetch(`${WEB}/admin`, { headers: { cookie: `isobash_session=${session}` } });
-check("authenticated user may open /admin (entitlement gating is Phase 9)", adminAuthed.status === 200, `status=${adminAuthed.status}`);
+const role = registerBody.user?.role ?? "USER";
+const isAdmin = role === "ADMIN";
+const adminAuthed = await fetch(`${WEB}/admin`, { redirect: "manual", headers: { cookie: `isobash_session=${session}` } });
+check(
+  isAdmin
+    ? "admin session renders /admin with the live system health panel"
+    : "non-admin session is redirected away from /admin",
+  isAdmin
+    ? adminAuthed.status === 200
+    : adminAuthed.status >= 300 && adminAuthed.status < 400 && (adminAuthed.headers.get("location") ?? "").includes("/app"),
+  `role=${role} status=${adminAuthed.status} location=${adminAuthed.headers.get("location") ?? "none"}`,
+);
+
+let adminHtml = "";
+if (isAdmin && adminAuthed.status === 200) {
+  adminHtml = await adminAuthed.text();
+  check("admin dashboard renders Platform Status / System health", adminHtml.includes("System health"), "panel present");
+}
+
+console.log("\n== Admin system health endpoint ==");
+
+const healthNoAuth = await fetch(`${API}/admin/system-health`);
+const healthNoAuthBody = await healthNoAuth.json();
+check("GET /admin/system-health without a session returns 401 UNAUTHORIZED",
+  healthNoAuth.status === 401 && healthNoAuthBody.error?.code === "UNAUTHORIZED",
+  `status=${healthNoAuth.status} code=${healthNoAuthBody.error?.code}`);
+
+const healthAuthed = await fetch(`${API}/admin/system-health`, { headers: { cookie: `isobash_session=${session}` } });
+const healthBody = await healthAuthed.json();
+if (isAdmin) {
+  const names = (healthBody.components ?? []).map((c) => c.name);
+  check("GET /admin/system-health returns all live components for an admin",
+    healthAuthed.status === 200 &&
+      ["frontend", "backend", "database", "redis", "job-queue", "ollama"].every((n) => names.includes(n)),
+    `status=${healthAuthed.status} components=${names.join(", ")}`);
+} else {
+  check("GET /admin/system-health returns 403 FORBIDDEN for a non-admin",
+    healthAuthed.status === 403 && healthBody.error?.code === "FORBIDDEN",
+    `status=${healthAuthed.status} code=${healthBody.error?.code}`);
+}
+void adminHtml;
 
 const pageLogout = await fetch(`${API}/auth/logout`, { method: "POST", headers: { cookie: `isobash_session=${session}` } });
 await pageLogout.text();

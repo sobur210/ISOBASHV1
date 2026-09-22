@@ -30,6 +30,11 @@ export type AppConfig = {
     model: string;
     apiKey?: string;
   };
+  gemini: {
+    enabled: boolean;
+    model: string;
+    apiKey?: string;
+  };
   storage: StorageRoots;
   env: string;
 };
@@ -132,11 +137,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       model: optionalString(env, 'OPENAI_MODEL') || 'gpt-4o-mini',
       apiKey: optionalString(env, 'OPENAI_API_KEY'),
     },
+    gemini: {
+      enabled: requireBoolean(env, 'GEMINI_ENABLED'),
+      model: optionalString(env, 'GEMINI_MODEL') || 'gemini-2.5-flash',
+      apiKey: optionalString(env, 'GEMINI_API_KEY'),
+    },
     storage,
   };
 
   if (config.openai.enabled && !config.openai.apiKey) {
     throw new Error('OPENAI_ENABLED is true but OPENAI_API_KEY is missing. Refusing to start.');
+  }
+  if (config.gemini.enabled && !config.gemini.apiKey) {
+    throw new Error('GEMINI_ENABLED is true but GEMINI_API_KEY is missing. Refusing to start.');
   }
   if (Number.isNaN(config.port) || config.port < 1 || config.port > 65535) {
     throw new Error(`PORT must be a valid TCP port, got "${env.PORT}".`);

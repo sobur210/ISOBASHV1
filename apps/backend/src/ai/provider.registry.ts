@@ -48,7 +48,7 @@ export class AiProviderRegistry {
       const status = await provider.health();
       if (status.status !== 'healthy') continue;
       try {
-        return await provider.execute(request);
+        return await provider.execute(normalizeRequest(request, provider.name));
       } catch (error) {
         lastError = error instanceof AiProviderError
           ? error
@@ -83,7 +83,7 @@ export class AiProviderRegistry {
 
       if (!provider.stream) {
         try {
-          const response = await provider.execute(request);
+          const response = await provider.execute(normalizeRequest(request, provider.name));
           yield { type: 'delta', text: response.output };
           yield { type: 'done', provider: response.provider, model: response.model, usage: response.usage };
         } catch (error) {
@@ -97,7 +97,7 @@ export class AiProviderRegistry {
       }
 
       try {
-        yield *provider.stream(request, signal);
+        yield *provider.stream(normalizeRequest(request, provider.name), signal);
       } catch (error) {
         yield {
           type: 'error',
@@ -114,4 +114,18 @@ export class AiProviderRegistry {
       'NO_HEALTHY_PROVIDER',
     );
   }
+}
+
+function normalizeRequest(request: AiRequest, providerName: string): AiRequest {
+  if (!request.model) return request;
+  if (request.model === providerName) {
+    const { model: _model, ...rest } = request;
+    return rest;
+  }
+  const prefix = `${providerName}:`;
+  if (request.model.startsWith(prefix)) {
+    const model = request.model.slice(prefix.length) || undefined;
+    return { ...request, model };
+  }
+  return request;
 }

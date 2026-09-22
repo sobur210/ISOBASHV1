@@ -10,6 +10,7 @@ import { QueueModule } from './queues/queue.module';
 import { AiModule } from './ai/ai.module';
 import { ChatModule } from './chat/chat.module';
 import { AuthModule } from './auth/auth.module';
+import { AdminModule } from './admin/admin.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { ConfigModule as IsoConfigModule } from './shared/config/config.module';
 import { resolveEnvFile } from './shared/config/configuration';
@@ -29,6 +30,7 @@ import { RequestLoggingMiddleware } from './shared/logging/request-logging.middl
     AiModule,
     ChatModule,
     AuthModule,
+    AdminModule,
     RealtimeModule,
   ],
   controllers: [AppController, HealthController],
