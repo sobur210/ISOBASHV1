@@ -216,6 +216,13 @@ export const TrashIcon = ({ className }: IconProps) => (
   </Icon>
 );
 
+export const BellIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  </Icon>
+);
+
 export const RefreshIcon = ({ className }: IconProps) => (
   <Icon className={className}>
     <path d="M3 12a9 9 0 0 1 15.36-6.36L21 8" />
