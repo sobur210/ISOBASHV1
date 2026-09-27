@@ -23,7 +23,16 @@ type GeminiGenerateResponse = {
 type GeminiErrorBody = { error?: { code?: number; message?: string; status?: string } };
 
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+/**
+ * Stable, generally available (non-preview) Flash model.
+ *
+ * `gemini-2.5-flash` was retired for newly provisioned API keys and now answers
+ * `404 ... no longer available to new users`, so it cannot be the default. The
+ * 3.x Flash line is stable GA on the free tier and is verified live by
+ * `verifyConfiguredModel()` below, which reports the truth instead of assuming.
+ */
+const DEFAULT_MODEL = 'gemini-3.7-flash';
+const MODEL_CHECK_TTL_MS = Number(process.env.GEMINI_MODEL_CHECK_TTL_MS || 10 * 60 * 1000);
 
 function classifyGeminiError(status: number, body?: GeminiErrorBody | null): { code: string; detail: string } {
   const geminiStatus = body?.error?.status;
@@ -40,10 +49,20 @@ function classifyGeminiError(status: number, body?: GeminiErrorBody | null): { c
         code: 'INVALID_API_KEY',
         detail: 'Gemini rejected the API key (authentication failed). Check GEMINI_API_KEY.',
       };
+    case 404:
+      return {
+        code: 'MODEL_NOT_AVAILABLE',
+        detail: `Gemini does not serve model "${DEFAULT_MODEL}" for this API key.${geminiMessage ? ` ${geminiMessage}` : ''}`,
+      };
     case 429:
       return {
         code: 'RATE_LIMITED',
         detail: 'Gemini rate limit reached. The provider did not respond; no fallback was used.',
+      };
+    case 503:
+      return {
+        code: 'PROVIDER_OVERLOADED',
+        detail: `Gemini is temporarily overloaded (HTTP 503).${geminiMessage ? ` ${geminiMessage}` : ''}`,
       };
     default:
       return {
@@ -66,8 +85,61 @@ export class GeminiProvider implements AiProvider {
   readonly name = 'gemini';
   readonly capabilities: readonly AiCapability[] = ['language'];
   private readonly model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
+  private modelCheck: { at: number; ok: boolean; detail: string } | null = null;
+  private healthCache: { at: number; value: AiProviderHealth } | null = null;
+
+  /**
+   * Confirm the configured model can actually generate for this key.
+   *
+   * `GET /models/{model}` still answers 200 for models that are listed but no
+   * longer served to new keys, so metadata is not proof. A one-token generation is
+   * the only honest signal, and it is cached for 10 minutes so the admin health
+   * panel (which polls every 10s) does not burn quota.
+   */
+  private async verifyConfiguredModel(apiKey: string): Promise<{ ok: boolean; detail: string }> {
+    if (this.modelCheck && Date.now() - this.modelCheck.at < MODEL_CHECK_TTL_MS) {
+      return { ok: this.modelCheck.ok, detail: this.modelCheck.detail };
+    }
+    const model = this.model;
+    try {
+      const response = await fetch(
+        `${API_BASE}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: 'ping' }] }],
+            generationConfig: { maxOutputTokens: 1 },
+          }),
+        },
+      );
+      if (!response.ok) {
+        const body = await readError(response);
+        const { detail } = classifyGeminiError(response.status, body);
+        this.modelCheck = { at: Date.now(), ok: false, detail };
+        return { ok: false, detail };
+      }
+      await response.json().catch(() => null);
+      const detail = `Model ${model} is reachable and the API key was validated live.`;
+      this.modelCheck = { at: Date.now(), ok: true, detail };
+      return { ok: true, detail };
+    } catch (error) {
+      const detail = 'Gemini is unreachable from this server.';
+      this.modelCheck = { at: Date.now(), ok: false, detail: `${detail} ${error instanceof Error ? error.message : ''}`.trim() };
+      return { ok: false, detail: this.modelCheck.detail };
+    }
+  }
 
   async health(): Promise<AiProviderHealth> {
+    if (this.healthCache && Date.now() - this.healthCache.at < 30_000) {
+      return this.healthCache.value;
+    }
+    const value = await this.computeHealth();
+    this.healthCache = { at: Date.now(), value };
+    return value;
+  }
+
+  private async computeHealth(): Promise<AiProviderHealth> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return {
@@ -78,19 +150,18 @@ export class GeminiProvider implements AiProvider {
       };
     }
     try {
-      const response = await fetch(
-        `${API_BASE}/models?key=${encodeURIComponent(apiKey)}&pageSize=1`,
-      );
+      const response = await fetch(`${API_BASE}/models?key=${encodeURIComponent(apiKey)}&pageSize=1`);
       if (!response.ok) {
         const body = await readError(response);
         const { detail } = classifyGeminiError(response.status, body);
         return { provider: this.name, status: 'unavailable', capabilities: [...this.capabilities], detail };
       }
+      const modelCheck = await this.verifyConfiguredModel(apiKey);
       return {
         provider: this.name,
-        status: 'healthy',
+        status: modelCheck.ok ? 'healthy' : 'unavailable',
         capabilities: [...this.capabilities],
-        detail: `Model ${this.model} is reachable and the API key was validated live.`,
+        detail: modelCheck.detail,
       };
     } catch {
       return {

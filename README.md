@@ -58,11 +58,13 @@ node scripts/verify-phase1.mjs   # routes, health, AI, database, queue+worker, r
 node scripts/verify-phase3.mjs   # configuration, storage, error format, health components
 node scripts/verify-phase5.mjs   # chat streaming, persistence, ownership, validation, tools, chat UI
 node scripts/verify-phase6.mjs   # auth: register/me/duplicates/login/logout/validation, frontend gating
+node scripts/verify-phase7.mjs   # authorization: roles guard, admin gating, role round-trip
+node scripts/verify-phase8.mjs   # security: headers, cookie hardening, MFA, rate limits, lockout, audit trail
 ```
 
 ## Status
 
-Phases 1–6 are implemented and runtime-verified:
+Phases 1–8 are implemented and runtime-verified:
 
 - Phase 1: project foundation, route shells, Prisma schema, BullMQ worker, Socket.IO.
 - Phase 2: provider-agnostic AI bridge with a real Ollama adapter.
@@ -70,5 +72,7 @@ Phases 1–6 are implemented and runtime-verified:
 - Phase 4: complete product UI architecture — design-system primitives, real-state workspace dashboard (live system + AI capability panels), research/billing surfaces, route loading/error states, responsive navigation.
 - Phase 5: live chat — conversation + message persistence (Conversation/Message models), streaming orchestration (`POST /chat/stream` SSE via a provider `stream()`), ownership by client session, realtime `chat:updated` events, and a real `/app/chat` surface with a working composer.
 - Phase 6: authentication — register/login/logout with bcrypt hashing and server-side sessions (httpOnly cookie), `/app` and `/admin` gated behind a real session, real login/register forms.
+- Phase 7: authorization — `@Roles()` + `RolesGuard` on the admin surface, admin-only live system health, first registered account bootstrapped as `ADMIN`.
+- Phase 8: security hardening — Redis-backed rate limiting and login lockout, TOTP MFA with two-step sign-in, persistent audit trail, security headers and CSP on both apps.
 
 All empty states are truthful — nothing is simulated before its phase makes it real.

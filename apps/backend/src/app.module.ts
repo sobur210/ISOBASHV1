@@ -16,6 +16,7 @@ import { ConfigModule as IsoConfigModule } from './shared/config/config.module';
 import { resolveEnvFile } from './shared/config/configuration';
 import { StorageModule } from './shared/storage/storage.module';
 import { RequestLoggingMiddleware } from './shared/logging/request-logging.middleware';
+import { SecurityHeadersMiddleware } from './security/security-headers.middleware';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { RequestLoggingMiddleware } from './shared/logging/request-logging.middl
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RequestLoggingMiddleware).forRoutes('*');
+    consumer.apply(RequestLoggingMiddleware, SecurityHeadersMiddleware).forRoutes('*');
   }
 }
+

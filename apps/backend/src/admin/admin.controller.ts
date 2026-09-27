@@ -1,8 +1,11 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { AdminGuard } from '../auth/admin.guard';
+import { AuthGuard } from '../auth/auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 import { SystemHealthService } from './system-health.service';
 
-@UseGuards(AdminGuard)
+@UseGuards(AuthGuard, RolesGuard)
+@Roles('ADMIN')
 @Controller('admin')
 export class AdminController {
   constructor(private readonly systemHealth: SystemHealthService) {}

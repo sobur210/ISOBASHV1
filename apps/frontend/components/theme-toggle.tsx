@@ -1,20 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { MoonIcon, SunIcon } from "@/components/ui/icons";
 
-export function ThemeToggle({ className = "" }: { className?: string }) {
-  const [dark, setDark] = useState<boolean | null>(null);
+function subscribe(onStoreChange: () => void) {
+  const observer = new MutationObserver(onStoreChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  return () => observer.disconnect();
+}
 
-  useEffect(() => {
-    setDark(document.documentElement.classList.contains("dark"));
-  }, []);
+function getSnapshot() {
+  return document.documentElement.classList.contains("dark");
+}
+
+function getServerSnapshot() {
+  return false;
+}
+
+export function ThemeToggle({ className = "" }: { className?: string }) {
+  const dark = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   function toggle() {
     const next = !dark;
     document.documentElement.classList.toggle("dark", next);
     document.cookie = `isobash_theme=${next ? "dark" : "light"}; path=/; max-age=31536000; samesite=lax`;
-    setDark(next);
   }
 
   return (

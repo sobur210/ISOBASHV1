@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/brand-logo";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -13,6 +14,7 @@ import {
   ImageIcon,
   SearchIcon,
   SettingsIcon,
+  ShieldIcon,
 } from "@/components/ui/icons";
 
 const workspaceNav = [
@@ -35,12 +37,18 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2.5 font-mono text-sm font-bold tracking-[0.22em] text-primary">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              I
-            </span>
-            ISOBASH
+            <BrandLogo priority />
           </Link>
           <div className="flex items-center gap-2">
+            {user.role === "ADMIN" && (
+              <Link
+                href="/admin"
+                className="hidden items-center gap-1.5 rounded-full border border-accent/40 bg-accent-soft px-3 py-1.5 font-mono text-xs text-accent hover:text-foreground sm:inline-flex"
+              >
+                <ShieldIcon className="h-3.5 w-3.5" />
+                Admin
+              </Link>
+            )}
             <span className="hidden max-w-56 truncate items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground sm:inline-flex">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
               {user.name ?? user.email}

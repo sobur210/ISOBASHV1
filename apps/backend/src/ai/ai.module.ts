@@ -8,11 +8,15 @@ import { OpenAiProvider } from './openai.provider';
 import { AiCapabilityRegistry } from './capability.registry';
 import { AiToolsRegistry } from './tools.registry';
 import { GeminiProvider } from './gemini.provider';
+import { ProviderHealthService } from './provider-health.service';
+import { AiRouterService } from './ai-router.service';
 
 @Module({
   controllers: [AiController],
   providers: [
     AiProviderRegistry,
+    ProviderHealthService,
+    AiRouterService,
     OllamaProvider,
     OpenAiProvider,
     GeminiProvider,
@@ -50,19 +54,33 @@ import { GeminiProvider } from './gemini.provider';
         }
         if (process.env.GEMINI_ENABLED === 'true') {
           registry.register(gemini);
+          const geminiModel = process.env.GEMINI_MODEL || 'gemini-3.7-flash';
           models.register({
-            id: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+            id: geminiModel,
             provider: gemini.name,
             capabilities: ['language'],
             modes: ['online', 'hybrid'],
             contextWindow: 1048576,
+            enabled: true,
           });
+          for (const alias of ['gemini-3.6-flash', 'gemini-flash-latest']) {
+            if (alias === geminiModel) continue;
+            models.register({
+              id: alias,
+              provider: gemini.name,
+              capabilities: ['language'],
+              modes: ['online', 'hybrid'],
+              contextWindow: 1048576,
+              enabled: false,
+              aliasOf: geminiModel,
+            });
+          }
         }
         if (registry.list().length === 0) registry.register(new UnconfiguredAiProvider());
         return true;
       },
     },
   ],
-  exports: [AiProviderRegistry, AiModelRegistry, AiToolsRegistry],
+  exports: [AiProviderRegistry, AiModelRegistry, AiToolsRegistry, ProviderHealthService, AiRouterService],
 })
 export class AiModule {}

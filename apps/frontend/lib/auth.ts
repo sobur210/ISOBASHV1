@@ -5,6 +5,7 @@ export type SessionUser = {
   email: string;
   name: string | null;
   role: "ADMIN" | "USER";
+  mfaEnabled: boolean;
   createdAt: string;
 };
 

@@ -35,6 +35,13 @@ export type AppConfig = {
     model: string;
     apiKey?: string;
   };
+  security: {
+    appSecret: string;
+    authRateLimit: { limit: number; windowMs: number };
+    registerRateLimit: { limit: number; windowMs: number };
+    mfaRateLimit: { limit: number; windowMs: number };
+    loginFailuresPerAccount: { limit: number; windowMs: number };
+  };
   storage: StorageRoots;
   env: string;
 };
@@ -139,8 +146,27 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     },
     gemini: {
       enabled: requireBoolean(env, 'GEMINI_ENABLED'),
-      model: optionalString(env, 'GEMINI_MODEL') || 'gemini-2.5-flash',
+      model: optionalString(env, 'GEMINI_MODEL') || 'gemini-3.7-flash',
       apiKey: optionalString(env, 'GEMINI_API_KEY'),
+    },
+    security: {
+      appSecret: requireString(env, 'APP_SECRET'),
+      authRateLimit: {
+        limit: Number(env.RATE_LIMIT_AUTH_MAX || 30),
+        windowMs: Number(env.RATE_LIMIT_AUTH_WINDOW_MS || 15 * 60 * 1000),
+      },
+      registerRateLimit: {
+        limit: Number(env.RATE_LIMIT_REGISTER_MAX || 30),
+        windowMs: Number(env.RATE_LIMIT_REGISTER_WINDOW_MS || 15 * 60 * 1000),
+      },
+      mfaRateLimit: {
+        limit: Number(env.RATE_LIMIT_MFA_MAX || 10),
+        windowMs: Number(env.RATE_LIMIT_MFA_WINDOW_MS || 15 * 60 * 1000),
+      },
+      loginFailuresPerAccount: {
+        limit: Number(env.RATE_LIMIT_LOGIN_FAILURES_MAX || 5),
+        windowMs: Number(env.RATE_LIMIT_LOGIN_FAILURES_WINDOW_MS || 15 * 60 * 1000),
+      },
     },
     storage,
   };

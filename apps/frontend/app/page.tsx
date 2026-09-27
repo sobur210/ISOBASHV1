@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ButtonLink } from "@/components/ui/button";
 import {
   ArrowRightIcon,
@@ -71,8 +72,7 @@ export default function Home() {
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center gap-2.5 font-mono text-sm font-bold tracking-[0.22em] text-primary">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">I</span>
-            ISOBASH
+            <Image src="/logo.png" alt="ISOBASH" width={128} height={32} className="h-8 w-auto" priority />
           </Link>
           <nav className="flex items-center gap-2">
             <ThemeToggle />
@@ -92,12 +92,8 @@ export default function Home() {
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_-10%,rgba(59,130,246,0.18),transparent)]"
           />
-          <div className="mx-auto w-full max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-            <div className="mx-auto max-w-3xl text-left">
-              <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent-soft px-3 py-1.5 font-mono text-xs uppercase tracking-[0.2em] text-accent">
-                <SparklesIcon className="h-3.5 w-3.5" />
-                AI operating platform
-              </p>
+          <div className="mx-auto grid w-full max-w-7xl gap-14 px-4 py-20 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8 lg:py-28">
+            <div className="text-left">
               <h1 className="max-w-3xl text-5xl font-semibold leading-[0.98] tracking-[-0.035em] text-foreground sm:text-6xl lg:text-7xl">
                 Your AI. Your agents.{" "}
                 <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -113,8 +109,25 @@ export default function Home() {
                   Open workspace <ArrowRightIcon className="h-4 w-4" />
                 </ButtonLink>
                 <ButtonLink href="/admin" variant="outline" size="lg">
-                  Admin control center
+                  Watch A Demo
                 </ButtonLink>
+              </div>
+            </div>
+
+            <div className="relative hidden overflow-hidden rounded-3xl border border-border/60 bg-surface shadow-[0_32px_90px_rgba(0,0,0,0.25)] lg:block">
+              <Image
+                src="https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80"
+                alt="Developer workspace with source code on screen"
+                width={1200}
+                height={800}
+                sizes="(min-width: 1024px) 45vw, 100vw"
+                className="h-full w-full object-cover"
+                priority
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
+              <div className="absolute bottom-5 left-5 flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-4 py-2 font-mono text-xs text-muted-foreground backdrop-blur">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                Local-first · Cloud-ready
               </div>
             </div>
           </div>

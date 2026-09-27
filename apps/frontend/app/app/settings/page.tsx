@@ -1,28 +1,30 @@
 import { PageHeader } from "@/components/page-header";
-import { PlaceholderCard } from "@/components/placeholder-card";
-import { SettingsIcon, ShieldIcon } from "@/components/ui/icons";
+import { MfaSettings } from "@/components/mfa-settings";
+import { requireUser } from "@/lib/auth-server";
+import { SettingsIcon } from "@/components/ui/icons";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const user = await requireUser();
+
   return (
     <div className="space-y-8">
       <PageHeader
         eyebrow="Workspace / Settings"
         title="Settings"
-        description="A route boundary for account, providers, security, preferences, and workspace configuration."
-        status="Phase 8+"
+        description="Account security, providers, preferences, and workspace configuration."
+        status="Phase 8"
       />
-      <PlaceholderCard
-        icon={<SettingsIcon className="h-5 w-5" />}
-        title="Preferences and provider configuration"
-        description="Signature settings will be backed by real persisted configuration once identity and entitlements exist."
-        feature="Integrated with auth — Phase 8"
-      />
-      <PlaceholderCard
-        icon={<ShieldIcon className="h-5 w-5" />}
-        title="Security settings"
-        description="MFA status, active sessions, and session revocation will be managed here with strict audit logging."
-        feature="Security requirement — spec §19"
-      />
+      <MfaSettings email={user.email} mfaEnabled={user.mfaEnabled} />
+      <div className="rounded-2xl border border-border bg-surface p-6">
+        <p className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.24em] text-accent">
+          <SettingsIcon className="h-3.5 w-3.5" />
+          Preferences
+        </p>
+        <h2 className="mt-3 text-lg font-semibold tracking-[-0.01em] text-foreground">Provider configuration</h2>
+        <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+          Model and provider preferences will be backed by real persisted configuration in a later phase.
+        </p>
+      </div>
     </div>
   );
 }

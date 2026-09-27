@@ -35,36 +35,42 @@ export function HealthPanel() {
   const [providers, setProviders] = useState<ProviderHealth[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [retrying, setRetrying] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const load = async (signal?: AbortSignal) => {
-    setLoading(true);
-    try {
-      const [health, providerHealth] = await Promise.all([
-        getJson<HealthResult>("/health", signal),
-        getJson<ProviderHealth[]>("/ai/providers/health", signal),
-      ]);
-      setData(health);
-      setProviders(providerHealth);
-      setError(null);
-      setLastUpdated(new Date());
-    } catch (err) {
-      if ((err as Error).name === "AbortError") return;
-      setError(err instanceof Error ? err.message : "The API is unreachable.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const refresh = (signal?: AbortSignal) =>
+    Promise.all([
+      getJson<HealthResult>("/health", signal),
+      getJson<ProviderHealth[]>("/ai/providers/health", signal),
+    ])
+      .then(([health, providerHealth]) => {
+        setData(health);
+        setProviders(providerHealth);
+        setError(null);
+        setLastUpdated(new Date());
+      })
+      .catch((err: unknown) => {
+        if ((err as Error).name === "AbortError") return;
+        setError(err instanceof Error ? err.message : "The API is unreachable.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
   useEffect(() => {
     const controller = new AbortController();
-    void load(controller.signal);
-    const timer = setInterval(() => load(controller.signal), REFRESH_MS);
+    void refresh(controller.signal);
+    const timer = setInterval(() => void refresh(controller.signal), REFRESH_MS);
     return () => {
       controller.abort();
       clearInterval(timer);
     };
   }, []);
+
+  const retry = () => {
+    setRetrying(true);
+    void refresh().finally(() => setRetrying(false));
+  };
 
   return (
     <Card>
@@ -92,10 +98,11 @@ export function HealthPanel() {
               </div>
             </div>
             <button
-              onClick={() => void load()}
-              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-foreground transition-colors hover:border-primary/60 hover:text-primary"
+              onClick={retry}
+              disabled={retrying}
+              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-foreground transition-colors hover:border-primary/60 hover:text-primary disabled:opacity-60"
             >
-              Retry
+              {retrying ? "Retrying" : "Retry"}
             </button>
           </div>
         ) : loading && !data ? (

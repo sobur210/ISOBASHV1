@@ -14,7 +14,7 @@ Runtime data (uploads, media, temp, logs, cache, knowledge, and models) is exter
 
 ## Backend layers
 
-- `src/auth` — authentication from Phase 6: bcrypt-hashed credentials, server-side `Session` rows, httpOnly `isobash_session` cookie (SameSite=Lax, 30-day TTL), `register`/`login`/`logout`/`me`, plus `AuthGuard`, `AdminGuard`, and `@CurrentUser()` for role gates. The first account registered on an empty database is bootstrapped as `ADMIN`.
+- `src/auth` — authentication from Phase 6: bcrypt-hashed credentials, server-side `Session` rows, httpOnly `isobash_session` cookie (SameSite=Lax, 30-day TTL), `register`/`login`/`logout`/`me`, plus `AuthGuard`, `RolesGuard` with `@Roles()`, and `@CurrentUser()` for role gates. The first account registered on an empty database is bootstrapped as `ADMIN`.
 - `src/ai` — provider-agnostic AI bridge from Phase 2: capability registry, model registry, provider registry, tool registry, and real adapters (Ollama with streaming; OpenAI-compatible when configured).
 - `src/chat` — conversation orchestration: persists conversations and messages to PostgreSQL, drives the AI engine, and streams tokens over SSE (`POST /chat/stream`).
 - `src/realtime` — Socket.IO gateway (connection/join/ping) plus a small `RealtimeService` that emits session-scoped events such as `chat:updated`.
@@ -24,6 +24,7 @@ Runtime data (uploads, media, temp, logs, cache, knowledge, and models) is exter
 - `src/shared/errors` — global exception filter that normalizes every error response.
 - `src/prisma` — Prisma client lifecycle.
 - `src/queues` — Redis + BullMQ queue producer with job defaults (retries, backoff, retention).
+- `src/security` — Phase 8: TOTP (RFC 6238), AES-256-GCM secret cipher, `AuditService` (persistent `AuditEvent` trail), `RateLimitService` + `RateLimitGuard` (Redis-backed with in-memory fallback), and `SecurityHeadersMiddleware` (mounted globally for all routes). `src/auth` gained 2-step MFA sign-in, session rotation on MFA enable, per-account login-failure lockout, and the `mfa/*` endpoints; the error filter maps `429 → RATE_LIMITED`. See `docs/SECURITY.md` for the full posture.
 
 ## Chat engine (Phase 5)
 
@@ -68,7 +69,7 @@ Any error passes through `AllExceptionsFilter`, which emits a stable shape:
 
 ## Admin system health
 
-`GET /admin/system-health` is guarded by `AdminGuard` (valid session + `role === 'ADMIN'`; otherwise `401 UNAUTHORIZED` or `403 FORBIDDEN`). It checks six components live in parallel, each with status, detail, and latency in ms:
+`GET /admin/system-health` is guarded by `AuthGuard` + `RolesGuard` (`@Roles('ADMIN')`; valid session required, else `401 UNAUTHORIZED`, non-admin `403 FORBIDDEN`). It checks six components live in parallel, each with status, detail, and latency in ms:
 
 - `frontend` — HTTP GET of `WEB_URL` (the Next.js server)
 - `backend` — the responding API itself
@@ -97,4 +98,4 @@ Workspace surfaces (research, agents, projects, files, media, billing, settings)
 
 ## Phase boundaries
 
-Phases 1–5 establish the foundation and live chat: routes, provider bridge, infrastructure services, design system, truthful empty states, and a real streaming, persisted chat surface. Phase 6 adds real authentication (register/login/logout with server-side sessions) and gates the product UI behind it. Admin role gating ships early with the system-health surface: the public hero panel was removed and rebuilt as a live, admin-only system health panel, and `AdminGuard` + `requireAdmin()` enforce the `ADMIN` role server- and client-side. Full entitlements, media, and billing follow in their dedicated phases — nothing else is simulated before it is real.
+Phases 1–5 establish the foundation and live chat: routes, provider bridge, infrastructure services, design system, truthful empty states, and a real streaming, persisted chat surface. Phase 6 adds real authentication (register/login/logout with server-side sessions) and gates the product UI behind it. Admin role gating ships early with the system-health surface: the public hero panel was removed and rebuilt as a live, admin-only system health panel, and `AuthGuard`+`RolesGuard` with `requireAdmin()` enforce the `ADMIN` role server- and client-side. Phase 7 generalizes this into a reusable role/entitlement layer (`@Roles()` + `RolesGuard`). Full entitlements, media, and billing follow in their dedicated phases — nothing else is simulated before it is real.

@@ -3,6 +3,7 @@ node_modules
 out
 .env
 .env.*
+!.env.example
 coverage
 npm-debug.log*
 .DS_Store
@@ -10,3 +11,11 @@ npm-debug.log*
 /apps/*/dist
 /apps/*/.next
 /apps/*/node_modules
+dev-run.log
+frontend-dev.log
+
+# Brand design sources duplicated at the repo root; the app assets are tracked
+# (apps/frontend/public/logo.png, apps/frontend/app/icon.png).
+/Futuristic Blue-Violet Monogram Icon.png
+/Glossy Blue ISOBASH Logo.png
+

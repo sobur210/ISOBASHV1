@@ -17,6 +17,14 @@ export class AiProviderRegistry {
     this.providers.set(provider.name, provider);
   }
 
+  instance(name: string): AiProvider | undefined {
+    return this.providers.get(name);
+  }
+
+  names(): string[] {
+    return [...this.providers.keys()];
+  }
+
   list(): AiProviderHealth[] {
     return [...this.providers.values()].map((provider) => ({
       provider: provider.name,

@@ -46,32 +46,38 @@ export function SystemHealthPanel() {
   const [data, setData] = useState<SystemHealthResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [retrying, setRetrying] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const load = async (signal?: AbortSignal) => {
-    setLoading(true);
-    try {
-      const result = await getJsonAuthed<SystemHealthResult>("/admin/system-health", signal);
-      setData(result);
-      setError(null);
-      setLastUpdated(new Date());
-    } catch (err) {
-      if ((err as Error).name === "AbortError") return;
-      setError(err instanceof Error ? err.message : "The API is unreachable.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const refresh = (signal?: AbortSignal) =>
+    getJsonAuthed<SystemHealthResult>("/admin/system-health", signal)
+      .then((result) => {
+        setData(result);
+        setError(null);
+        setLastUpdated(new Date());
+      })
+      .catch((err: unknown) => {
+        if ((err as Error).name === "AbortError") return;
+        setError(err instanceof Error ? err.message : "The API is unreachable.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
   useEffect(() => {
     const controller = new AbortController();
-    void load(controller.signal);
-    const timer = setInterval(() => load(controller.signal), REFRESH_MS);
+    void refresh(controller.signal);
+    const timer = setInterval(() => void refresh(controller.signal), REFRESH_MS);
     return () => {
       controller.abort();
       clearInterval(timer);
     };
   }, []);
+
+  const retry = () => {
+    setRetrying(true);
+    void refresh().finally(() => setRetrying(false));
+  };
 
   return (
     <Card>
@@ -99,11 +105,12 @@ export function SystemHealthPanel() {
               </div>
             </div>
             <button
-              onClick={() => void load()}
-              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-foreground transition-colors hover:border-primary/60 hover:text-primary"
+              onClick={retry}
+              disabled={retrying}
+              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-foreground transition-colors hover:border-primary/60 hover:text-primary disabled:opacity-60"
             >
               <RefreshIcon className="h-3.5 w-3.5" />
-              Retry
+              {retrying ? "Retrying" : "Retry"}
             </button>
           </div>
         ) : loading && !data ? (

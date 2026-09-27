@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { AiProviderRegistry } from '../ai/provider.registry';
+import { AiRouterService } from '../ai/ai-router.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeService } from '../realtime/realtime.service';
 import { ChatStreamRequestDto } from './dto/chat-stream-request.dto';
 
 export type ChatStreamEvent =
-  | { type: 'meta'; conversationId: string; conversationTitle: string; userMessageId: string }
+  | { type: 'meta'; conversationId: string; conversationTitle: string; userMessageId: string; routing?: { provider: string; model: string; mode: string; strict: boolean; candidates: number; explanation: string } }
   | { type: 'delta'; text: string }
   | { type: 'done'; messageId: string; conversationId: string; provider: string; model: string; usage?: { inputTokens?: number; outputTokens?: number } }
   | { type: 'error'; code: string; message: string; messageId?: string };
@@ -14,7 +14,7 @@ export type ChatStreamEvent =
 export class ChatService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly ai: AiProviderRegistry,
+    private readonly ai: AiRouterService,
     private readonly realtime: RealtimeService,
   ) {}
 
@@ -83,13 +83,24 @@ export class ChatService {
       });
     }
 
+    // Phase 9: the routing decision is part of the stream so the UI can show
+    // which model answered and why, instead of guessing from the provider name.
+    const plan = await this.ai.plan({ capability: 'language', model: request.model });
+
     yield ChatService.frame({
       type: 'meta',
       conversationId: conversation.id,
       conversationTitle: conversation.title,
       userMessageId: userMessage.id,
+      routing: {
+        provider: plan.selected?.provider ?? 'none',
+        model: plan.selected?.model ?? 'none',
+        mode: plan.request.mode ?? this.ai.mode(),
+        strict: plan.strict,
+        candidates: plan.candidates.filter((candidate) => candidate.eligible).length,
+        explanation: plan.explanation,
+      },
     });
-
     let captured = '';
     let assistantId: string | undefined;
 

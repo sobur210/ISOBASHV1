@@ -24,6 +24,8 @@ model User {
   name      String?
   passwordHash String?
   role      UserRole @default(USER)
+  mfaSecret String?
+  mfaEnabledAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   lastLoginAt DateTime?
@@ -32,6 +34,22 @@ model User {
   tasks     Task[]
   notifications Notification[]
   sessions  Session[]
+}
+
+model AuditEvent {
+  id         Int      @id @default(autoincrement())
+  category   String // AUTH | AUTHORIZATION | ADMIN | SECURITY
+  action     String // register, login, login_failed, logout, mfa_enabled, mfa_disabled, forbidden, admin_access, ...
+  actorId    Int?
+  actorEmail String?
+  ip         String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([category, createdAt])
+  @@index([actorId, createdAt])
+  @@index([actorEmail, createdAt])
 }
 
 model Session {
