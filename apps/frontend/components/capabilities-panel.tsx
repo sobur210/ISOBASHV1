@@ -4,7 +4,15 @@ import { useEffect, useState } from "react";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { StatusChip } from "@/components/ui/status-chip";
 import { SkeletonTextRow } from "@/components/ui/skeleton";
-import { AlertTriangleIcon, ChatIcon, CpuIcon, ImageIcon, SearchIcon, SparklesIcon, VideoIcon } from "@/components/ui/icons";
+import {
+  AlertTriangleIcon,
+  ChatIcon,
+  CpuIcon,
+  ImageIcon,
+  SearchIcon,
+  SparklesIcon,
+  VideoIcon,
+} from "@/components/ui/icons";
 import { getJson } from "@/lib/api";
 
 type CapabilityStatus = {
@@ -41,25 +49,33 @@ export function CapabilitiesPanel() {
     return () => controller.abort();
   }, []);
 
+  const available = capabilities?.filter((c) => c.status === "available").length ?? 0;
+
   return (
     <Card>
       <CardHeader
         title="AI capabilities"
         subtitle="What ISOBASH can actually do with the providers configured right now."
         icon={<CpuIcon className="h-4 w-4" />}
+        action={
+          capabilities ? (
+            <span className="font-mono text-[11px] text-muted-foreground">
+              {available}/{capabilities.length} ready
+            </span>
+          ) : null
+        }
       />
-      <CardBody>
+      <CardBody className="pt-1">
         {error ? (
           <div className="flex items-start gap-3 rounded-xl border border-danger/25 bg-danger/5 p-4">
             <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
             <p className="text-xs text-muted-foreground">{error}</p>
           </div>
         ) : !capabilities ? (
-          <div className="divide-y divide-foreground/5">
-            <SkeletonTextRow />
-            <SkeletonTextRow />
-            <SkeletonTextRow />
-            <SkeletonTextRow />
+          <div className="grid gap-3 sm:grid-cols-2">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <SkeletonTextRow key={index} />
+            ))}
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
@@ -68,26 +84,30 @@ export function CapabilitiesPanel() {
                 label: capability.capability.replace(/-/g, " "),
                 icon: <CpuIcon className="h-4 w-4" />,
               };
-              const available = capability.status === "available";
+              const isAvailable = capability.status === "available";
               return (
                 <div
                   key={capability.capability}
-                  className="flex items-start justify-between gap-3 rounded-xl border border-foreground/10 p-4"
+                  className={`flex items-start justify-between gap-3 rounded-xl border p-4 transition-colors ${
+                    isAvailable ? "border-border bg-surface-2" : "border-dashed border-border"
+                  }`}
                 >
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-foreground/5 text-muted-foreground">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                        isAvailable ? "bg-primary-soft text-primary" : "bg-muted text-muted-foreground"
+                      }`}
+                    >
                       {meta.icon}
                     </span>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{meta.label}</p>
+                    <div className="min-w-0">
+                      <p className="text-[13.5px] font-medium text-foreground">{meta.label}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {available
-                          ? `Available — ${capability.providers.join(", ")}`
-                          : capability.detail}
+                        {isAvailable ? capability.providers.join(", ") : capability.detail}
                       </p>
                     </div>
                   </div>
-                  <StatusChip tone={available ? "success" : "neutral"} label={available ? "ready" : "off"} />
+                  <StatusChip tone={isAvailable ? "success" : "neutral"} label={isAvailable ? "ready" : "off"} />
                 </div>
               );
             })}

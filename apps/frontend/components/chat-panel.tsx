@@ -1,8 +1,10 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { StatusChip } from "@/components/ui/status-chip";
+import { Button } from "@/components/ui/button";
+import { Textarea, Select } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertTriangleIcon,
   BotIcon,
@@ -224,34 +226,31 @@ export function ChatPanel() {
     }
   };
 
-  const isStreaming = streaming;
+  const activeTitle = conversations.find((c) => c.id === activeId)?.title ?? "New conversation";
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
-      <aside className="flex min-h-[24rem] flex-col rounded-2xl border border-foreground/10 bg-surface">
-        <div className="border-b border-foreground/10 p-4">
-          <button
-            onClick={newChat}
-            disabled={isStreaming}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:pointer-events-none disabled:opacity-50"
-          >
+    <div className="grid gap-5 lg:grid-cols-[290px_1fr]">
+      <aside className="edge-light flex min-h-[24rem] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
+        <div className="border-b border-border p-3.5">
+          <Button onClick={newChat} disabled={streaming} className="w-full">
             <PlusIcon className="h-4 w-4" />
             New conversation
-          </button>
+          </Button>
         </div>
 
         <div aria-label="Conversation list" className="flex-1 space-y-1 overflow-y-auto p-2">
           {loadingList ? (
             <div className="space-y-2 p-2">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-3/4" />
+              <Skeleton className="h-14 w-full rounded-xl" />
+              <Skeleton className="h-14 w-full rounded-xl" />
+              <Skeleton className="h-14 w-3/4 rounded-xl" />
             </div>
           ) : conversations.length === 0 ? (
             <div className="flex flex-col items-start gap-2 p-4">
-              <p className="text-sm font-medium text-foreground">No conversations yet</p>
+              <p className="text-[13.5px] font-medium text-foreground">No conversations yet</p>
               <p className="text-xs leading-5 text-muted-foreground">
-                Your conversations are stored on the server and listed here across devices that share this client session.
+                Your conversations are stored on the server and listed here across devices that share this
+                client session.
               </p>
             </div>
           ) : (
@@ -261,24 +260,42 @@ export function ChatPanel() {
               return (
                 <div
                   key={conversation.id}
-                  className={`group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
-                    active ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
-                  }`}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => void selectConversation(conversation.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      void selectConversation(conversation.id);
+                    }
+                  }}
+                  aria-current={active ? "true" : undefined}
+                  className={`group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
+                    active
+                      ? "bg-primary-soft"
+                      : "hover:bg-surface-2 focus-visible:bg-surface-2"
+                  }`}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">{conversation.title}</p>
-                    <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                    <p
+                      className={`truncate text-[13.5px] font-medium ${
+                        active ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
+                      }`}
+                    >
+                      {conversation.title}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground/80">
                       {last ? `You · ${last.content.slice(0, 40)}` : "Empty conversation"}
                     </p>
                   </div>
                   <button
-                    aria-label="Delete conversation"
+                    type="button"
+                    aria-label={`Delete conversation: ${conversation.title}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       void removeConversation(conversation.id);
                     }}
-                    className="invisible rounded-lg p-1.5 text-muted-foreground transition-colors hover:text-danger group-hover:visible"
+                    className="rounded-lg p-1.5 text-muted-foreground transition-all hover:bg-danger/10 hover:text-danger focus-visible:opacity-100 group-hover:opacity-70 group-hover:hover:opacity-100"
                   >
                     <TrashIcon className="h-3.5 w-3.5" />
                   </button>
@@ -289,32 +306,33 @@ export function ChatPanel() {
         </div>
       </aside>
 
-      <section className="flex min-h-[32rem] flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-surface">
-        <header className="flex items-center justify-between gap-3 border-b border-foreground/10 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+      <section className="edge-light flex min-h-[34rem] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary-soft text-primary">
               <ChatIcon className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                {conversations.find((c) => c.id === activeId)?.title ?? "New conversation"}
-              </p>
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-[13.5px] font-semibold text-foreground">{activeTitle}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {isStreaming ? "Streaming a real response…" : "Realtime chat with your configured providers"}
+                {streaming
+                  ? "Streaming a real response…"
+                  : "Realtime chat with your configured providers"}
               </p>
             </div>
           </div>
-          {isStreaming ? (
+
+          {streaming ? (
             <StatusChip tone="warning" label="Generating…" />
           ) : (
-            <label className="inline-flex items-center gap-2">
+            <label className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">Provider</span>
-              <select
+              <Select
                 value={selectedProvider}
                 onChange={(e) => setSelectedProvider(e.target.value)}
-                disabled={isStreaming}
+                disabled={streaming}
                 aria-label="AI provider"
-                className="rounded-full border border-foreground/10 bg-background px-3 py-1.5 text-xs font-medium capitalize text-foreground focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+                className="w-36"
               >
                 {providers.length === 0 ? (
                   <option value="ollama">ollama</option>
@@ -325,19 +343,22 @@ export function ChatPanel() {
                     </option>
                   ))
                 )}
-              </select>
+              </Select>
             </label>
           )}
         </header>
 
         {error ? (
-          <div className="flex items-start gap-3 border-b border-danger/25 bg-danger/5 px-5 py-3">
+          <div
+            role="alert"
+            className="flex items-start gap-3 border-b border-danger/25 bg-danger/5 px-5 py-3"
+          >
             <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
             <p className="text-xs text-muted-foreground">{error}</p>
           </div>
         ) : null}
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-5">
+        <div className="flex-1 space-y-5 overflow-y-auto p-5">
           {loadingThread ? (
             <div className="space-y-4">
               <div className="flex justify-end">
@@ -348,33 +369,32 @@ export function ChatPanel() {
               </div>
             </div>
           ) : messages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <div className="flex h-full flex-col items-center justify-center gap-4 px-4 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary-soft text-primary">
                 <BotIcon className="h-6 w-6" />
-              </div>
+              </span>
               <div>
-                <p className="text-sm font-semibold text-foreground">Start a conversation</p>
-                <p className="mt-1 max-w-sm text-xs leading-5 text-muted-foreground">
-                  Responses stream token-by-token from the local AI engine and every message is persisted to PostgreSQL.
+                <p className="text-[15px] font-semibold text-foreground">Start a conversation</p>
+                <p className="mt-2 max-w-sm text-[13px] leading-6 text-muted-foreground">
+                  Responses stream token-by-token from the local AI engine and every message is persisted to
+                  PostgreSQL.
                 </p>
               </div>
             </div>
           ) : (
-            messages.map((message) => (
-              <MessageBubble key={message.key} message={message} />
-            ))
+            messages.map((message) => <MessageBubble key={message.key} message={message} />)
           )}
           <div ref={bottomRef} />
         </div>
 
         <form
-          className="border-t border-foreground/10 p-4"
+          className="border-t border-border p-4"
           onSubmit={(e: FormEvent) => {
             e.preventDefault();
             void send(input);
           }}
         >
-          <textarea
+          <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -383,23 +403,20 @@ export function ChatPanel() {
                 void send(input);
               }
             }}
-            disabled={isStreaming}
+            disabled={streaming}
             rows={3}
-            placeholder={isStreaming ? "Waiting for the response…" : "Ask ISOBASH anything…"}
-            className="w-full resize-none rounded-xl border border-foreground/10 bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            aria-label="Message"
+            placeholder={streaming ? "Waiting for the response…" : "Ask ISOBASH anything…"}
           />
-          <div className="mt-3 flex items-center justify-between gap-3">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
-              Enter to send · Shift+Enter for a new line · {conversations.length} conversation{conversations.length === 1 ? "" : "s"}
+              Enter to send · Shift+Enter for a new line · {conversations.length} conversation
+              {conversations.length === 1 ? "" : "s"}
             </p>
-            <button
-              type="submit"
-              disabled={!input.trim() || isStreaming}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:pointer-events-none disabled:opacity-50"
-            >
-              {isStreaming ? "Streaming…" : "Send"}
+            <Button type="submit" disabled={!input.trim() || streaming}>
+              {streaming ? "Streaming…" : "Send"}
               <SendIcon className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </div>
         </form>
       </section>
@@ -413,15 +430,20 @@ function MessageBubble({ message }: { message: LocalMessage }) {
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 ${
+        className={`max-w-[85%] px-4 py-3 text-[13.5px] leading-6 ${
           isUser
-            ? "rounded-br-md bg-primary text-primary-foreground"
-            : "rounded-bl-md border border-foreground/10 bg-background"
+            ? "rounded-2xl rounded-br-md bg-primary text-primary-foreground shadow-glow"
+            : "edge-light rounded-2xl rounded-bl-md border border-border bg-surface-2 text-foreground"
         }`}
       >
-        <p className="whitespace-pre-wrap text-foreground">
+        <p className="whitespace-pre-wrap">
           {message.content}
-          {message.streaming ? <span aria-hidden="true" className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse rounded-full bg-current align-middle" /> : null}
+          {message.streaming ? (
+            <span
+              aria-hidden="true"
+              className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse rounded-full bg-current align-middle"
+            />
+          ) : null}
         </p>
         {message.error ? (
           <p className="mt-2 flex items-center gap-1.5 text-xs text-danger">
@@ -430,7 +452,7 @@ function MessageBubble({ message }: { message: LocalMessage }) {
           </p>
         ) : null}
         {!isUser && (message.model || message.provider) ? (
-          <p className="mt-2 text-[11px] uppercase tracking-wide text-muted-foreground">
+          <p className="mt-2 font-mono text-[10.5px] tracking-[0.08em] text-muted-foreground uppercase">
             {message.provider} · {message.model}
           </p>
         ) : null}

@@ -1,72 +1,107 @@
-import { BrainIcon, GlobeIcon, LayersIcon } from "@/components/marketing/marketing-icons";
-import { ChatIcon, FileIcon, ImageIcon, SearchIcon, VideoIcon } from "@/components/ui/icons";
+import type { ReactNode } from "react";
+import { Section, SectionHeading } from "@/components/ui/section";
+import {
+  BrainIcon,
+  ChatIcon,
+  FileIcon,
+  GlobeIcon,
+  ImageIcon,
+  LayersIcon,
+  SearchIcon,
+  VideoIcon,
+} from "@/components/ui/icons";
 
-const cards = [
+type Feature = {
+  title: string;
+  description: string;
+  icon: ReactNode;
+  tone: string;
+  /** Tailwind grid placement for the bento layout. */
+  span: string;
+};
+
+const features: Feature[] = [
   {
     title: "AI Chat & Assistants",
-    description: "Chat with advanced AI models and create custom agents for your specific needs.",
+    description:
+      "Conversations that stream token by token and persist to PostgreSQL. Switch providers per message — the routing layer picks the right one for the job.",
     icon: <ChatIcon className="h-5 w-5" />,
-    tone: "bg-blue-500/10 text-blue-500",
+    tone: "from-primary/18",
+    span: "lg:col-span-6 lg:row-span-2",
   },
   {
     title: "Image Generation",
-    description: "Create high-quality images with multiple models and styles.",
+    description: "High-quality images across multiple models and styles.",
     icon: <ImageIcon className="h-5 w-5" />,
-    tone: "bg-violet-500/10 text-violet-500",
+    tone: "from-violet/18",
+    span: "lg:col-span-3",
   },
   {
     title: "Video Generation",
-    description: "Turn text, images or videos into stunning videos with AI.",
+    description: "Turn text or images into video through queued jobs.",
     icon: <VideoIcon className="h-5 w-5" />,
-    tone: "bg-rose-500/10 text-rose-500",
+    tone: "from-accent/18",
+    span: "lg:col-span-3",
   },
   {
     title: "Web Research",
-    description: "Get real-time information with verified sources and citations.",
+    description: "Real-time answers with every citation checked against the source text it came from.",
     icon: <SearchIcon className="h-5 w-5" />,
-    tone: "bg-emerald-500/10 text-emerald-500",
+    tone: "from-success/18",
+    span: "lg:col-span-3",
   },
   {
-    title: "File & Document Analysis",
-    description: "Upload and analyze PDFs, documents, spreadsheets and more.",
+    title: "Document Analysis",
+    description: "Upload PDFs, documents and spreadsheets and query them.",
     icon: <FileIcon className="h-5 w-5" />,
-    tone: "bg-orange-500/10 text-orange-500",
+    tone: "from-warning/18",
+    span: "lg:col-span-3",
   },
   {
     title: "Memory & Context",
-    description: "Your AI remembers, so you don&rsquo;t have to.",
+    description: "Your AI remembers, so you don’t have to.",
     icon: <BrainIcon className="h-5 w-5" />,
-    tone: "bg-orange-500/10 text-orange-500",
+    tone: "from-primary/18",
+    span: "lg:col-span-4",
   },
   {
     title: "Projects & Collaboration",
-    description: "Organize your work and collaborate with your team.",
+    description: "Organise work and share it with your team.",
     icon: <LayersIcon className="h-5 w-5" />,
-    tone: "bg-violet-500/10 text-violet-500",
+    tone: "from-violet/18",
+    span: "lg:col-span-4",
   },
   {
     title: "Multi-Provider AI",
-    description: "Access the best models from multiple providers &mdash; including local options.",
+    description: "Local models and cloud vendors behind one interface — including fully offline.",
     icon: <GlobeIcon className="h-5 w-5" />,
-    tone: "bg-blue-500/10 text-blue-500",
+    tone: "from-accent/18",
+    span: "lg:col-span-4",
   },
 ];
 
-export function FeatureCards() {
+function FeatureBento() {
   return (
-    <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-      {cards.map((card) => (
+    <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
+      {features.map((feature) => (
         <article
-          key={card.title}
-          className="group rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_2px_10px_rgba(15,23,42,0.04)] transition-all hover:-translate-y-1 hover:border-[#3B82F6]/40 hover:shadow-[0_18px_40px_-16px_rgba(15,23,42,0.18)]"
+          key={feature.title}
+          className={`group edge-light relative overflow-hidden rounded-2xl border border-border bg-surface p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-primary/35 hover:shadow-lift sm:p-7 ${feature.span}`}
         >
-          <span
-            className={`flex h-12 w-12 items-center justify-center rounded-full ${card.tone} transition-transform group-hover:scale-105`}
-          >
-            {card.icon}
+          {/* Tint wash that grows on hover. */}
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none absolute -top-24 -right-16 h-48 w-48 rounded-full bg-gradient-to-br ${feature.tone} to-transparent opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100`}
+          />
+          <span className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-primary/20 bg-primary-soft text-primary transition-transform duration-300 group-hover:scale-105">
+            {feature.icon}
           </span>
-          <h3 className="mt-6 text-[15px] font-semibold tracking-[-0.01em] text-slate-900">{card.title}</h3>
-          <p className="mt-2.5 text-[13px] leading-6 text-slate-500">{card.description}</p>
+          <h3 className="relative mt-5 text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+            {feature.title}
+          </h3>
+          <p className="relative mt-2.5 text-[13.5px] leading-6 text-muted-foreground">
+            {feature.description}
+          </p>
         </article>
       ))}
     </div>
@@ -75,22 +110,22 @@ export function FeatureCards() {
 
 export function FeatureSection() {
   return (
-    <section id="features" className="scroll-mt-20 bg-[#F8FAFC] py-24">
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.24em] text-[#3B82F6]">
-            Everything you need in one platform
-          </p>
-          <h2 className="mt-5 text-3xl font-bold tracking-[-0.03em] text-slate-900 sm:text-[2.6rem] sm:leading-[1.1]">
-            Powerful Features for Endless Possibilities
-          </h2>
-          <p className="mx-auto mt-5 max-w-xl text-[15px] leading-7 text-slate-500">
-            From simple tasks to complex projects, ISOBASH gives you the tools to be more creative, productive and
-            innovative &mdash; all in one place.
-          </p>
-        </div>
-        <FeatureCards />
-      </div>
-    </section>
+    <Section id="features" className="py-24 sm:py-28">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"
+      />
+      <SectionHeading
+        eyebrow="Everything in one platform"
+        title={
+          <>
+            Powerful features,
+            <br className="hidden sm:block" /> no <span className="text-gradient">tab juggling</span>
+          </>
+        }
+        lede="From a one-line prompt to a full project: chat, agents, research, files and media all run against real providers through one engine — never a mock."
+      />
+      <FeatureBento />
+    </Section>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangleIcon } from "@/components/ui/icons";
+import { Button } from "@/components/ui/button";
 
 export function RouteError({
   error,
@@ -12,23 +13,18 @@ export function RouteError({
   label?: string;
 }) {
   return (
-    <div className="flex flex-col items-start gap-4 rounded-2xl border border-danger/25 bg-danger/5 p-8">
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-danger/15 text-danger">
+    <div className="edge-light flex flex-col items-start gap-5 rounded-2xl border border-danger/25 bg-danger/5 p-8">
+      <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-danger/25 bg-danger/10 text-danger">
         <AlertTriangleIcon className="h-5 w-5" />
-      </div>
+      </span>
       <div>
-        <h2 className="text-lg font-semibold text-foreground">{label}</h2>
-        <p className="mt-1.5 max-w-xl text-sm leading-6 text-muted-foreground">
+        <h2 className="text-[15px] font-semibold text-foreground">{label}</h2>
+        <p className="mt-2 max-w-xl text-[13.5px] leading-6 text-muted-foreground">
           {error.message || "An unexpected error occurred while rendering this page."}
           {error.digest ? ` (digest: ${error.digest})` : ""}
         </p>
       </div>
-      <button
-        onClick={retry}
-        className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
-      >
-        Try again
-      </button>
+      <Button onClick={retry}>Try again</Button>
     </div>
   );
 }

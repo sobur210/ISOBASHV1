@@ -49,9 +49,8 @@ export const ChatIcon = ({ className }: IconProps) => (
 
 export const BotIcon = ({ className }: IconProps) => (
   <Icon className={className}>
-    <path d="M12 8V4m0 4a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3m3-12a3 3 0 0 0-3-3" transform="translate(0 0)" />
     <rect x="4" y="8" width="16" height="12" rx="2" />
-    <path d="M12 8a2 2 0 0 1 2 2" />
+    <path d="M12 8V5" />
     <circle cx="9" cy="14" r="1" />
     <circle cx="15" cy="14" r="1" />
   </Icon>
@@ -115,6 +114,13 @@ export const ShieldIcon = ({ className }: IconProps) => (
   </Icon>
 );
 
+export const LockIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <rect x="3" y="11" width="18" height="11" rx="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </Icon>
+);
+
 export const LogoutIcon = ({ className }: IconProps) => (
   <Icon className={className}>
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -137,6 +143,19 @@ export const ArrowRightIcon = ({ className }: IconProps) => (
   </Icon>
 );
 
+export const ArrowUpRightIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M7 17 17 7" />
+    <path d="M7 7h10v10" />
+  </Icon>
+);
+
+export const PlayIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="m6 4 14 8-14 8Z" />
+  </Icon>
+);
+
 export const SearchIcon = ({ className }: IconProps) => (
   <Icon className={className}>
     <circle cx="11" cy="11" r="8" />
@@ -147,6 +166,12 @@ export const SearchIcon = ({ className }: IconProps) => (
 export const SparklesIcon = ({ className }: IconProps) => (
   <Icon className={className}>
     <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+  </Icon>
+);
+
+export const ZapIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" />
   </Icon>
 );
 
@@ -163,6 +188,14 @@ export const DatabaseIcon = ({ className }: IconProps) => (
     <ellipse cx="12" cy="5" rx="9" ry="3" />
     <path d="M3 5v14a9 3 0 0 0 18 0V5" />
     <path d="M3 12a9 3 0 0 0 18 0" />
+  </Icon>
+);
+
+export const ServerIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <rect x="2" y="3" width="20" height="7" rx="2" />
+    <rect x="2" y="14" width="20" height="7" rx="2" />
+    <path d="M6 6.5h.01M6 17.5h.01" />
   </Icon>
 );
 
@@ -229,5 +262,73 @@ export const RefreshIcon = ({ className }: IconProps) => (
     <path d="M21 3v5h-5" />
     <path d="M21 12a9 9 0 0 1-15.36 6.36L3 16" />
     <path d="M3 21v-5h5" />
+  </Icon>
+);
+
+export const MenuIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M3 6h18M3 12h18M3 18h18" />
+  </Icon>
+);
+
+export const CloseIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M18 6 6 18M6 6l12 12" />
+  </Icon>
+);
+
+export const CheckIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="m5 13 4 4L19 7" />
+  </Icon>
+);
+
+export const BrainIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M12 5a3 3 0 0 0-3 3 3 3 0 0 0-1 5.8V16a3 3 0 0 0 4 2.8 3 3 0 0 0 4-2.8v-2.2A3 3 0 0 0 15 8a3 3 0 0 0-3-3Z" />
+    <path d="M12 5v14" />
+  </Icon>
+);
+
+export const GlobeIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18" />
+    <path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z" />
+  </Icon>
+);
+
+export const LayersIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="m12 3 9 5-9 5-9-5 9-5Z" />
+    <path d="m3 13 9 5 9-5" />
+  </Icon>
+);
+
+export const InfinityIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M7 8a4 4 0 1 0 0 8c2.5 0 3.5-2 5-4 1.5-2 2.5-4 5-4a4 4 0 1 1 0 8c-2.5 0-3.5-2-5-4-1.5-2-2.5-4-5-4Z" />
+  </Icon>
+);
+
+export const WalletIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2" />
+    <rect x="3" y="7" width="18" height="12" rx="2" />
+    <path d="M16 13h2" />
+  </Icon>
+);
+
+export const TrendingUpIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="m3 17 6-6 4 4 8-8" />
+    <path d="M15 7h6v6" />
+  </Icon>
+);
+
+export const QuoteIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M9 7H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2v2a2 2 0 0 1-2 2H4" />
+    <path d="M20 7h-4a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h2v2a2 2 0 0 1-2 2h-1" />
   </Icon>
 );

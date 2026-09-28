@@ -62,6 +62,43 @@ export async function deleteJson(path: string, signal?: AbortSignal): Promise<vo
   }
 }
 
+export async function sendJsonAuthed<T>(
+  path: string,
+  body: unknown,
+  method: "POST" | "PATCH" = "POST",
+  signal?: AbortSignal,
+): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    signal,
+    credentials: "include",
+    headers: { "content-type": "application/json", Accept: "application/json", ...sessionHeaders() },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401) {
+    throw new Error("AUTH_REQUIRED: Sign in to use this area.");
+  }
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, `Request failed with status ${res.status}`));
+  }
+  return (await res.json()) as T;
+}
+
+export async function deleteJsonAuthed(path: string, signal?: AbortSignal): Promise<void> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "DELETE",
+    signal,
+    credentials: "include",
+    headers: { Accept: "application/json", ...sessionHeaders() },
+  });
+  if (res.status === 401) {
+    throw new Error("AUTH_REQUIRED: Sign in to use this area.");
+  }
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, `Request failed with status ${res.status}`));
+  }
+}
+
 async function extractErrorMessage(res: Response, fallback: string): Promise<string> {
   try {
     const body = (await res.json()) as ApiErrorBody;
@@ -162,4 +199,92 @@ export type ProviderInfo = {
 
 export async function fetchProviders(signal?: AbortSignal): Promise<ProviderInfo[]> {
   return getJson<ProviderInfo[]>("/ai/providers", signal);
+}
+/* Phase 11 research: retrieval-backed answers with structured citations. */
+
+export type ResearchSourceStatus = "PENDING" | "FETCHED" | "REJECTED" | "FAILED";
+
+export type ResearchSessionStatus =
+  | "PENDING"
+  | "SEARCHING"
+  | "RETRIEVING"
+  | "ANSWERING"
+  | "COMPLETED"
+  | "FAILED";
+
+export type ResearchSource = {
+  id: string;
+  url: string;
+  finalUrl: string | null;
+  title: string | null;
+  host: string | null;
+  status: ResearchSourceStatus;
+  detail: string | null;
+  httpStatus: number | null;
+  characters: number;
+  origin: string;
+  fetchedAt: string | null;
+};
+
+export type ResearchCitation = {
+  id: string;
+  marker: string;
+  quote: string;
+  verified: boolean;
+  sourceId: string;
+  source?: { url: string; title: string | null; host: string | null };
+};
+
+export type ResearchSession = {
+  id: string;
+  question: string;
+  status: ResearchSessionStatus;
+  answer: string | null;
+  error: string | null;
+  noEvidence: boolean;
+  retrieval: string;
+  queries: string[];
+  provider: string | null;
+  model: string | null;
+  createdAt: string;
+  finishedAt: string | null;
+  sources: ResearchSource[];
+  citations: ResearchCitation[];
+  _count?: { sources: number; citations: number };
+};
+
+export type ResearchCapabilities = {
+  search: { available: boolean; provider: string | null; detail: string };
+  retrieval: {
+    available: boolean;
+    privateHostsAllowed: boolean;
+    maxSources: number;
+    maxCharactersPerSource: number;
+    fetchTimeoutMs: number;
+    detail: string;
+  };
+};
+
+export async function fetchResearchCapabilities(signal?: AbortSignal): Promise<ResearchCapabilities> {
+  return getJsonAuthed<ResearchCapabilities>("/research/capabilities", signal);
+}
+
+export async function fetchResearchSessions(signal?: AbortSignal): Promise<ResearchSession[]> {
+  return getJsonAuthed<ResearchSession[]>("/research", signal);
+}
+
+export async function fetchResearchSession(id: string, signal?: AbortSignal): Promise<ResearchSession> {
+  return getJsonAuthed<ResearchSession>(`/research/${id}`, signal);
+}
+
+export async function startResearch(input: {
+  question: string;
+  urls?: string[];
+  model?: string;
+}): Promise<ResearchSession> {
+  return sendJsonAuthed<ResearchSession>("/research", input);
+}
+
+export async function deleteResearchSession(id: string, signal?: AbortSignal): Promise<void> {
+  return deleteJsonAuthed(`/research/${id}`, signal);
 }

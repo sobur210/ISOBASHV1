@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { StatusChip } from "@/components/ui/status-chip";
-import { SkeletonTextRow } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { SkeletonRows } from "@/components/ui/skeleton";
 import {
   ActivityIcon,
   AlertTriangleIcon,
@@ -87,66 +88,54 @@ export function SystemHealthPanel() {
         icon={<ActivityIcon className="h-4 w-4" />}
         action={
           lastUpdated ? (
-            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
               <ClockIcon className="h-3.5 w-3.5" />
               {lastUpdated.toLocaleTimeString()}
             </span>
           ) : null
         }
       />
-      <CardBody>
+      <CardBody className="pt-1">
         {error ? (
           <div className="flex flex-col items-start gap-4 rounded-xl border border-danger/25 bg-danger/5 p-4">
             <div className="flex items-start gap-3">
               <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
               <div>
-                <p className="text-sm font-medium text-foreground">Health check failed</p>
+                <p className="text-[13.5px] font-medium text-foreground">Health check failed</p>
                 <p className="mt-1 text-xs text-muted-foreground">{error}</p>
               </div>
             </div>
-            <button
-              onClick={retry}
-              disabled={retrying}
-              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm text-foreground transition-colors hover:border-primary/60 hover:text-primary disabled:opacity-60"
-            >
+            <Button variant="outline" size="sm" onClick={retry} disabled={retrying}>
               <RefreshIcon className="h-3.5 w-3.5" />
               {retrying ? "Retrying" : "Retry"}
-            </button>
+            </Button>
           </div>
         ) : loading && !data ? (
-          <div className="divide-y divide-foreground/5">
-            <SkeletonTextRow />
-            <SkeletonTextRow />
-            <SkeletonTextRow />
-            <SkeletonTextRow />
-            <SkeletonTextRow />
-            <SkeletonTextRow />
-          </div>
+          <SkeletonRows count={6} />
         ) : (
-          <div className="divide-y divide-foreground/5">
+          <div className="divide-y divide-border">
             {data?.components.map((component) => {
               const meta = componentMeta[component.name] ?? {
                 label: component.name,
                 icon: <CpuIcon className="h-4 w-4" />,
               };
-              const tone = component.status === "ok" ? "success" : "danger";
               return (
                 <div key={component.name} className="flex items-center justify-between gap-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-foreground/5 text-muted-foreground">
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-2 text-muted-foreground">
                       {meta.icon}
                     </span>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{meta.label}</p>
-                      {component.detail ? (
-                        <p className="mt-0.5 max-w-[30rem] truncate text-xs text-muted-foreground" title={component.detail}>
-                          {component.detail}
-                        </p>
-                      ) : (
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {component.latencyMs != null ? `Responded in ${component.latencyMs}ms.` : "No detail reported."}
-                        </p>
-                      )}
+                    <div className="min-w-0">
+                      <p className="text-[13.5px] font-medium text-foreground">{meta.label}</p>
+                      <p
+                        className="mt-0.5 truncate text-xs text-muted-foreground"
+                        title={component.detail}
+                      >
+                        {component.detail ??
+                          (component.latencyMs != null
+                            ? `Responded in ${component.latencyMs}ms.`
+                            : "No detail reported.")}
+                      </p>
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
@@ -155,7 +144,10 @@ export function SystemHealthPanel() {
                         {component.latencyMs}ms
                       </span>
                     ) : null}
-                    <StatusChip tone={tone} label={component.status} />
+                    <StatusChip
+                      tone={component.status === "ok" ? "success" : "danger"}
+                      label={component.status}
+                    />
                   </div>
                 </div>
               );

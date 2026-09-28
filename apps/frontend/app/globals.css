@@ -1,57 +1,121 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant light (&:where(.light, .light *));
+
+/* ------------------------------------------------------------------ *
+ * ISOBASH design tokens
+ *
+ * One palette drives the marketing site, the workspace and the admin
+ * console. `:root` is the brand identity — deep navy with a neon blue
+ * signal — and `.light` is its tuned light counterpart applied to
+ * <html> by the theme toggle. No component reaches for a raw hex.
+ * ------------------------------------------------------------------ */
 
 :root {
-  --background: #f8fafc;
-  --surface: #ffffff;
-  --foreground: #111827;
-  --muted-foreground: #6b7280;
-  --border: rgba(17, 24, 39, 0.1);
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --primary-foreground: #ffffff;
-  --accent: #0ea5ff;
-  --accent-soft: rgba(14, 165, 255, 0.12);
-  --ring: #3b82f6;
-  --danger: #ef4444;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --radius: 0.75rem;
-}
+  /* Native UI (scrollbars, form controls) follows the class, not the OS,
+     so the browser chrome matches the chosen theme. */
+  color-scheme: dark;
 
-.dark {
-  --background: #111827;
-  --surface: #182235;
-  --foreground: #f8fafc;
-  --muted-foreground: #94a3b8;
-  --border: rgba(248, 250, 252, 0.1);
-  --primary: #3b82f6;
-  --primary-hover: #60a5fa;
-  --primary-foreground: #ffffff;
-  --accent: #0ea5ff;
-  --accent-soft: rgba(14, 165, 255, 0.16);
-  --ring: #3b82f6;
+  --background: #05070f;
+  --surface: #0a0f1e;
+  --surface-2: #0e1526;
+  --surface-3: #141d33;
+  --muted: #0c1322;
+
+  --foreground: #e8eeff;
+  --muted-foreground: #8494b4;
+
+  --border: rgb(125 155 220 / 0.14);
+  --border-strong: rgb(125 155 220 / 0.28);
+
+  --primary: #4d8dff;
+  --primary-hover: #7aa8ff;
+  --primary-foreground: #04070f;
+  --primary-soft: rgb(77 141 255 / 0.14);
+
+  --accent: #22d3ee;
+  --accent-soft: rgb(34 211 238 / 0.14);
+  --violet: #a78bfa;
+  --violet-soft: rgb(167 139 250 / 0.14);
+
+  --ring: #4d8dff;
   --danger: #f87171;
   --success: #4ade80;
   --warning: #fbbf24;
+
+  /* Shadows are tinted with the surface, never neutral grey. */
+  --shadow-rgb: 1 4 14;
+  --shadow-soft: 0 1px 0 rgb(255 255 255 / 0.03), 0 8px 24px -14px rgb(var(--shadow-rgb) / 0.9);
+  --shadow-lift: 0 0 0 1px rgb(255 255 255 / 0.03), 0 28px 60px -28px rgb(var(--shadow-rgb) / 1);
+  --shadow-deep: 0 60px 140px -50px rgb(var(--shadow-rgb) / 1);
+  --shadow-glow: 0 0 0 1px rgb(77 141 255 / 0.28), 0 20px 56px -22px rgb(77 141 255 / 0.6);
+}
+
+.light {
+  color-scheme: light;
+
+  --background: #f2f5fb;
+  --surface: #ffffff;
+  --surface-2: #f7f9fe;
+  --surface-3: #eaeff8;
+  --muted: #e9eef7;
+
+  --foreground: #070d1c;
+  --muted-foreground: #55648a;
+
+  --border: rgb(9 26 63 / 0.1);
+  --border-strong: rgb(9 26 63 / 0.18);
+
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --primary-soft: rgb(37 99 235 / 0.1);
+
+  --accent: #0284c7;
+  --accent-soft: rgb(2 132 199 / 0.1);
+  --violet: #6d28d9;
+  --violet-soft: rgb(109 40 217 / 0.1);
+
+  --ring: #2563eb;
+  --danger: #dc2626;
+  --success: #15803d;
+  --warning: #b45309;
+
+  --shadow-rgb: 20 40 90;
+  --shadow-soft: 0 1px 2px rgb(var(--shadow-rgb) / 0.05), 0 6px 16px -8px rgb(var(--shadow-rgb) / 0.12);
+  --shadow-lift: 0 2px 4px rgb(var(--shadow-rgb) / 0.04), 0 20px 44px -22px rgb(var(--shadow-rgb) / 0.28);
+  --shadow-deep: 0 48px 120px -40px rgb(var(--shadow-rgb) / 0.42);
+  --shadow-glow: 0 0 0 1px rgb(37 99 235 / 0.18), 0 18px 48px -20px rgb(37 99 235 / 0.55);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-muted: var(--muted);
   --color-foreground: var(--foreground);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
   --color-primary-foreground: var(--primary-foreground);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
   --color-ring: var(--ring);
   --color-danger: var(--danger);
   --color-success: var(--success);
   --color-warning: var(--warning);
+
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lift: var(--shadow-lift);
+  --shadow-deep: var(--shadow-deep);
+  --shadow-glow: var(--shadow-glow);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -63,6 +127,7 @@
 
   html {
     scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
@@ -70,6 +135,7 @@
     color: var(--foreground);
     font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   a {
@@ -78,9 +144,22 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
   ::selection {
     background: var(--primary);
     color: var(--primary-foreground);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 
   ::-webkit-scrollbar {
@@ -89,11 +168,187 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--muted-foreground) 35%, transparent);
+    background: color-mix(in srgb, var(--muted-foreground) 32%, transparent);
+    border: 3px solid transparent;
+    background-clip: content-box;
     border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
+    background-clip: content-box;
   }
 
   ::-webkit-scrollbar-track {
     background: transparent;
+  }
+}
+
+@layer components {
+  /* Display type: the brand gradient, clipped to the glyphs. */
+  .text-gradient {
+    background-image: linear-gradient(
+      100deg,
+      var(--primary) 0%,
+      var(--accent) 46%,
+      var(--violet) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .text-gradient-soft {
+    background-image: linear-gradient(180deg, var(--foreground) 30%, color-mix(in srgb, var(--foreground) 62%, transparent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Frosted panel used for floating previews and overlays. */
+  .glass {
+    background-color: color-mix(in srgb, var(--surface) 72%, transparent);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--border);
+  }
+
+  /*
+   * The brand wordmark is deep blue, so it disappears on the dark
+   * surface. Flip it to white there and leave it untouched in light
+   * mode — one rule, instead of a filter at every call site.
+   */
+  .logo-on-dark {
+    filter: brightness(0) invert(1);
+  }
+
+  .light .logo-on-dark {
+    filter: none;
+  }
+
+  /* Hairline top edge that reads as light catching a surface. */
+  .edge-light {
+    position: relative;
+  }
+
+  .edge-light::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--primary) 45%, transparent),
+      transparent
+    );
+    pointer-events: none;
+  }
+
+  /* Blueprint grid for hero and section backdrops. */
+  .grid-bg {
+    background-image:
+      linear-gradient(to right, color-mix(in srgb, var(--foreground) 5%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--foreground) 5%, transparent) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  /* Mask the grid so it dissolves toward the edges instead of tiling flat. */
+  .grid-fade {
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 35%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 35%, transparent 100%);
+  }
+
+  .animate-aurora {
+    animation: aurora 22s ease-in-out infinite;
+  }
+
+  .animate-float {
+    animation: float 7s ease-in-out infinite;
+  }
+
+  .animate-float-slow {
+    animation: float 11s ease-in-out infinite;
+  }
+
+  .animate-marquee {
+    animation: marquee 42s linear infinite;
+  }
+
+  .animate-pulse-ring {
+    animation: pulse-ring 2.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-rise {
+    animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes aurora {
+  0%,
+  100% {
+    transform: translate3d(-4%, -2%, 0) scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate3d(5%, 3%, 0) scale(1.14);
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-aurora,
+  .animate-float,
+  .animate-float-slow,
+  .animate-marquee,
+  .animate-pulse-ring,
+  .animate-rise {
+    animation: none;
   }
 }

@@ -1,47 +1,63 @@
-import Link from "next/link";
-import { ArrowRightIcon } from "@/components/ui/icons";
-import { PlayIcon } from "@/components/marketing/marketing-icons";
+import { ButtonLink } from "@/components/ui/button";
+import { AuroraBackdrop } from "@/components/marketing/aurora-backdrop";
 import { DashboardPreview } from "@/components/marketing/dashboard-preview";
 import { FloatingPreviewCards } from "@/components/marketing/floating-cards";
-import { HeroCapabilities } from "@/components/marketing/hero-capabilities";
+import { ArrowRightIcon, PlayIcon } from "@/components/ui/icons";
+
+const trustPoints = [
+  "No vendor lock-in",
+  "Runs offline",
+  "Nothing simulated",
+];
 
 export function MarketingHero() {
   return (
-    <section className="relative overflow-hidden bg-[#070B14]">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_55%_at_50%_-8%,rgba(59,130,246,0.28),transparent_65%)]"
-      />
-      <div className="relative mx-auto grid w-full max-w-7xl items-center gap-16 px-4 pb-24 pt-16 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:px-8 lg:pb-32 lg:pt-24">
-        <div>
-          <h1 className="text-[2.6rem] font-bold leading-[1.04] tracking-[-0.035em] text-white sm:text-6xl lg:text-[4.1rem]">
+    <section className="relative isolate overflow-hidden">
+      <AuroraBackdrop />
+
+      <div className="relative mx-auto grid w-full max-w-7xl items-center gap-16 px-4 pb-20 pt-14 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:px-8 lg:pb-28 lg:pt-24">
+        <div className="animate-rise">
+          <span className="glass inline-flex items-center gap-2.5 rounded-full py-1.5 pr-4 pl-1.5 text-[12.5px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-2.5 py-1 font-mono text-[10px] font-semibold tracking-[0.16em] text-primary uppercase">
+              <span className="animate-pulse-ring h-1.5 w-1.5 rounded-full bg-primary" />
+              Live
+            </span>
+            Local-first · Cloud-ready
+          </span>
+
+          <h1 className="mt-7 text-[2.75rem] leading-[1.02] font-bold tracking-[-0.04em] text-balance text-foreground sm:text-6xl lg:text-[4.35rem]">
             Create. Research. Build.
-            <span className="mt-1 block text-[#3B82F6]">All with AI.</span>
+            <span className="text-gradient mt-1.5 block">All with AI.</span>
           </h1>
-          <p className="mt-7 max-w-[560px] text-[15px] leading-7 text-slate-400 sm:text-base">
-            ISOBASH brings together the most powerful AI models, creative tools, research capabilities and
-            automation &mdash; in one place. Turn your ideas into reality with text, images, videos, and more.
+
+          <p className="mt-7 max-w-[560px] text-[15.5px] leading-8 text-pretty text-muted-foreground sm:text-[16.5px]">
+            ISOBASH brings the best models, creative tools, live web research and automation into one
+            workspace — routed per request across local and cloud providers, and honest about what it
+            cannot do.
           </p>
-          <div className="mt-9 flex flex-wrap items-center gap-4">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-full bg-[#3B82F6] px-7 py-3.5 text-[15px] font-semibold text-white shadow-[0_14px_40px_-10px_rgba(59,130,246,0.7)] transition-colors hover:bg-[#2563EB]"
-            >
-              Start Creating Free
-              <ArrowRightIcon className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/app/chat"
-              className="inline-flex items-center gap-2 rounded-full border border-[#3B82F6]/50 bg-transparent px-7 py-3.5 text-[15px] font-semibold text-[#93C5FD] transition-colors hover:border-[#3B82F6] hover:text-white"
-            >
+
+          <div className="mt-9 flex flex-wrap items-center gap-3.5">
+            <ButtonLink href="/register" size="lg" className="group">
+              Start creating free
+              <ArrowRightIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </ButtonLink>
+            <ButtonLink href="/app/chat" size="lg" variant="outline">
               <PlayIcon className="h-3.5 w-3.5" />
-              Watch Demo
-            </Link>
+              Open the workspace
+            </ButtonLink>
           </div>
-          <HeroCapabilities />
+
+          <ul className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
+            {trustPoints.map((point) => (
+              <li key={point} className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                <span className="h-1 w-1 rounded-full bg-accent" />
+                {point}
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div className="min-w-0">
+        <div className="animate-rise min-w-0 [animation-delay:120ms]">
           <FloatingPreviewCards>
             <DashboardPreview />
           </FloatingPreviewCards>

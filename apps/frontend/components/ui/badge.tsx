@@ -1,13 +1,14 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
-export type BadgeTone = "success" | "warning" | "danger" | "neutral" | "primary";
+export type BadgeTone = "success" | "warning" | "danger" | "neutral" | "primary" | "accent";
 
 const tones: Record<BadgeTone, string> = {
-  success: "bg-success/15 text-success ring-success/30",
-  warning: "bg-warning/15 text-warning ring-warning/30",
-  danger: "bg-danger/15 text-danger ring-danger/30",
-  neutral: "bg-muted text-muted-foreground ring-foreground/15",
-  primary: "bg-primary/15 text-primary ring-primary/30",
+  success: "bg-success/12 text-success ring-success/25",
+  warning: "bg-warning/12 text-warning ring-warning/25",
+  danger: "bg-danger/12 text-danger ring-danger/25",
+  neutral: "bg-muted text-muted-foreground ring-border",
+  primary: "bg-primary/12 text-primary ring-primary/25",
+  accent: "bg-accent/12 text-accent ring-accent/25",
 };
 
 export function Badge({
@@ -21,7 +22,7 @@ export function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${tones[tone]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-[10.5px] font-medium tracking-[0.08em] uppercase ring-1 ring-inset ${tones[tone]} ${className}`}
     >
       {children}
     </span>
