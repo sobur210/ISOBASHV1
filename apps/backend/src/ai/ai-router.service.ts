@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
   AiCapability,
+  AiEmbeddingRequest,
+  AiEmbeddingResponse,
+  AiImageResponse,
   AiMode,
   AiProviderError,
   AiRequest,
@@ -16,6 +19,7 @@ import {
   RoutePlan,
   RouteRequest,
   isFailoverAllowed,
+  isImageFailoverAllowed,
 } from './routing.types';
 
 const DEFAULT_MODE: AiMode = (process.env.AI_DEFAULT_MODE as AiMode) || 'offline';
@@ -66,8 +70,16 @@ export class AiRouterService {
       const stats = this.health.stats(provider);
       const circuitAllows = this.health.allowsRequest(provider);
 
-      for (const model of this.models.modelsFor(provider)) {
-        const supportsCapability = model.capabilities.includes(request.capability) || instance.capabilities.includes(request.capability);
+      const providerModels = this.models.modelsFor(provider);
+      // A provider that advertises several capabilities must not lend them all to
+      // every one of its models: an OR on the provider's capability list made
+      // Gemini's text and embedding models eligible for image generation (and its
+      // image models eligible for chat), so a run burned a provider call per wrong
+      // model before reaching the renderer. A model's own capabilities decide; the
+      // provider-level list is only trusted when it has no registered models.
+      const providerIsImplicit = providerModels.length === 0 && instance.capabilities.includes(request.capability);
+      for (const model of providerModels) {
+        const supportsCapability = model.capabilities.includes(request.capability) || providerIsImplicit;
         if (!supportsCapability) {
           candidates.push({
             provider,
@@ -112,8 +124,15 @@ export class AiRouterService {
           candidate.reasons.push(`alias model, selectable manually (primary: ${model.aliasOf ?? 'unknown'})`);
         }
         if (health.status !== 'healthy') {
-          candidate.eligible = false;
-          candidate.reasons.push(`provider health is "${health.status}"${health.detail ? `: ${health.detail}` : ''}`);
+          if (request.ignoreProviderHealth) {
+            // Recorded, not enforced: see `ignoreProviderHealth` in routing.types.
+            candidate.reasons.push(
+              `provider health is "${health.status}"${health.detail ? `: ${health.detail}` : ''} — attempted anyway so the real error is reported`,
+            );
+          } else {
+            candidate.eligible = false;
+            candidate.reasons.push(`provider health is "${health.status}"${health.detail ? `: ${health.detail}` : ''}`);
+          }
         }
         if (circuit === 'open' || !circuitAllows) {
           candidate.eligible = false;
@@ -176,6 +195,7 @@ export class AiRouterService {
           model: candidate.model,
           input: request.input,
           metadata: request.metadata,
+          responseFormat: request.responseFormat,
         });
         this.health.recordSuccess(candidate.provider, Date.now() - attemptStart);
         attempts.push({ provider: candidate.provider, model: candidate.model, outcome: 'success', durationMs: Date.now() - attemptStart });
@@ -200,6 +220,142 @@ export class AiRouterService {
     }
 
     throw lastError ?? new AiProviderError('No eligible model could serve the request.', 'router', 'NO_ELIGIBLE_MODEL');
+  }
+
+  /**
+   * Phase 12 embeddings.
+   *
+   * The same plan/eligibility/failover rules as `execute`, because an index built
+   * from half-embedded chunks is worse than no index: a provider that answers
+   * with a real error (bad key, missing model, rate limit) is surfaced instead
+   * of being routed around.
+   */
+  async embed(request: RouteRequest & AiEmbeddingRequest): Promise<AiEmbeddingResponse> {
+    const plan = await this.plan(request);
+    const ordered = orderCandidates(plan);
+
+    if (ordered.length === 0) {
+      throw plan.selected === null && plan.candidates.length > 0
+        ? new AiProviderError(plan.explanation, 'router', 'NO_ELIGIBLE_MODEL')
+        : new AiProviderError('No configured provider can produce embeddings.', 'router', 'NO_PROVIDER_AVAILABLE');
+    }
+
+    let lastError: AiProviderError | undefined;
+    for (const [index, candidate] of ordered.entries()) {
+      const instance = this.registry.instance(candidate.provider);
+      if (!instance?.embed) {
+        lastError = new AiProviderError(
+          `Provider ${candidate.provider} does not implement embeddings.`,
+          candidate.provider,
+          'CAPABILITY_UNSUPPORTED',
+        );
+        continue;
+      }
+      const started = Date.now();
+      try {
+        const response = await instance.embed({
+          inputs: request.inputs,
+          model: request.model ? request.model.replace(`${candidate.provider}:`, '') : undefined,
+          ...(request.taskType ? { taskType: request.taskType } : {}),
+        });
+        this.health.recordSuccess(candidate.provider, Date.now() - started);
+        return response;
+      } catch (error) {
+        const providerError = toProviderError(error, candidate.provider);
+        this.health.recordFailure(candidate.provider, providerError.code);
+        const hasNext = index < ordered.length - 1;
+        if (plan.strict || !hasNext || !isFailoverAllowed(providerError.code)) {
+          this.log.warn(`Embedding on ${candidate.provider}:${candidate.model} failed (${providerError.code}).`);
+          throw providerError;
+        }
+        this.log.warn(`Failing over embeddings from ${candidate.provider} to the next eligible model.`);
+        lastError = providerError;
+      }
+    }
+
+    throw lastError ?? new AiProviderError('No eligible model could produce embeddings.', 'router', 'NO_ELIGIBLE_MODEL');
+  }
+
+  /**
+   * Phase 13 image generation.
+   *
+   * The same plan/eligibility rules as `execute`, with one difference and an
+   * honesty rule. The difference: when the caller pinned nothing, a provider that
+   * refuses (zero quota, a bad key, a retired model) does not end the run if
+   * another eligible renderer exists — refusing would make a deployment with a
+   * working second renderer unable to draw anything. The honesty rule: the
+   * substitution is reported in `failovers` and shown on the run, and a pinned
+   * model is still strict, so nothing is ever swapped behind the user's back.
+   */
+  async generateImage(request: RouteRequest & { prompt: string; aspectRatio?: string; count?: number }): Promise<AiImageResponse> {
+    const plan = await this.plan({ ...request, ignoreProviderHealth: true });
+    const ordered = orderCandidates(plan);
+
+    if (ordered.length === 0) {
+      throw plan.selected === null && plan.candidates.length > 0
+        ? new AiProviderError(plan.explanation, 'router', 'NO_ELIGIBLE_MODEL')
+        : new AiProviderError('No configured provider can generate images.', 'router', 'NO_PROVIDER_AVAILABLE');
+    }
+
+    let lastError: AiProviderError | undefined;
+    const failovers: string[] = [];
+    const attempts: string[] = [];
+    for (const [index, candidate] of ordered.entries()) {
+      const instance = this.registry.instance(candidate.provider);
+      if (!instance?.generateImage) {
+        lastError = new AiProviderError(
+          `Provider ${candidate.provider} does not implement image generation.`,
+          candidate.provider,
+          'CAPABILITY_UNSUPPORTED',
+        );
+        attempts.push(`${candidate.provider}:${candidate.model} cannot generate images`);
+        continue;
+      }
+      const started = Date.now();
+      try {
+        const response = await instance.generateImage({
+          prompt: request.prompt,
+          model: request.model ? request.model.replace(`${candidate.provider}:`, '') || undefined : undefined,
+          ...(request.aspectRatio ? { aspectRatio: request.aspectRatio } : {}),
+          ...(request.count !== undefined ? { count: request.count } : {}),
+        });
+        this.health.recordSuccess(candidate.provider, Date.now() - started);
+        return failovers.length > 0 ? { ...response, failovers } : response;
+      } catch (error) {
+        const providerError = toProviderError(error, candidate.provider);
+        this.health.recordFailure(candidate.provider, providerError.code);
+        attempts.push(`${candidate.provider}:${candidate.model} refused (${providerError.code})`);
+        const hasNext = index < ordered.length - 1;
+        if (plan.strict || !hasNext || !isImageFailoverAllowed(providerError.code)) {
+          this.log.warn(`Image generation on ${candidate.provider}:${candidate.model} failed (${providerError.code}).`);
+          // A failed run must name every renderer that was tried, not only the last
+          // one: with two providers, "Gemini is rate limited" alone would hide that
+          // the key-less renderer was tried and refused too.
+          if (attempts.length > 1) {
+            throw new AiProviderError(
+              `${providerError.message} Every eligible renderer was tried: ${attempts.join('; ')}.`,
+              providerError.provider,
+              providerError.code,
+            );
+          }
+          throw providerError;
+        }
+        this.log.warn(`Failing over image generation from ${candidate.provider} to the next eligible model.`);
+        failovers.push(
+          `${candidate.provider}:${candidate.model} could not render this image (${providerError.code}); it was rendered by another provider instead.`,
+        );
+        lastError = providerError;
+      }
+    }
+
+    if (lastError && attempts.length > 1) {
+      throw new AiProviderError(
+        `${lastError.message} Every eligible renderer was tried: ${attempts.join('; ')}.`,
+        lastError.provider,
+        lastError.code,
+      );
+    }
+    throw lastError ?? new AiProviderError('No eligible model could generate an image.', 'router', 'NO_ELIGIBLE_MODEL');
   }
 
   /**

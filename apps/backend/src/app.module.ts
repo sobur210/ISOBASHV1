@@ -12,6 +12,12 @@ import { ChatModule } from './chat/chat.module';
 import { AuthModule } from './auth/auth.module';
 import { AdminModule } from './admin/admin.module';
 import { RealtimeModule } from './realtime/realtime.module';
+import { AgentsModule } from './agents/agents.module';
+import { ResearchModule } from './research/research.module';
+import { FilesModule } from './files/files.module';
+import { MediaModule } from './media/media.module';
+import { MemoryModule } from './memory/memory.module';
+import { ProjectsModule } from './projects/projects.module';
 import { ConfigModule as IsoConfigModule } from './shared/config/config.module';
 import { resolveEnvFile } from './shared/config/configuration';
 import { StorageModule } from './shared/storage/storage.module';
@@ -33,6 +39,12 @@ import { SecurityHeadersMiddleware } from './security/security-headers.middlewar
     AuthModule,
     AdminModule,
     RealtimeModule,
+    MemoryModule,
+    ProjectsModule,
+    AgentsModule,
+    ResearchModule,
+    FilesModule,
+    MediaModule,
   ],
   controllers: [AppController, HealthController],
   providers: [

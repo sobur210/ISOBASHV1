@@ -1,6 +1,5 @@
 import { PageHeader } from "@/components/page-header";
-import { PlaceholderCard } from "@/components/placeholder-card";
-import { FolderIcon, UsersIcon } from "@/components/ui/icons";
+import { ProjectsPanel } from "@/components/projects-panel";
 
 export default function ProjectsPage() {
   return (
@@ -8,21 +7,10 @@ export default function ProjectsPage() {
       <PageHeader
         eyebrow="Workspace / Projects"
         title="Projects"
-        description="A route boundary for owned workspaces, task state, members, sharing, and project memory."
-        status="Phase 10"
+        description="One workspace per goal. Its tasks, agents, conversations, memories and files are scoped to it, and ownership is checked on the server."
+        status="Phase 10 · live"
       />
-      <PlaceholderCard
-        icon={<FolderIcon className="h-5 w-5" />}
-        title="No projects yet"
-        description="Projects will store real task state, membership, and project-scoped memory backed by the database."
-        feature="Integrated in Phase 10"
-      />
-      <PlaceholderCard
-        icon={<UsersIcon className="h-5 w-5" />}
-        title="Ownership enforced"
-        description="Project access will be enforced server-side from database ownership, never from client claims."
-        feature="Security requirement — spec §20"
-      />
+      <ProjectsPanel />
     </div>
   );
 }

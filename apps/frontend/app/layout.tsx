@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -46,9 +47,13 @@ export const viewport: Viewport = {
  * Runs before paint so the resolved theme is already on <html> and the
  * first frame never flashes the wrong palette. Dark is the brand default.
  */
-const themeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )isobash_theme=([^;]*)/);var c=m&&m[1];if(c==='light'){document.documentElement.classList.add('light')}else{document.documentElement.classList.remove('light')}}catch(e){}})();`;
+const themeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )isobash_theme=([^;]*)/);var c=m&&m[1];if(!c){c=localStorage.getItem('isobash_theme')}if(c==='light'){document.documentElement.classList.add('light')}else{document.documentElement.classList.remove('light')}}catch(e){}})();`;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // proxy.ts mints this per request; Next.js stamps it onto its own inline
+  // scripts, and we have to stamp it on ours by hand or CSP refuses it.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="en"
@@ -56,7 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         {children}
       </body>
     </html>

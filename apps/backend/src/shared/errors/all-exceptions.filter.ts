@@ -53,6 +53,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
       } else if (status === HttpStatus.TOO_MANY_REQUESTS) {
         code = 'RATE_LIMITED';
         message = exception.message;
+      } else if (status === HttpStatus.PAYLOAD_TOO_LARGE) {
+        // Raised by the upload interceptor while the body is still being read.
+        // A caller needs to know it was the size, not a validation slip.
+        code = 'FILE_TOO_LARGE';
+        message =
+          typeof body === 'object' && body !== null && 'message' in body
+            ? String((body as { message?: unknown }).message ?? exception.message)
+            : exception.message;
       } else if (typeof body === 'object' && body !== null && 'message' in body) {
         const raw = (body as { message?: unknown }).message;
         message = Array.isArray(raw) ? raw.join(', ') : String(raw ?? exception.message);

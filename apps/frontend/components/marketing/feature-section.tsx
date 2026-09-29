@@ -16,7 +16,6 @@ type Feature = {
   description: string;
   icon: ReactNode;
   tone: string;
-  /** Tailwind grid placement for the bento layout. */
   span: string;
 };
 
@@ -27,7 +26,7 @@ const features: Feature[] = [
       "Conversations that stream token by token and persist to PostgreSQL. Switch providers per message — the routing layer picks the right one for the job.",
     icon: <ChatIcon className="h-5 w-5" />,
     tone: "from-primary/18",
-    span: "lg:col-span-6 lg:row-span-2",
+    span: "lg:col-span-3",
   },
   {
     title: "Image Generation",
@@ -52,7 +51,7 @@ const features: Feature[] = [
   },
   {
     title: "Document Analysis",
-    description: "Upload PDFs, documents and spreadsheets and query them.",
+    description: "Upload PDFs, Markdown, HTML, CSV, JSON or text and query what was really extracted from them.",
     icon: <FileIcon className="h-5 w-5" />,
     tone: "from-warning/18",
     span: "lg:col-span-3",
@@ -62,21 +61,21 @@ const features: Feature[] = [
     description: "Your AI remembers, so you don’t have to.",
     icon: <BrainIcon className="h-5 w-5" />,
     tone: "from-primary/18",
-    span: "lg:col-span-4",
+    span: "lg:col-span-3",
   },
   {
     title: "Projects & Collaboration",
     description: "Organise work and share it with your team.",
     icon: <LayersIcon className="h-5 w-5" />,
     tone: "from-violet/18",
-    span: "lg:col-span-4",
+    span: "lg:col-span-3",
   },
   {
     title: "Multi-Provider AI",
     description: "Local models and cloud vendors behind one interface — including fully offline.",
     icon: <GlobeIcon className="h-5 w-5" />,
     tone: "from-accent/18",
-    span: "lg:col-span-4",
+    span: "lg:col-span-3",
   },
 ];
 

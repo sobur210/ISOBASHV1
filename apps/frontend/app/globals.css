@@ -51,41 +51,41 @@
   --shadow-glow: 0 0 0 1px rgb(77 141 255 / 0.28), 0 20px 56px -22px rgb(77 141 255 / 0.6);
 }
 
-.light {
-  color-scheme: light;
+html.light, html[data-theme="light"], .light {
+  color-scheme: light !important;
 
-  --background: #f2f5fb;
-  --surface: #ffffff;
-  --surface-2: #f7f9fe;
-  --surface-3: #eaeff8;
-  --muted: #e9eef7;
+  --background: #ffffff !important;
+  --surface: #f8fafc !important;
+  --surface-2: #f1f5f9 !important;
+  --surface-3: #e2e8f0 !important;
+  --muted: #f1f5f9 !important;
 
-  --foreground: #070d1c;
-  --muted-foreground: #55648a;
+  --foreground: #0f172a !important;
+  --muted-foreground: #475569 !important;
 
-  --border: rgb(9 26 63 / 0.1);
-  --border-strong: rgb(9 26 63 / 0.18);
+  --border: rgb(15 23 42 / 0.12) !important;
+  --border-strong: rgb(15 23 42 / 0.22) !important;
 
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-foreground: #ffffff;
-  --primary-soft: rgb(37 99 235 / 0.1);
+  --primary: #2563eb !important;
+  --primary-hover: #1d4ed8 !important;
+  --primary-foreground: #ffffff !important;
+  --primary-soft: rgb(37 99 235 / 0.12) !important;
 
-  --accent: #0284c7;
-  --accent-soft: rgb(2 132 199 / 0.1);
-  --violet: #6d28d9;
-  --violet-soft: rgb(109 40 217 / 0.1);
+  --accent: #0284c7 !important;
+  --accent-soft: rgb(2 132 199 / 0.12) !important;
+  --violet: #7c3aed !important;
+  --violet-soft: rgb(124 58 237 / 0.12) !important;
 
-  --ring: #2563eb;
-  --danger: #dc2626;
-  --success: #15803d;
-  --warning: #b45309;
+  --ring: #2563eb !important;
+  --danger: #dc2626 !important;
+  --success: #16a34a !important;
+  --warning: #d97706 !important;
 
-  --shadow-rgb: 20 40 90;
-  --shadow-soft: 0 1px 2px rgb(var(--shadow-rgb) / 0.05), 0 6px 16px -8px rgb(var(--shadow-rgb) / 0.12);
-  --shadow-lift: 0 2px 4px rgb(var(--shadow-rgb) / 0.04), 0 20px 44px -22px rgb(var(--shadow-rgb) / 0.28);
-  --shadow-deep: 0 48px 120px -40px rgb(var(--shadow-rgb) / 0.42);
-  --shadow-glow: 0 0 0 1px rgb(37 99 235 / 0.18), 0 18px 48px -20px rgb(37 99 235 / 0.55);
+  --shadow-rgb: 15 23 42;
+  --shadow-soft: 0 1px 2px rgb(var(--shadow-rgb) / 0.06), 0 6px 16px -8px rgb(var(--shadow-rgb) / 0.1);
+  --shadow-lift: 0 2px 4px rgb(var(--shadow-rgb) / 0.05), 0 20px 44px -22px rgb(var(--shadow-rgb) / 0.2);
+  --shadow-deep: 0 48px 120px -40px rgb(var(--shadow-rgb) / 0.3);
+  --shadow-glow: 0 0 0 1px rgb(37 99 235 / 0.2), 0 18px 48px -20px rgb(37 99 235 / 0.4);
 }
 
 @theme inline {

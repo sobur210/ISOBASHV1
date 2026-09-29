@@ -11,6 +11,73 @@ enum TaskStatus {
   TODO
   IN_PROGRESS
   DONE
+  FAILED
+  CANCELLED
+}
+
+enum AgentRunStatus {
+  PENDING
+  PLANNING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AgentStepStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  SKIPPED
+}
+
+enum MemoryKind {
+  FACT
+  PREFERENCE
+  SUMMARY
+  NOTE
+}
+
+enum ResearchStatus {
+  PENDING
+  SEARCHING
+  RETRIEVING
+  ANSWERING
+  COMPLETED
+  FAILED
+}
+
+enum ResearchSourceStatus {
+  PENDING
+  FETCHED
+  REJECTED
+  FAILED
+}
+
+/// Phase 12 files. A stored file is either being turned into knowledge
+/// (PROCESSING), is searchable (READY), or failed for a recorded reason.
+enum FileStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+
+/// Phase 13 media. A generation is only COMPLETED when a provider really returned
+/// bytes that are now stored; anything else records the provider's own error.
+enum MediaGenerationStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
 }
 
 enum UserRole {
@@ -32,8 +99,16 @@ model User {
 
   projects  Project[]
   tasks     Task[]
+  conversations Conversation[]
   notifications Notification[]
   sessions  Session[]
+  agents    Agent[]
+  agentRuns AgentRun[]
+  memories  MemoryEntry[]
+  researchSessions ResearchSession[]
+  files        StoredFile[]
+  imageGenerations ImageGeneration[]
+  mediaAssets  MediaAsset[]
 }
 
 model AuditEvent {
@@ -74,6 +149,15 @@ model Project {
   ownerId     Int
   owner       User     @relation(fields: [ownerId], references: [id])
   tasks       Task[]
+  agents      Agent[]
+  memories    MemoryEntry[]
+  conversations Conversation[]
+  researchSessions ResearchSession[]
+  files        StoredFile[]
+  imageGenerations ImageGeneration[]
+  mediaAssets  MediaAsset[]
+
+  @@index([ownerId, updatedAt])
 }
 
 model Task {
@@ -81,14 +165,343 @@ model Task {
   title       String
   description String?
   status      TaskStatus @default(TODO)
+  order       Int        @default(0)
+  result      String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
   projectId   Int
-  project     Project    @relation(fields: [projectId], references: [id])
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   assigneeId  Int?
   assignee    User?      @relation(fields: [assigneeId], references: [id])
+
+  agentRunId  String?
+  agentRun    AgentRun?  @relation(fields: [agentRunId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, order, createdAt])
+  @@index([status])
+}
+
+model Agent {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  instructions  String   @default("")
+  providerModel String?
+  maxSteps      Int      @default(6)
+  toolNames     String[] @default([])
+  memoryEnabled Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ownerId   Int
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  projectId Int?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  runs     AgentRun[]
+  memories MemoryEntry[]
+
+  @@index([ownerId, updatedAt])
+  @@index([projectId])
+}
+
+model AgentRun {
+  id                String         @id @default(cuid())
+  status            AgentRunStatus @default(PENDING)
+  input             String
+  output            String?
+  error             String?
+  plan              Json?
+  provider          String?
+  model             String?
+  stepsExecuted     Int            @default(0)
+  cancelRequestedAt DateTime?
+  startedAt         DateTime?
+  finishedAt        DateTime?
+  createdAt         DateTime       @default(now())
+
+  agentId  String
+  agent    Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  ownerId  Int
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  steps    AgentStep[]
+  tasks    Task[]
+
+  @@index([agentId, createdAt])
+  @@index([ownerId, createdAt])
+  @@index([status])
+}
+
+model AgentStep {
+  id         String          @id @default(cuid())
+  position   Int
+  title      String
+  tool       String?
+  input      Json?
+  output     String?
+  error      String?
+  status     AgentStepStatus @default(PENDING)
+  durationMs Int?
+  createdAt  DateTime        @default(now())
+
+  runId   String
+  run     AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, position])
+  @@index([runId, position])
+}
+
+model MemoryEntry {
+  id             String     @id @default(cuid())
+  kind           MemoryKind @default(NOTE)
+  content        String
+  source         String     @default("manual")
+  sourceId       String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  lastAccessedAt DateTime?
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentId   String?
+  agent     Agent?   @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  projectId Int?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId, updatedAt])
+  @@index([agentId, updatedAt])
+  @@index([projectId, updatedAt])
+}
+
+model ResearchSession {
+  id        String         @id @default(cuid())
+  question  String
+  status    ResearchStatus @default(PENDING)
+  answer    String?
+  error     String?
+  /// Set when the model read the sources and reported they do not answer the question.
+  /// An honest "no evidence found" result, which is different from an uncited answer.
+  noEvidence Boolean       @default(false)
+  /// How the sources were found: "search" (a real search provider), "supplied" (URLs
+  /// the caller gave), or both. Never a value implying retrieval that did not happen.
+  retrieval String         @default("none")
+  queries   String[]       @default([])
+  provider  String?
+  model     String?
+  searchedAt DateTime?
+  startedAt DateTime?
+  finishedAt DateTime?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  userId    Int
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId Int?
+  project   Project?        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  sources   ResearchSource[]
+  citations ResearchCitation[]
+
+  @@index([userId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([status])
+}
+
+model ResearchSource {
+  id          String               @id @default(cuid())
+  url         String
+  /// The URL the fetch actually landed on after redirects, so a cited page can be
+  /// traced to its canonical location.
+  finalUrl    String?
+  title       String?
+  host        String?
+  status      ResearchSourceStatus @default(PENDING)
+  detail      String?
+  httpStatus  Int?
+  /// The extracted plain text the model actually read. Capped, never truncated silently.
+  content     String               @default("")
+  characters  Int                  @default(0)
+  origin      String               @default("supplied")
+  fetchedAt   DateTime?
+
+  sessionId String
+  session   ResearchSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  citations ResearchCitation[]
+
+  @@unique([sessionId, url])
+  @@index([sessionId, status])
+}
+
+model ResearchCitation {
+  id        String   @id @default(cuid())
+  marker    String
+  quote     String
+  /// Set when the quote could not be found verbatim in the source text, so the UI can
+  /// mark the citation as unverified instead of presenting it as evidence.
+  verified  Boolean  @default(false)
+
+  sessionId String
+  session   ResearchSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  sourceId  String
+  source    ResearchSource  @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, marker])
+  @@index([sourceId])
+}
+
+model StoredFile {
+  id           String     @id @default(cuid())
+  /// The name the uploader chose. Never used as a path: the bytes live under
+  /// `relativePath`, which the server generates and validates.
+  originalName String
+  relativePath String
+  extension    String     @default("")
+  /// The type decided from the bytes, not from the client's claim:
+  /// text | markdown | csv | json | html | pdf | image | archive | unknown
+  kind         String     @default("unknown")
+  mimeType     String
+  sizeBytes    Int
+  /// Per-user content identity: the same bytes cannot be stored twice.
+  sha256       String
+  status       FileStatus @default(PENDING)
+  /// Why the file could not be processed, or could only be partially indexed.
+  error        String?
+  /// Set when the file is searchable but something was skipped, e.g. no embedding
+  /// provider. Never used to hide a failure: `error` is the failure channel.
+  warning      String?
+  extractable  Boolean    @default(false)
+  extractedText String    @default("")
+  characters   Int        @default(0)
+  /// How many knowledge chunks this file currently has. Denormalised so a list
+  /// does not have to count a child table per row.
+  chunkCount   Int        @default(0)
+  truncated    Boolean    @default(false)
+  embeddingModel String?
+  embeddedAt   DateTime?
+  processedAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  userId    Int
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId Int?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  chunks FileChunk[]
+
+  @@unique([userId, sha256])
+  @@index([userId, createdAt])
+  @@index([userId, status])
+  @@index([projectId, createdAt])
+  @@index([kind])
+}
+
+model FileChunk {
+  id        String @id @default(cuid())
+  ordinal   Int
+  content   String
+  characters Int
+  /// A cheap, honest size estimate (4 characters per token). Never presented as
+  /// a real tokenizer count.
+  tokenEstimate Int
+  /// The embedding as a JSON number array. Postgres has no vector extension here,
+  /// so similarity is computed in the API against the caller's own chunks.
+  embedding       Json?
+  embeddingModel  String?
+  embeddedAt      DateTime?
+  createdAt DateTime @default(now())
+
+  fileId String
+  file   StoredFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@unique([fileId, ordinal])
+  @@index([fileId])
+}
+
+/// Phase 13 image generation. One row per request the caller made; the bytes live
+/// on disk under a server-generated path and are described by `MediaAsset` rows.
+/// A run is COMPLETED only when a provider really returned images that are stored.
+model ImageGeneration {
+  id             String                @id @default(cuid())
+  prompt         String
+  /// What the caller asked the provider for, e.g. "16:9". Null when the provider
+  /// default was used, so the column never claims a ratio nobody requested.
+  aspectRatio    String?
+  /// How many images were asked for. `assets` can hold fewer, and `error` then
+  /// says why the rest are missing.
+  requestedCount Int                   @default(1)
+  status         MediaGenerationStatus @default(PENDING)
+  /// The provider's error, verbatim and truncated for storage. Never a paraphrase
+  /// presented as a success.
+  error          String?
+  errorCode      String?
+  /// Set when the run succeeded but something was skipped, e.g. one of the four
+  /// requested images was refused by the provider. Never used to hide a failure:
+  /// `error` is the failure channel and `warning` is not one.
+  warning        String?
+  /// The provider's own finish reason (STOP, IMAGE_SAFETY, PROHIBITED_CONTENT, …).
+  /// This is the provider's verdict, not a moderation classifier ISOBASH runs.
+  finishReason   String?
+  provider       String?
+  model          String?
+  inputTokens    Int?
+  outputTokens   Int?
+  cancelRequestedAt DateTime?
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId Int?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  assets MediaAsset[]
+
+  @@index([userId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([status])
+}
+
+/// A generated file. `relativePath` is generated by the server and validated
+/// against traversal; the absolute path never leaves the process.
+model MediaAsset {
+  id           String    @id @default(cuid())
+  kind         MediaKind @default(IMAGE)
+  relativePath String
+  mimeType     String
+  sizeBytes    Int
+  width        Int?
+  height       Int?
+  /// Content identity of the stored bytes, so a damaged file is detectable on read
+  /// rather than served as if it were intact.
+  sha256       String
+  /// The provider's own note about the image, when it returned one.
+  note         String?
+  /// Copied from the generation so an asset stays readable without its parent row.
+  prompt       String?
+  aspectRatio  String?
+  provider     String?
+  model        String?
+  createdAt    DateTime  @default(now())
+
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId Int?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  generationId String?
+  generation   ImageGeneration? @relation(fields: [generationId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([generationId])
+  @@index([projectId, createdAt])
+  @@index([kind])
 }
 
 model Notification {
@@ -109,9 +522,15 @@ model Conversation {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  messages Message[]
+  userId    Int?
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  projectId Int?
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  messages  Message[]
 
   @@index([clientSessionId, updatedAt])
+  @@index([userId, updatedAt])
+  @@index([projectId, updatedAt])
 }
 
 model Message {

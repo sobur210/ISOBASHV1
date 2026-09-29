@@ -1,3 +1,9 @@
+/**
+ * Browser-visible API base URL. The NEXT_PUBLIC_ prefix is inlined into the
+ * client bundle by Next.js at build time, so this must be set in
+ * apps/frontend/.env.local (documented in the root .env.example). The literal
+ * default keeps the app working when the variable is absent.
+ */
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 const SESSION_KEY = "isobash_client_session";
@@ -126,16 +132,25 @@ export async function streamChat(
   const response = await fetch(`${API_URL}/chat/stream`, {
     method: "POST",
     signal,
+    credentials: "include",
     headers: { "content-type": "application/json", accept: "text/event-stream", ...sessionHeaders() },
     body: JSON.stringify({ input, conversationId, model }),
   });
 
-  const reader = response.body?.getReader();
+  // A failed stream carries a normal JSON error envelope, not NDJSON frames, so
+  // reading it as a stream would yield an empty conversation with no cause.
+  if (!response.ok) {
+    throw new Error(await extractErrorMessage(response, `Chat request failed with status ${response.status}`));
+  }
+  if (!response.body) {
+    throw new Error("The chat stream returned no body.");
+  }
+
+  const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
 
   const consume = async () => {
-    if (!reader) return;
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -288,3 +303,549 @@ export async function startResearch(input: {
 export async function deleteResearchSession(id: string, signal?: AbortSignal): Promise<void> {
   return deleteJsonAuthed(`/research/${id}`, signal);
 }
+
+/* Phase 12 files & documents, and the knowledge index built from them. */
+
+export type FileKind = "text" | "markdown" | "csv" | "json" | "html" | "pdf" | "image" | "archive" | "binary";
+
+export type FileStatus = "PENDING" | "PROCESSING" | "READY" | "FAILED";
+
+export type FileChunkSummary = {
+  ordinal: number;
+  characters: number;
+  tokenEstimate: number;
+  embeddingModel: string | null;
+  embeddedAt: string | null;
+};
+
+export type FileRecord = {
+  id: string;
+  originalName: string;
+  extension: string;
+  kind: FileKind;
+  mimeType: string;
+  sizeBytes: number;
+  status: FileStatus;
+  error: string | null;
+  warning: string | null;
+  extractable: boolean;
+  characters: number;
+  chunkCount: number;
+  truncated: boolean;
+  embeddingModel: string | null;
+  embeddedAt: string | null;
+  processedAt: string | null;
+  projectId: number | null;
+  createdAt: string;
+  chunks?: FileChunkSummary[];
+};
+
+export type FileText = {
+  id: string;
+  characters: number;
+  truncated: boolean;
+  warning: string | null;
+  error: string | null;
+  text: string;
+  chunkCount: number;
+};
+
+export type EmbeddingAvailability = {
+  available: boolean;
+  provider?: string | null;
+  model?: string | null;
+  dimensions?: number | null;
+  detail: string;
+};
+
+export type FileCapabilities = {
+  upload: {
+    maxBytes: number;
+    maxFilesPerUser: number;
+    maxTotalBytesPerUser: number;
+    types: { extension: string; kind: FileKind; mimeType: string; extractable: boolean }[];
+    detail: string;
+  };
+  extraction: {
+    text: boolean;
+    markdown: boolean;
+    csv: boolean;
+    json: boolean;
+    html: boolean;
+    pdf: boolean;
+    images: boolean;
+    officeAndArchives: boolean;
+    maxExtractedCharacters: number;
+    maxChunksPerFile: number;
+    chunkSize: number;
+    chunkOverlap: number;
+    detail: string;
+  };
+  embeddings: EmbeddingAvailability;
+  knowledge: {
+    chunkCount: number;
+    embeddedChunks: number;
+    storedFiles: number;
+    searchCandidateLimit: number;
+    detail: string;
+  };
+};
+
+export type KnowledgeHit = {
+  chunkId: string;
+  ordinal: number;
+  fileId: string;
+  fileName: string;
+  kind: FileKind;
+  score: number;
+  keywordScore: number | null;
+  vectorScore: number | null;
+  matchedBy: "keyword" | "vector" | "hybrid";
+  characters: number;
+  snippet: string;
+};
+
+export type KnowledgeSearch = {
+  query: string;
+  terms: string[];
+  mode: "keyword" | "vector" | "hybrid";
+  detail: string;
+  hits: KnowledgeHit[];
+  candidatesConsidered: number;
+  tookMs: number;
+};
+
+export type KnowledgeStats = {
+  files: number;
+  chunks: number;
+  embeddedChunks: number;
+  characters: number;
+  storedBytes: number;
+  filesByKind: Partial<Record<FileKind, number>>;
+  filesByStatus: Partial<Record<FileStatus, number>>;
+  embeddings: EmbeddingAvailability;
+  searchCandidateLimit: number;
+};
+
+export type ProjectSummary = { id: number; name: string };
+
+export async function fetchFileCapabilities(signal?: AbortSignal): Promise<FileCapabilities> {
+  return getJsonAuthed<FileCapabilities>("/files/capabilities", signal);
+}
+
+export async function fetchFiles(
+  query: { status?: FileStatus; kind?: FileKind; projectId?: number; limit?: number } = {},
+  signal?: AbortSignal,
+): Promise<FileRecord[]> {
+  const params = new URLSearchParams();
+  if (query.status) params.set("status", query.status);
+  if (query.kind) params.set("kind", query.kind);
+  if (query.projectId !== undefined) params.set("projectId", String(query.projectId));
+  if (query.limit !== undefined) params.set("limit", String(query.limit));
+  const suffix = params.toString();
+  return getJsonAuthed<FileRecord[]>(`/files${suffix ? `?${suffix}` : ""}`, signal);
+}
+
+export async function fetchFile(id: string, signal?: AbortSignal): Promise<FileRecord> {
+  return getJsonAuthed<FileRecord>(`/files/${id}`, signal);
+}
+
+export async function fetchFileText(id: string, limit?: number, signal?: AbortSignal): Promise<FileText> {
+  const suffix = limit === undefined ? "" : `?limit=${limit}`;
+  return getJsonAuthed<FileText>(`/files/${id}/text${suffix}`, signal);
+}
+
+/**
+ * Multipart upload. The browser must set the multipart boundary itself, so the
+ * Content-Type header is deliberately absent here.
+ */
+export async function uploadFile(file: File, projectId?: number): Promise<FileRecord> {
+  const form = new FormData();
+  form.append("file", file, file.name);
+  if (projectId !== undefined) form.append("projectId", String(projectId));
+
+  const res = await fetch(`${API_URL}/files`, {
+    method: "POST",
+    credentials: "include",
+    headers: { Accept: "application/json", ...sessionHeaders() },
+    body: form,
+  });
+  if (res.status === 401) {
+    throw new Error("AUTH_REQUIRED: Sign in to upload files.");
+  }
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, `Upload failed with status ${res.status}`));
+  }
+  return (await res.json()) as FileRecord;
+}
+
+export async function reindexFile(id: string, projectId: number | null): Promise<FileRecord> {
+  return sendJsonAuthed<FileRecord>(`/files/${id}/reindex`, { projectId });
+}
+
+export async function deleteFile(id: string, signal?: AbortSignal): Promise<void> {
+  return deleteJsonAuthed(`/files/${id}`, signal);
+}
+
+export function downloadFileUrl(id: string): string {
+  return `${API_URL}/files/${id}/download`;
+}
+
+export async function fetchKnowledgeStats(signal?: AbortSignal): Promise<KnowledgeStats> {
+  return getJsonAuthed<KnowledgeStats>("/knowledge/stats", signal);
+}
+
+export async function searchKnowledge(
+  query: { q: string; limit?: number; kind?: FileKind; projectId?: number },
+  signal?: AbortSignal,
+): Promise<KnowledgeSearch> {
+  const params = new URLSearchParams({ q: query.q });
+  if (query.limit !== undefined) params.set("limit", String(query.limit));
+  if (query.kind) params.set("kind", query.kind);
+  if (query.projectId !== undefined) params.set("projectId", String(query.projectId));
+  return getJsonAuthed<KnowledgeSearch>(`/knowledge/search?${params.toString()}`, signal);
+}
+
+export async function fetchProjects(signal?: AbortSignal): Promise<ProjectSummary[]> {
+  return getJsonAuthed<ProjectSummary[]>("/projects", signal);
+}
+
+/* Projects and their task board. */
+
+export type TaskStatus = "TODO" | "IN_PROGRESS" | "DONE" | "FAILED" | "CANCELLED";
+
+export type ProjectTask = {
+  id: number;
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  order: number;
+  result: string | null;
+  assigneeId: number | null;
+  agentRunId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ProjectCounts = { agents: number; conversations: number; memories: number };
+
+export type Project = ProjectSummary & {
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+  tasks: ProjectTask[];
+  _count?: { agents?: number; conversations?: number; memories?: number } | ProjectCounts;
+};
+
+export async function fetchProjectList(signal?: AbortSignal): Promise<Project[]> {
+  return getJsonAuthed<Project[]>("/projects", signal);
+}
+
+export async function fetchProject(id: number, signal?: AbortSignal): Promise<Project> {
+  return getJsonAuthed<Project>(`/projects/${id}`, signal);
+}
+
+export async function createProject(input: { name: string; description?: string }): Promise<Project> {
+  return sendJsonAuthed<Project>("/projects", input);
+}
+
+export async function updateProject(
+  id: number,
+  input: { name?: string; description?: string },
+): Promise<Project> {
+  return sendJsonAuthed<Project>(`/projects/${id}`, input, "PATCH");
+}
+
+export async function deleteProject(id: number, signal?: AbortSignal): Promise<void> {
+  return deleteJsonAuthed(`/projects/${id}`, signal);
+}
+
+export async function addProjectTask(
+  projectId: number,
+  input: { title: string; description?: string },
+): Promise<ProjectTask> {
+  return sendJsonAuthed<ProjectTask>(`/projects/${projectId}/tasks`, input);
+}
+
+export async function updateProjectTask(
+  taskId: number,
+  input: { title?: string; description?: string; status?: TaskStatus; result?: string },
+): Promise<ProjectTask> {
+  return sendJsonAuthed<ProjectTask>(`/projects/tasks/${taskId}`, input, "PATCH");
+}
+
+export async function deleteProjectTask(taskId: number, signal?: AbortSignal): Promise<void> {
+  return deleteJsonAuthed(`/projects/tasks/${taskId}`, signal);
+}
+
+/* Agents, their runs, and the steps a run actually executed. */
+
+export type AgentRunStatus =
+  | "PENDING"
+  | "PLANNING"
+  | "RUNNING"
+  | "COMPLETED"
+  | "FAILED"
+  | "CANCELLED";
+
+export type AgentStepStatus = "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED" | "SKIPPED";
+
+export type AgentStep = {
+  id: string;
+  position: number;
+  title: string;
+  tool: string | null;
+  input: unknown;
+  output: string | null;
+  error: string | null;
+  status: AgentStepStatus;
+  durationMs: number | null;
+  createdAt: string;
+};
+
+export type AgentRun = {
+  id: string;
+  status: AgentRunStatus;
+  input: string;
+  output: string | null;
+  error: string | null;
+  plan: unknown;
+  provider: string | null;
+  model: string | null;
+  stepsExecuted: number;
+  cancelRequestedAt: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  createdAt: string;
+  agentId: string;
+  steps?: AgentStep[];
+  agent?: { id: string; name: string };
+};
+
+export type Agent = {
+  id: string;
+  name: string;
+  description: string | null;
+  instructions: string;
+  providerModel: string | null;
+  maxSteps: number;
+  toolNames: string[];
+  memoryEnabled: boolean;
+  projectId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  project?: { id: number; name: string } | null;
+  _count?: { runs: number; memories: number };
+};
+
+export type AgentInput = {
+  name: string;
+  description?: string;
+  instructions?: string;
+  providerModel?: string;
+  maxSteps?: number;
+  toolNames?: string[];
+  memoryEnabled?: boolean;
+  projectId?: number;
+};
+
+export async function fetchAgents(signal?: AbortSignal): Promise<Agent[]> {
+  return getJsonAuthed<Agent[]>("/agents", signal);
+}
+
+export async function fetchAgent(id: string, signal?: AbortSignal): Promise<Agent> {
+  return getJsonAuthed<Agent>(`/agents/${id}`, signal);
+}
+
+export async function createAgent(input: AgentInput): Promise<Agent> {
+  return sendJsonAuthed<Agent>("/agents", input);
+}
+
+export async function updateAgent(
+  id: string,
+  input: Partial<AgentInput> & { projectId?: number | null },
+): Promise<Agent> {
+  return sendJsonAuthed<Agent>(`/agents/${id}`, input, "PATCH");
+}
+
+export async function deleteAgent(id: string, signal?: AbortSignal): Promise<void> {
+  return deleteJsonAuthed(`/agents/${id}`, signal);
+}
+
+export async function fetchAgentRuns(id: string, signal?: AbortSignal): Promise<AgentRun[]> {
+  return getJsonAuthed<AgentRun[]>(`/agents/${id}/runs`, signal);
+}
+
+export async function fetchAgentRun(runId: string, signal?: AbortSignal): Promise<AgentRun> {
+  return getJsonAuthed<AgentRun>(`/agents/runs/${runId}`, signal);
+}
+
+export async function startAgentRun(id: string, input: string): Promise<AgentRun> {
+  return sendJsonAuthed<AgentRun>(`/agents/${id}/runs`, { input });
+}
+
+export async function cancelAgentRun(runId: string): Promise<AgentRun> {
+  return sendJsonAuthed<AgentRun>(`/agents/runs/${runId}/cancel`, {});
+}
+
+/* Phase 13 media: image generation runs and the stored media library. */
+
+export type MediaGenerationStatus = "PENDING" | "RUNNING" | "COMPLETED" | "FAILED" | "CANCELLED";
+
+export type MediaKind = "IMAGE" | "VIDEO";
+
+export type MediaAsset = {
+  id: string;
+  kind: MediaKind;
+  mimeType: string;
+  sizeBytes: number;
+  width: number | null;
+  height: number | null;
+  sha256: string;
+  note: string | null;
+  prompt: string | null;
+  aspectRatio: string | null;
+  provider: string | null;
+  model: string | null;
+  generationId: string | null;
+  projectId: number | null;
+  createdAt: string;
+};
+
+export type ImageGeneration = {
+  id: string;
+  prompt: string;
+  aspectRatio: string | null;
+  requestedCount: number;
+  status: MediaGenerationStatus;
+  error: string | null;
+  errorCode: string | null;
+  warning: string | null;
+  finishReason: string | null;
+  provider: string | null;
+  model: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  cancelRequestedAt: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  createdAt: string;
+  projectId: number | null;
+  assets: MediaAsset[];
+  _count?: { assets: number };
+};
+
+export type MediaModelOption = {
+  id: string;
+  provider: string;
+  /** An alias is pickable by hand but is never chosen automatically. */
+  autoSelectable: boolean;
+  aliasOf: string | null;
+};
+
+export type MediaProviderState = {
+  provider: string;
+  status: "healthy" | "unconfigured" | "unavailable";
+  healthDetail: string | null;
+  circuit: "closed" | "open" | "half-open";
+  stats: {
+    provider: string;
+    totalRequests: number;
+    totalFailures: number;
+    successRate: number;
+    avgLatencyMs: number | null;
+    lastFailureCode?: string;
+  };
+};
+
+export type MediaCapabilities = {
+  generation: {
+    available: boolean;
+    allProvidersHealthy: boolean;
+    providers: MediaProviderState[];
+    models: MediaModelOption[];
+    aspectRatios: string[];
+    maxPromptCharacters: number;
+    maxImagesPerRequest: number;
+    maxImageBytes: number;
+    maxAssetsPerUser: number;
+    maxTotalBytesPerUser: number;
+    generationsPerHour: number;
+    detail: string;
+  };
+  moderation: { enforced: string; detail: string };
+  video: { available: boolean; detail: string };
+  lastFailure: {
+    id: string;
+    errorCode: string | null;
+    error: string | null;
+    finishReason: string | null;
+    createdAt: string;
+  } | null;
+  usage: { assets: number; storedBytes: number; generations: number };
+};
+
+export async function fetchMediaCapabilities(signal?: AbortSignal): Promise<MediaCapabilities> {
+  return getJsonAuthed<MediaCapabilities>("/media/capabilities", signal);
+}
+
+export async function fetchImageGenerations(
+  query: { status?: MediaGenerationStatus; projectId?: number; limit?: number } = {},
+  signal?: AbortSignal,
+): Promise<ImageGeneration[]> {
+  const params = new URLSearchParams();
+  if (query.status) params.set("status", query.status);
+  if (query.projectId !== undefined) params.set("projectId", String(query.projectId));
+  if (query.limit !== undefined) params.set("limit", String(query.limit));
+  const suffix = params.toString();
+  return getJsonAuthed<ImageGeneration[]>(`/media/generations${suffix ? `?${suffix}` : ""}`, signal);
+}
+
+export async function fetchImageGeneration(id: string, signal?: AbortSignal): Promise<ImageGeneration> {
+  return getJsonAuthed<ImageGeneration>(`/media/generations/${id}`, signal);
+}
+
+export async function startImageGeneration(input: {
+  prompt: string;
+  aspectRatio?: string;
+  count?: number;
+  projectId?: number;
+  model?: string;
+}): Promise<ImageGeneration> {
+  return sendJsonAuthed<ImageGeneration>("/media/generations", input);
+}
+
+export async function cancelImageGeneration(id: string): Promise<ImageGeneration> {
+  return sendJsonAuthed<ImageGeneration>(`/media/generations/${id}/cancel`, {});
+}
+
+export async function deleteImageGeneration(id: string, signal?: AbortSignal): Promise<void> {
+  return deleteJsonAuthed(`/media/generations/${id}`, signal);
+}
+
+export async function fetchMediaAssets(
+  query: { kind?: MediaKind; generationId?: string; projectId?: number; limit?: number } = {},
+  signal?: AbortSignal,
+): Promise<MediaAsset[]> {
+  const params = new URLSearchParams();
+  if (query.kind) params.set("kind", query.kind);
+  if (query.generationId) params.set("generationId", query.generationId);
+  if (query.projectId !== undefined) params.set("projectId", String(query.projectId));
+  if (query.limit !== undefined) params.set("limit", String(query.limit));
+  const suffix = params.toString();
+  return getJsonAuthed<MediaAsset[]>(`/media/assets${suffix ? `?${suffix}` : ""}`, signal);
+}
+
+export async function deleteMediaAsset(id: string, signal?: AbortSignal): Promise<void> {
+  return deleteJsonAuthed(`/media/assets/${id}`, signal);
+}
+
+/** Served by an authenticated, checksum-verified route, so the cookie must ride along. */
+export function mediaAssetUrl(id: string): string {
+  return `${API_URL}/media/assets/${id}/file`;
+}
+
+export function mediaAssetDownloadUrl(id: string): string {
+  return `${API_URL}/media/assets/${id}/file?download=1`;
+}
+

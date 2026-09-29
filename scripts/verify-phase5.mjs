@@ -106,7 +106,25 @@ try {
 } catch (e) {
   fail("GET /ai/tools threw", e.message);
 }
-check("GET /ai/tools returns the registered tools (empty, truthful)", Array.isArray(tools) && tools.length === 0, `${tools?.length ?? "?"} tool(s)`);
+// The Phase 2 catalogue was empty on purpose. Phase 10 fills it with real governed
+// tools, so the invariant now is that whatever is published is fully described —
+// a tool without a schema, a risk class or a ceiling would be an ungoverned capability.
+check(
+  "GET /ai/tools returns only fully governed tools",
+  Array.isArray(tools) &&
+    tools.every(
+      (tool) =>
+        typeof tool.name === "string" &&
+        typeof tool.description === "string" &&
+        tool.parameters?.type === "object" &&
+        typeof tool.risk === "string" &&
+        Number.isInteger(tool.timeoutMs) &&
+        tool.timeoutMs > 0 &&
+        Number.isInteger(tool.maxArgumentLength) &&
+        tool.maxArgumentLength > 0,
+    ),
+  `${tools?.length ?? "?"} tool(s)`,
+);
 
 const realtimeProbe = await fetch(`${API}/health`);
 const realtimeHealth = await realtimeProbe.json();

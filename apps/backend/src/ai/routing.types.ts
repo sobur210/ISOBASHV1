@@ -48,6 +48,21 @@ export type RouteRequest = {
   /** Explicit provider or `provider:model` selection made by the caller. */
   model?: string;
   metadata?: Record<string, string>;
+  /** Phase 10: ask the provider for a machine-readable object (agent planning). */
+  responseFormat?: 'text' | 'json';
+  /**
+   * Phase 13: do not let provider health veto the candidate.
+   *
+   * `AiProviderHealth` is per provider, and each adapter derives it from the
+   * capability it was written for. Gemini's health is a live one-token call to its
+   * *text* model, so a 503 on chat would otherwise stop an image request with a
+   * complaint about the wrong model — hiding the real image error (a zero image
+   * quota, a retired image model) behind an unrelated outage. The plan still
+   * records the health and the reason; it just does not treat it as a veto.
+   * The circuit breaker still applies, because that is about this process, not
+   * about the provider's other capability.
+   */
+  ignoreProviderHealth?: boolean;
 };
 
 export type RoutePlan = {
@@ -99,4 +114,19 @@ export const FAILOVER_BLOCKED_CODES: ReadonlySet<string> = new Set([
 export function isFailoverAllowed(code: string | undefined): boolean {
   if (!code) return false;
   return FAILOVER_ALLOWED_CODES.has(code);
+}
+
+/**
+ * Image generation may leave a blocked provider for another renderer — but only
+ * when the caller pinned nothing, and only with the substitution reported.
+ *
+ * The text path deliberately does not do this: routing around a provider that
+ * refused for quota, a bad key or a retired model hides the fact that the one the
+ * user chose could not pay. For an unpinned image request there is no such choice
+ * to hide — the user asked for "an image" — and refusing outright would mean a
+ * deployment with a perfectly good second renderer can never draw anything.
+ */
+export function isImageFailoverAllowed(code: string | undefined): boolean {
+  if (!code) return false;
+  return isFailoverAllowed(code) || FAILOVER_BLOCKED_CODES.has(code);
 }

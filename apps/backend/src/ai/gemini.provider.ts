@@ -1,15 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import {
   AiCapability,
+  AiEmbeddingRequest,
+  AiEmbeddingResponse,
+  AiGeneratedImage,
+  AiImageRequest,
+  AiImageResponse,
   AiProvider,
   AiProviderError,
   AiProviderHealth,
   AiRequest,
   AiResponse,
   AiStreamChunk,
+  isProviderRefusal,
 } from './provider.types';
 
-type GeminiPart = { text?: string };
+type GeminiInlineData = { mimeType?: string; data?: string };
+type GeminiPart = { text?: string; inlineData?: GeminiInlineData };
 type GeminiCandidate = {
   content?: { parts?: GeminiPart[] };
   finishReason?: string;
@@ -17,12 +24,22 @@ type GeminiCandidate = {
 type GeminiUsage = { promptTokenCount?: number; candidatesTokenCount?: number };
 type GeminiGenerateResponse = {
   candidates?: GeminiCandidate[];
+  promptFeedback?: { blockReason?: string };
   usageMetadata?: GeminiUsage;
   modelVersion?: string;
 };
 type GeminiErrorBody = { error?: { code?: number; message?: string; status?: string } };
 
-const API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+/**
+ * Google's Generative Language endpoint, overridable so the verification run
+ * can point the real adapter at a fixture that speaks the same response shape.
+ * Same seam as `OLLAMA_BASE_URL` / `OPENAI_BASE_URL`; unset in normal use, and
+ * nothing in the provider branches on it.
+ */
+const API_BASE = (process.env.GEMINI_API_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta').replace(
+  /\/+$/,
+  '',
+);
 /**
  * Stable, generally available (non-preview) Flash model.
  *
@@ -32,7 +49,16 @@ const API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
  * `verifyConfiguredModel()` below, which reports the truth instead of assuming.
  */
 const DEFAULT_MODEL = 'gemini-3.7-flash';
+/**
+ * Phase 13 image model. Verified to be listed for the key at runtime, but
+ * *listing* is not serving: a free-tier key can see image models and still be
+ * refused with a zero image quota. `generateImage` therefore surfaces that
+ * refusal rather than reporting a generation that did not happen.
+ */
+const DEFAULT_IMAGE_MODEL = 'gemini-3.1-flash-image';
 const MODEL_CHECK_TTL_MS = Number(process.env.GEMINI_MODEL_CHECK_TTL_MS || 10 * 60 * 1000);
+/** Hard ceiling so a bad `count` cannot turn one request into an unbounded spend. */
+const MAX_IMAGES_PER_CALL = 8;
 
 function classifyGeminiError(status: number, body?: GeminiErrorBody | null): { code: string; detail: string } {
   const geminiStatus = body?.error?.status;
@@ -55,9 +81,12 @@ function classifyGeminiError(status: number, body?: GeminiErrorBody | null): { c
         detail: `Gemini does not serve model "${DEFAULT_MODEL}" for this API key.${geminiMessage ? ` ${geminiMessage}` : ''}`,
       };
     case 429:
+      // The body distinguishes a burst from a plan that grants zero of this metric.
+      // "rate limit, try later" and "your key has no image quota at all" are very
+      // different problems, so the provider's own words are kept.
       return {
         code: 'RATE_LIMITED',
-        detail: 'Gemini rate limit reached. The provider did not respond; no fallback was used.',
+        detail: `Gemini rate limit reached and it did not answer; no fallback was used.${geminiMessage ? ` ${geminiMessage}` : ''}`,
       };
     case 503:
       return {
@@ -83,8 +112,19 @@ async function readError(response: Response): Promise<GeminiErrorBody | null> {
 @Injectable()
 export class GeminiProvider implements AiProvider {
   readonly name = 'gemini';
-  readonly capabilities: readonly AiCapability[] = ['language'];
+  /**
+   * Image generation is opt-out rather than implicit: a deployment that only
+   * wants Gemini for text and embeddings sets `GEMINI_IMAGE_ENABLED=false` and the
+   * capability disappears from `/ai/capabilities` instead of being offered and
+   * then refused at call time.
+   */
+  private readonly imageEnabled = process.env.GEMINI_IMAGE_ENABLED !== 'false';
+  readonly capabilities: readonly AiCapability[] = this.imageEnabled
+    ? ['language', 'embeddings', 'image-generation']
+    : ['language', 'embeddings'];
   private readonly model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
+  private readonly embeddingModel = process.env.GEMINI_EMBEDDING_MODEL || 'text-embedding-004';
+  private readonly imageModel = process.env.GEMINI_IMAGE_MODEL || DEFAULT_IMAGE_MODEL;
   private modelCheck: { at: number; ok: boolean; detail: string } | null = null;
   private healthCache: { at: number; value: AiProviderHealth } | null = null;
 
@@ -184,7 +224,12 @@ export class GeminiProvider implements AiProvider {
         {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: request.input }] }] }),
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: request.input }] }],
+            ...(request.responseFormat === 'json'
+              ? { generationConfig: { responseMimeType: 'application/json' } }
+              : {}),
+          }),
         },
       );
       if (!response.ok) {
@@ -287,6 +332,179 @@ export class GeminiProvider implements AiProvider {
       if (signal?.aborted) throw new AiProviderError('Generation aborted.', this.name, 'STREAM_ABORTED');
       throw new AiProviderError(error instanceof Error ? error.message : 'Gemini stream interrupted.', this.name, 'PROVIDER_STREAM_FAILED');
     }
+  }
+
+  /**
+   * `:embedContent` takes one input per call, so a batch is sent as a short
+   * sequential run. Rate limits and overload are surfaced verbatim: an index
+   * must never be built from a silently half-embedded document.
+   */
+  async embed(request: AiEmbeddingRequest): Promise<AiEmbeddingResponse> {
+    if (request.inputs.length === 0) {
+      throw new AiProviderError('Gemini was asked to embed an empty batch.', this.name, 'INVALID_REQUEST');
+    }
+    const apiKey = this.requireApiKey();
+    const model = request.model || this.embeddingModel;
+    const embeddings: number[][] = [];
+    try {
+      for (const input of request.inputs) {
+        const response = await fetch(
+          `${API_BASE}/models/${encodeURIComponent(model)}:embedContent?key=${encodeURIComponent(apiKey)}`,
+          {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              model: `models/${model}`,
+              content: { parts: [{ text: input }] },
+              ...(request.taskType ? { taskType: request.taskType } : {}),
+            }),
+          },
+        );
+        if (!response.ok) {
+          const body = await readError(response);
+          const { code, detail } = classifyGeminiError(response.status, body);
+          throw new AiProviderError(detail, this.name, code);
+        }
+        const payload = (await response.json()) as { embedding?: { values?: number[] } };
+        const values = payload.embedding?.values ?? [];
+        if (values.length === 0) {
+          throw new AiProviderError('Gemini returned an empty embedding.', this.name, 'EMPTY_PROVIDER_RESPONSE');
+        }
+        embeddings.push(values);
+      }
+      return { provider: this.name, model, embeddings, dimensions: embeddings[0].length };
+    } catch (error) {
+      if (error instanceof AiProviderError) throw error;
+      throw new AiProviderError(error instanceof Error ? error.message : 'Gemini embedding request failed.', this.name, 'PROVIDER_UNAVAILABLE');
+    }
+  }
+
+  /**
+   * Phase 13 image generation.
+   *
+   * Gemini renders one image per `:generateContent` call, so `count` is driven as
+   * a short sequential run. Three rules keep the result honest:
+   *  - a call that fails is recorded in `failures` with the provider's own code and
+   *    message, so "1 of 3 images" is never reported as "3 images";
+   *  - a run where nothing was produced throws the first real provider error, so a
+   *    quota refusal or a bad key cannot be mistaken for an empty gallery;
+   *  - a refusal (`promptFeedback.blockReason`, `IMAGE_SAFETY`, …) is returned
+   *    rather than thrown, because the provider answered on purpose and the caller
+   *    should record a block, not an outage.
+   */
+  async generateImage(request: AiImageRequest): Promise<AiImageResponse> {
+    if (!this.imageEnabled) {
+      throw new AiProviderError('Gemini image generation is disabled (GEMINI_IMAGE_ENABLED=false).', this.name, 'CAPABILITY_UNSUPPORTED');
+    }
+    const apiKey = this.requireApiKey();
+    const model = request.model || this.imageModel;
+    const requested = Math.min(Math.max(request.count ?? 1, 1), MAX_IMAGES_PER_CALL);
+
+    const images: AiGeneratedImage[] = [];
+    const failures: { code: string; message: string }[] = [];
+    let finishReason: string | undefined;
+    const usage: { inputTokens?: number; outputTokens?: number } = {};
+
+    for (let index = 0; index < requested; index += 1) {
+      let response: Response;
+      try {
+        response = await fetch(
+          `${API_BASE}/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+          {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: request.prompt }] }],
+              generationConfig: {
+                // Without IMAGE in the modalities list the model only answers with
+                // text, and a text-only "success" would be stored as an image.
+                responseModalities: ['TEXT', 'IMAGE'],
+                ...(request.aspectRatio ? { imageConfig: { aspectRatio: request.aspectRatio } } : {}),
+              },
+            }),
+          },
+        );
+      } catch (error) {
+        failures.push({
+          code: 'PROVIDER_UNAVAILABLE',
+          message: error instanceof Error ? error.message : 'Gemini is unreachable from this server.',
+        });
+        continue;
+      }
+
+      if (!response.ok) {
+        const body = await readError(response);
+        const { code, detail } = classifyGeminiError(response.status, body);
+        failures.push({ code, message: detail });
+        // Quota, a rejected key and a retired model are answers, not blips: burning
+        // the remaining calls would only spend the same budget to reach the same wall.
+        if (code !== 'PROVIDER_REQUEST_FAILED' && code !== 'PROVIDER_OVERLOADED') break;
+        continue;
+      }
+
+      const payload = (await response.json()) as GeminiGenerateResponse;
+      if (payload.usageMetadata?.promptTokenCount != null) {
+        usage.inputTokens = (usage.inputTokens ?? 0) + payload.usageMetadata.promptTokenCount;
+      }
+      if (payload.usageMetadata?.candidatesTokenCount != null) {
+        usage.outputTokens = (usage.outputTokens ?? 0) + payload.usageMetadata.candidatesTokenCount;
+      }
+
+      const candidate = payload.candidates?.[0];
+      const reason = candidate?.finishReason ?? payload.promptFeedback?.blockReason;
+      if (reason) finishReason = reason;
+
+      const note = (candidate?.content?.parts ?? []).map((part) => part.text ?? '').join('').trim();
+      const produced = (candidate?.content?.parts ?? []).filter(
+        (part): part is GeminiPart & { inlineData: GeminiInlineData } =>
+          Boolean(part.inlineData?.data),
+      );
+      for (const part of produced) {
+        images.push({
+          mimeType: part.inlineData.mimeType || 'image/png',
+          data: part.inlineData.data as string,
+          ...(note ? { note } : {}),
+        });
+      }
+      if (produced.length === 0 && !isProviderRefusal(reason)) {
+        failures.push({
+          code: 'EMPTY_PROVIDER_RESPONSE',
+          message: note
+            ? `Gemini answered with text instead of an image: ${note.slice(0, 200)}`
+            : 'Gemini returned no image data.',
+        });
+      }
+    }
+
+    if (images.length === 0 && isProviderRefusal(finishReason)) {
+      return {
+        provider: this.name,
+        model,
+        images: [],
+        requested,
+        finishReason,
+        ...(failures.length > 0 ? { failures } : {}),
+        usage,
+      };
+    }
+    if (images.length === 0) {
+      const first = failures[0];
+      throw new AiProviderError(
+        first?.message ?? 'Gemini returned no image data.',
+        this.name,
+        first?.code ?? 'EMPTY_PROVIDER_RESPONSE',
+      );
+    }
+
+    return {
+      provider: this.name,
+      model,
+      images,
+      requested,
+      ...(finishReason ? { finishReason } : {}),
+      ...(failures.length > 0 ? { failures } : {}),
+      usage,
+    };
   }
 
   private assertLanguageCapability(request: AiRequest): void {

@@ -163,19 +163,12 @@ export function ChatPanel() {
     };
 
     try {
-      const { response, onEvent, consume } = await streamChat(
+      const { onEvent, consume } = await streamChat(
         inputText,
         activeIdRef.current ?? undefined,
         controller.signal,
         selectedProvider,
       );
-
-      if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
-        setError(body?.error?.message ?? `Request failed (${response.status})`);
-        setMessages((prev) => prev.filter((m) => m.pending));
-        return;
-      }
 
       onEvent((event) => {
         if (event.type === "meta") {

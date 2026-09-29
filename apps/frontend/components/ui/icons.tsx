@@ -156,6 +156,24 @@ export const PlayIcon = ({ className }: IconProps) => (
   </Icon>
 );
 
+export const PauseIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
+  </Icon>
+);
+
+export const ChevronLeftIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="m15 18-6-6 6-6" />
+  </Icon>
+);
+
+export const ChevronRightIcon = ({ className }: IconProps) => (
+  <Icon className={className}>
+    <path d="m9 18 6-6-6-6" />
+  </Icon>
+);
+
 export const SearchIcon = ({ className }: IconProps) => (
   <Icon className={className}>
     <circle cx="11" cy="11" r="8" />

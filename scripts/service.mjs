@@ -98,6 +98,14 @@ const OLLAMA_BASE_URL = env('OLLAMA_BASE_URL', 'http://127.0.0.1:11434');
 const HEALTH_INTERVAL_MS = envNumber('SERVICE_HEALTH_INTERVAL_MS', 15_000);
 const PROBE_TIMEOUT_MS = envNumber('SERVICE_PROBE_TIMEOUT_MS', 6_000);
 const PROBE_FAILURE_THRESHOLD = envNumber('SERVICE_PROBE_FAILURE_THRESHOLD', 3);
+/**
+ * A service is not expected to answer its probe until it has finished booting.
+ * Without this grace the threshold is reached purely by the boot window
+ * (PROBE_FAILURE_THRESHOLD * (HEALTH_INTERVAL_MS + PROBE_TIMEOUT_MS) = 63s), so
+ * any service slower than that is killed mid-startup and can never come up.
+ * The Next.js production server alone took 38s to report ready here.
+ */
+const BOOT_GRACE_MS = envNumber('SERVICE_BOOT_GRACE_MS', 180_000);
 const RESTART_BACKOFF_MAX_MS = envNumber('SERVICE_RESTART_BACKOFF_MAX_MS', 30_000);
 const STABLE_UPTIME_MS = envNumber('SERVICE_STABLE_UPTIME_MS', 120_000);
 const KILL_STALE = envBool('SERVICE_KILL_STALE', true);
@@ -488,9 +496,7 @@ function isStale(sourceDir, artifact) {
 
 /** Resolve `npm` without a shell so child args are never concatenated into a command line. */
 function npmCommand() {
-  if (!IS_WINDOWS) return 'npm';
-  const candidate = join(dirname(process.execPath), 'npm.cmd');
-  return existsSync(candidate) ? candidate : 'npm';
+  return 'npm';
 }
 
 async function ensureArtifacts({ force = false } = {}) {
@@ -502,7 +508,13 @@ async function ensureArtifacts({ force = false } = {}) {
   if (force || isStale(join(REPO_ROOT, 'apps', 'worker', 'src'), WORKER_ENTRY)) {
     tasks.push({ name: 'worker', args: ['run', 'build:worker'] });
   }
-  if (WEB_MODE === 'production' && (force || !existsSync(WEB_BUILD_ID))) {
+  if (
+    WEB_MODE === 'production' &&
+    (force ||
+      !existsSync(WEB_BUILD_ID) ||
+      isStale(join(REPO_ROOT, 'apps', 'frontend', 'app'), WEB_BUILD_ID) ||
+      isStale(join(REPO_ROOT, 'apps', 'frontend', 'components'), WEB_BUILD_ID))
+  ) {
     tasks.push({ name: 'frontend', args: ['run', 'build:frontend'] });
   }
   if (!tasks.length) {
@@ -661,6 +673,9 @@ class ManagedService {
   async probe() {
     if (!this.definition.probe) return;
     if (!this.child) return;
+    // Still inside the boot window: a closed port or a timeout is expected, so
+    // record the observation without counting it toward a restart.
+    const booting = this.startedAt !== null && Date.now() - this.startedAt < BOOT_GRACE_MS;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
     try {
@@ -673,14 +688,25 @@ class ManagedService {
         this.consecutiveProbeFailures = 0;
         if (this.state !== 'running') this.state = 'running';
       } else {
-        this.consecutiveProbeFailures += 1;
-        log.warn(`${this.name} probe returned HTTP ${response.status} (${this.definition.probe.url}).`);
+        this.lastProbeAt = new Date().toISOString();
+        if (booting) {
+          this.consecutiveProbeFailures = 0;
+          log.info(`${this.name} still booting (HTTP ${response.status} from ${this.definition.probe.url}).`);
+        } else {
+          this.consecutiveProbeFailures += 1;
+          log.warn(`${this.name} probe returned HTTP ${response.status} (${this.definition.probe.url}).`);
+        }
       }
     } catch (error) {
       this.lastProbeAt = new Date().toISOString();
       this.lastProbeOk = false;
-      this.consecutiveProbeFailures += 1;
-      log.warn(`${this.name} probe failed: ${error instanceof Error ? error.message : String(error)}`);
+      if (booting) {
+        this.consecutiveProbeFailures = 0;
+        log.info(`${this.name} still booting (${error instanceof Error ? error.message : String(error)}).`);
+      } else {
+        this.consecutiveProbeFailures += 1;
+        log.warn(`${this.name} probe failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
     } finally {
       clearTimeout(timer);
     }
