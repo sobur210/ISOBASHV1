@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
  *
  * Next.js inlines React's hydration payload and any inline script the app
  * renders. With a static `script-src 'self'` those are all refused, the app
- * never hydrates, and every client control — the theme toggle included — is
+ * never hydrates, and every client control (the theme toggle included) is
  * inert. A fresh nonce per request is the only way to keep `script-src` strict.
  */
 function buildCsp(nonce: string) {
@@ -17,6 +17,7 @@ function buildCsp(nonce: string) {
     `script-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: blob: ${apiOrigin} https://images.unsplash.com`,
+    `media-src 'self' blob: ${apiOrigin}`,
     "font-src 'self'",
     `connect-src 'self' ${apiOrigin}${isDev ? ` ${apiOrigin.replace(/^http/, "ws")}` : ""}`,
     "frame-ancestors 'none'",

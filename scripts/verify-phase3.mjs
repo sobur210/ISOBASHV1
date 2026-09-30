@@ -13,7 +13,7 @@ const WEB_URL = process.env.WEB_URL || 'http://localhost:3000';
 const results = [];
 function record(name, pass, detail = '') {
   results.push({ name, pass, detail });
-  console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`);
+  console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${detail ? `: ${detail}` : ''}`);
 }
 
 async function main() {

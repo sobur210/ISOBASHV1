@@ -35,7 +35,7 @@ export async function getUser(): Promise<SessionUser | null> {
         }
       }
     } catch {
-      // backend temporarily unreachable — treated as unauthenticated below
+      // backend temporarily unreachable. Treated as unauthenticated below.
     }
   }
 

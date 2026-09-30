@@ -9,6 +9,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
+import { StrictBoolean } from '../../shared/dto/strict-boolean.decorator';
 
 const MAX_NAME = 80;
 const MAX_DESCRIPTION = 500;
@@ -50,8 +51,9 @@ export class CreateAgentDto {
   toolNames?: string[];
 
   @IsOptional()
+  @StrictBoolean()
   @IsBoolean()
-  memoryEnabled?: boolean;
+  memoryEnabled?: boolean | string;
 
   @IsOptional()
   @Type(() => Number)
@@ -93,8 +95,9 @@ export class UpdateAgentDto {
   toolNames?: string[];
 
   @IsOptional()
+  @StrictBoolean()
   @IsBoolean()
-  memoryEnabled?: boolean;
+  memoryEnabled?: boolean | string;
 
   @IsOptional()
   @Type(() => Number)

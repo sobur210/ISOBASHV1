@@ -46,7 +46,7 @@ export class AiController {
     return this.tools.list();
   }
 
-  /** Phase 9: live routing table — health, circuit state, reliability, latency. */
+  /** Phase 9: live routing table of health, circuit state, reliability and latency. */
   @Get('routing')
   async routingTable() {
     return {

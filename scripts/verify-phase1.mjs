@@ -16,7 +16,7 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const results = [];
 function record(name, pass, detail = '') {
   results.push({ name, pass, detail });
-  console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${detail ? ` — ${detail}` : ''}`);
+  console.log(`${pass ? 'PASS' : 'FAIL'}  ${name}${detail ? `: ${detail}` : ''}`);
 }
 
 async function checkHttp(label, url) {

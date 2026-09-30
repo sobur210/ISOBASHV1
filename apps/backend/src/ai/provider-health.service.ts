@@ -26,7 +26,7 @@ const CIRCUIT_COOLDOWN_MS = readNumber('AI_CIRCUIT_COOLDOWN_MS', 30_000);
 const LATENCY_EWMA_ALPHA = 0.3;
 
 /**
- * Phase 9 — provider health cache, latency/reliability tracking and a real
+ * Phase 9: provider health cache, latency/reliability tracking and a real
  * circuit breaker.
  *
  * Purpose: routing decisions must be fast (no live probe per token) and honest

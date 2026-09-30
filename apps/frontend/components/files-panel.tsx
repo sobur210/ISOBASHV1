@@ -324,7 +324,7 @@ export function FilesPanel() {
                 />
                 <Row
                   label="Stored but not indexed"
-                  value="images, and ZIP-based office documents — OCR is not available"
+                  value="images, and ZIP-based office documents. OCR is not available"
                 />
                 <Row
                   label="Chunking"

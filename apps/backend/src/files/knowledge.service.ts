@@ -242,7 +242,7 @@ export class KnowledgeService {
       orderBy: { fileId: 'asc' },
     });
 
-    // Cosine similarity of unrelated text is not zero — it lands around 0.0-0.3 —
+    // Cosine similarity of unrelated text is not zero (it lands around 0.0-0.3),
     // so a dense search with no floor always returns its top-k, which would make
     // "nothing matches" indistinguishable from "here is the least irrelevant
     // chunk". Only a chunk meaningfully closer than the rest is a real hit, and

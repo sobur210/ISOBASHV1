@@ -50,10 +50,10 @@ Fixed-window counters backed by Redis with an automatic in-memory fallback if Re
 
 `AuditEvent` rows are written for authentication and authorization events. Categories:
 
-- `AUTH` — register, login, logout, `login_password_ok_mfa_required`, successful 2-step login
-- `SECURITY` — failed login (**only a SHA-256 hash of the email address is retained**), MFA setup/enable/disable
+- `AUTH`: register, login, logout, `login_password_ok_mfa_required`, successful 2-step login
+- `SECURITY`: failed login (**only a SHA-256 hash of the email address is retained**), MFA setup/enable/disable
   success and failure, invalid MFA code on sign-in
-- `ADMIN` / `AUTHORIZATION` — RolesGuard allow (`admin_access`) and deny (`forbidden`)
+- `ADMIN` / `AUTHORIZATION`: RolesGuard allow (`admin_access`) and deny (`forbidden`)
 
 Each event records category, action, actor id/email, IP, user-agent, and optional JSON metadata.
 Failed writes are swallowed with a warning so security logging never breaks the request path.
@@ -67,7 +67,7 @@ Failed writes are swallowed with a warning so security logging never breaks the 
 - `Referrer-Policy: strict-origin-when-cross-origin`
 - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
 - `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Resource-Policy: same-origin`
-- `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'` — the API never
+- `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'`, the API never
   serves HTML, so content is locked down to nothing by default.
 - `Strict-Transport-Security` is added when serving over HTTPS or in production.
 

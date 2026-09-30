@@ -23,7 +23,7 @@ const features: Feature[] = [
   {
     title: "AI Chat & Assistants",
     description:
-      "Conversations that stream token by token and persist to PostgreSQL. Switch providers per message — the routing layer picks the right one for the job.",
+      "Conversations that stream token by token and persist to PostgreSQL. Switch providers per message: the routing layer picks the right one for the job.",
     icon: <ChatIcon className="h-5 w-5" />,
     tone: "from-primary/18",
     span: "lg:col-span-3",
@@ -72,7 +72,7 @@ const features: Feature[] = [
   },
   {
     title: "Multi-Provider AI",
-    description: "Local models and cloud vendors behind one interface — including fully offline.",
+    description: "Local models and cloud vendors behind one interface, including fully offline.",
     icon: <GlobeIcon className="h-5 w-5" />,
     tone: "from-accent/18",
     span: "lg:col-span-3",
@@ -122,7 +122,7 @@ export function FeatureSection() {
             <br className="hidden sm:block" /> no <span className="text-gradient">tab juggling</span>
           </>
         }
-        lede="From a one-line prompt to a full project: chat, agents, research, files and media all run against real providers through one engine — never a mock."
+        lede="From a one-line prompt to a full project: chat, agents, research, files and media all run against real providers through one engine. Never a mock."
       />
       <FeatureBento />
     </Section>

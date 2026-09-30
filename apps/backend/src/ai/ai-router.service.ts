@@ -9,7 +9,9 @@ import {
   AiRequest,
   AiResponse,
   AiStreamChunk,
+  AiVideoResponse,
 } from './provider.types';
+import { AiVideoRequest } from './video-provider.types';
 import { AiProviderRegistry } from './provider.registry';
 import { AiModelRegistry } from './model.registry';
 import { ProviderHealthService } from './provider-health.service';
@@ -19,14 +21,14 @@ import {
   RoutePlan,
   RouteRequest,
   isFailoverAllowed,
-  isImageFailoverAllowed,
+  isMediaFailoverAllowed,
 } from './routing.types';
 
 const DEFAULT_MODE: AiMode = (process.env.AI_DEFAULT_MODE as AiMode) || 'offline';
 const OFFLINE_STRICT = process.env.AI_OFFLINE_STRICT === 'true';
 
 /**
- * Phase 9 — AI orchestration and model routing.
+ * Phase 9: AI orchestration and model routing.
  *
  * The router is the single entry point for every model call. It turns a
  * capability request into an explainable, health-aware plan, executes the best
@@ -90,6 +92,7 @@ export class AiRouterService {
             circuit,
             avgLatencyMs: stats.avgLatencyMs,
             successRate: stats.successRate,
+            priority: model.priority ?? 0,
             score: Number.NEGATIVE_INFINITY,
             eligible: false,
             reasons: [`does not support capability "${request.capability}"`],
@@ -106,6 +109,7 @@ export class AiRouterService {
           circuit,
           avgLatencyMs: stats.avgLatencyMs,
           successRate: stats.successRate,
+          priority: model.priority ?? 0,
           score: 0,
           eligible: true,
           reasons: [],
@@ -121,13 +125,17 @@ export class AiRouterService {
 
         if (model.enabled === false && !selection.model) {
           candidate.eligible = false;
-          candidate.reasons.push(`alias model, selectable manually (primary: ${model.aliasOf ?? 'unknown'})`);
+          candidate.reasons.push(
+            model.aliasOf
+              ? `alias model, selectable manually (primary: ${model.aliasOf})`
+              : 'not auto-selected, selectable manually',
+          );
         }
         if (health.status !== 'healthy') {
           if (request.ignoreProviderHealth) {
             // Recorded, not enforced: see `ignoreProviderHealth` in routing.types.
             candidate.reasons.push(
-              `provider health is "${health.status}"${health.detail ? `: ${health.detail}` : ''} — attempted anyway so the real error is reported`,
+              `provider health is "${health.status}"${health.detail ? `: ${health.detail}` : ''}. Attempted anyway so the real error is reported`,
             );
           } else {
             candidate.eligible = false;
@@ -144,6 +152,9 @@ export class AiRouterService {
         }
 
         candidate.score = scoreCandidate(candidate, mode, stats.successRate);
+        if (candidate.priority) {
+          candidate.reasons.push(`operator preference +${candidate.priority} applied to the score`);
+        }
         candidate.reasons.push(...describeMode(candidate, mode));
         candidates.push(candidate);
       }
@@ -163,6 +174,28 @@ export class AiRouterService {
       decidedAt: new Date().toISOString(),
       explanation: explain(selected, ranked, mode, strict),
     };
+  }
+
+  /**
+   * The provider that would serve a video request right now, without calling one.
+   *
+   * Runs are queued rather than executed in the request, and a queue is a promise
+   * that a process with the right renderer will come for the job. So the decision
+   * has to be made before the job is enqueued: `null` means no renderer can take
+   * this run at all, and the caller must say so now rather than leave a row waiting
+   * on a worker that will never arrive.
+   *
+   * The plan is built exactly as `generateVideo` builds it (`ignoreProviderHealth`,
+   * the same request), so the answer is the provider that call will try first rather
+   * than a second opinion from a slightly different question.
+   */
+  async resolveVideoProvider(model?: string | null): Promise<string | null> {
+    const plan = await this.plan({
+      capability: 'video-generation',
+      ...(model ? { model } : {}),
+      ignoreProviderHealth: true,
+    });
+    return plan.selected?.provider ?? null;
   }
 
   /** Execute a request through the plan, honouring the failover policy. */
@@ -282,7 +315,7 @@ export class AiRouterService {
    * The same plan/eligibility rules as `execute`, with one difference and an
    * honesty rule. The difference: when the caller pinned nothing, a provider that
    * refuses (zero quota, a bad key, a retired model) does not end the run if
-   * another eligible renderer exists — refusing would make a deployment with a
+   * another eligible renderer exists. Refusing would make a deployment with a
    * working second renderer unable to draw anything. The honesty rule: the
    * substitution is reported in `failovers` and shown on the run, and a pinned
    * model is still strict, so nothing is ever swapped behind the user's back.
@@ -326,7 +359,7 @@ export class AiRouterService {
         this.health.recordFailure(candidate.provider, providerError.code);
         attempts.push(`${candidate.provider}:${candidate.model} refused (${providerError.code})`);
         const hasNext = index < ordered.length - 1;
-        if (plan.strict || !hasNext || !isImageFailoverAllowed(providerError.code)) {
+        if (plan.strict || !hasNext || !isMediaFailoverAllowed(providerError.code)) {
           this.log.warn(`Image generation on ${candidate.provider}:${candidate.model} failed (${providerError.code}).`);
           // A failed run must name every renderer that was tried, not only the last
           // one: with two providers, "Gemini is rate limited" alone would hide that
@@ -356,6 +389,113 @@ export class AiRouterService {
       );
     }
     throw lastError ?? new AiProviderError('No eligible model could generate an image.', 'router', 'NO_ELIGIBLE_MODEL');
+  }
+
+  /**
+   * Phase 14 video generation.
+   *
+   * The same rules as `generateImage`, and for the same reasons: provider health
+   * is per provider and each adapter derives it from the capability it was written
+   * for, so a healthy text model must not stand between a clip and the renderer
+   * that can actually produce one; and a pinned `provider:model` is still strict.
+   * The one difference that matters is that a video call can legitimately run for
+   * minutes, so the timeout belongs to the adapter and is not a routing concern.
+   */
+  async generateVideo(
+    request: RouteRequest & {
+      prompt: string;
+      aspectRatio?: string;
+      durationSeconds?: number;
+      image?: { mimeType: string; data: string };
+      withAudio?: boolean;
+      signal?: AbortSignal;
+      // Async-render contract: when provided, the call is pinned to a provider
+      // project that was already created for this run (a retry must resume it
+      // rather than create a second one), and progress updates are reported to
+      // whoever asked instead of being inferred after the fact.
+      providerJobId?: AiVideoRequest['providerJobId'];
+      onJobProgress?: AiVideoRequest['onJobProgress'];
+    },
+  ): Promise<AiVideoResponse> {
+    const plan = await this.plan({ ...request, ignoreProviderHealth: true });
+    const ordered = orderCandidates(plan);
+
+    if (ordered.length === 0) {
+      throw plan.selected === null && plan.candidates.length > 0
+        ? new AiProviderError(plan.explanation, 'router', 'NO_ELIGIBLE_MODEL')
+        : new AiProviderError('No configured provider can generate video.', 'router', 'NO_PROVIDER_AVAILABLE');
+    }
+
+    let lastError: AiProviderError | undefined;
+    const failovers: string[] = [];
+    const attempts: string[] = [];
+    for (const [index, candidate] of ordered.entries()) {
+      const instance = this.registry.instance(candidate.provider);
+      if (!instance?.generateVideo) {
+        lastError = new AiProviderError(
+          `Provider ${candidate.provider} does not implement video generation.`,
+          candidate.provider,
+          'CAPABILITY_UNSUPPORTED',
+        );
+        attempts.push(`${candidate.provider}:${candidate.model} cannot generate video`);
+        continue;
+      }
+      const started = Date.now();
+      try {
+        const response = await instance.generateVideo({
+          prompt: request.prompt,
+          model: request.model ? request.model.replace(`${candidate.provider}:`, '') || undefined : undefined,
+          ...(request.aspectRatio ? { aspectRatio: request.aspectRatio } : {}),
+          ...(request.durationSeconds !== undefined ? { durationSeconds: request.durationSeconds } : {}),
+          ...(request.image ? { image: request.image } : {}),
+          ...(request.withAudio !== undefined ? { withAudio: request.withAudio } : {}),
+          ...(request.signal ? { signal: request.signal } : {}),
+          ...(request.providerJobId ? { providerJobId: request.providerJobId } : {}),
+          ...(request.onJobProgress ? { onJobProgress: request.onJobProgress } : {}),
+        });
+        this.health.recordSuccess(candidate.provider, Date.now() - started);
+        // The spread preserves `metering` untouched, which is what the credit ledger
+        // settles against: it names the provider that was actually billed, so a
+        // failover must not quietly restate who spent the credits.
+        return failovers.length > 0 ? { ...response, failovers } : response;
+      } catch (error) {
+        const providerError = toProviderError(error, candidate.provider);
+        this.health.recordFailure(candidate.provider, providerError.code);
+        attempts.push(`${candidate.provider}:${candidate.model} refused (${providerError.code})`);
+        const hasNext = index < ordered.length - 1;
+        if (plan.strict || !hasNext || !isMediaFailoverAllowed(providerError.code)) {
+            this.log.warn(`Video generation on ${candidate.provider}:${candidate.model} failed (${providerError.code}).`);
+            // A failed run names every renderer that was tried. With one renderer the
+            // message is already the whole story; with two, "the model is rate limited"
+            // alone would hide that the other one was tried and refused too.
+            if (attempts.length > 1) {
+              throw new AiProviderError(
+                `${providerError.message} Every eligible renderer was tried: ${attempts.join('; ')}.`,
+                providerError.provider,
+                providerError.code,
+                // Carried through the rewrite: a failure after the provider accepted the
+                // render still names the project that may have been billed.
+                providerError.details,
+              );
+            }
+          throw providerError;
+        }
+        this.log.warn(`Failing over video generation from ${candidate.provider} to the next eligible model.`);
+        failovers.push(
+          `${candidate.provider}:${candidate.model} could not render this clip (${providerError.code}); it was rendered by another provider instead.`,
+        );
+        lastError = providerError;
+      }
+    }
+
+    if (lastError && attempts.length > 1) {
+      throw new AiProviderError(
+        `${lastError.message} Every eligible renderer was tried: ${attempts.join('; ')}.`,
+        lastError.provider,
+        lastError.code,
+      );
+    }
+    throw lastError ?? new AiProviderError('No eligible model could generate a video.', 'router', 'NO_ELIGIBLE_MODEL');
   }
 
   /**
@@ -475,6 +615,11 @@ export function scoreCandidate(candidate: RouteCandidate, mode: AiMode, successR
   if (candidate.avgLatencyMs !== null) score -= Math.min(25, candidate.avgLatencyMs / 200);
   if (candidate.circuit === 'half-open') score -= 20;
 
+  // An explicit operator preference, applied last so it settles the decision
+  // rather than being one more signal competing with a per-capability health
+  // check it has nothing to do with.
+  if (candidate.priority) score += candidate.priority;
+
   return Math.round(score * 100) / 100;
 }
 
@@ -499,6 +644,7 @@ function explain(selected: RouteCandidate | null, ranked: RouteCandidate[], mode
     `circuit ${selected.circuit}`,
     `success rate ${Math.round(selected.successRate * 100)}%`,
     selected.avgLatencyMs === null ? 'latency unknown' : `avg latency ${selected.avgLatencyMs}ms`,
+    ...(selected.priority ? [`operator preference +${selected.priority}`] : []),
     `score ${selected.score}`,
   ];
   return `${strict ? 'Pinned' : 'Routed'} to ${selected.provider}:${selected.model} (${basis.join(', ')}).`;

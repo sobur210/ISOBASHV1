@@ -24,7 +24,7 @@ const results = [];
 
 function check(name, passed, detail = "") {
   results.push({ name, passed, detail });
-  console.log(`${passed ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${passed ? "PASS" : "FAIL"}  ${name}${detail ? `: ${detail}` : ""}`);
 }
 
 function cookieFrom(res, name) {
@@ -268,7 +268,7 @@ if (pool) {
   await pool.query(`DELETE FROM "User" WHERE id = $1`, [user.id]);
   console.log("(throwaway test user removed; audit events retained as evidence)");
 } else {
-  console.log("(skipped audit + cleanup — DATABASE_URL not found in .env)");
+  console.log("(skipped audit + cleanup: DATABASE_URL not found in .env)");
 }
 
 console.log("");

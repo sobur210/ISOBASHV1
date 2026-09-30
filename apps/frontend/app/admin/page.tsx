@@ -9,7 +9,7 @@ export default function AdminPage() {
       <PageHeader
         eyebrow="Admin"
         title="Control center"
-        description="Administration for users, entitlements, providers, jobs, security, and audit events. System status below is checked live — never hardcoded."
+        description="Administration for users, entitlements, providers, jobs, security, and audit events. System status below is checked live, never hardcoded."
         status="Admin session active"
       />
 
@@ -32,7 +32,7 @@ export default function AdminPage() {
           icon={<ShieldIcon className="h-5 w-5" />}
           title="Restricted boundary"
           description="Every operation in this area will be authorization-checked server-side and fully audit-logged. MFA is required for admin access."
-          feature="Security requirement — spec §19.1"
+          feature="Security requirement: spec §19.1"
         />
       </div>
     </div>

@@ -48,18 +48,29 @@ export function MarketingHero() {
 
       <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center text-center px-6 pb-20 pt-16 sm:px-12 lg:px-16 lg:pb-28 lg:pt-24 z-10">
         <div className="animate-rise flex flex-col items-center">
-          <h1 className="text-[2.75rem] leading-[1.05] font-bold tracking-[-0.04em] text-balance text-foreground sm:text-6xl lg:text-[4.5rem]">
-            Create. Research. Build.
-            <span className="text-gradient mt-2 block">All with AI.</span>
+          {/**
+           * Two lines at one uniform size, "Create, Research," over "Build." with
+           * only the second line in the brand accent. `text-balance` is dropped:
+           * it would try to even out the line lengths and could pull words down
+           * into the wrong row, which defeats the point of a deliberate break.
+           * The qualifier stays small so the space below the headline is free for
+           * a larger element.
+           */}
+          <h1 className="text-[2.125rem] leading-[1.12] font-bold tracking-[-0.035em] text-foreground sm:text-[3rem] lg:text-[4rem]">
+            <span className="block">Create, Research,</span>
+            <span className="block text-primary">Build.</span>
+            <span className="mt-3 block text-[1.125rem] font-medium leading-snug tracking-[-0.01em] text-foreground sm:mt-4 sm:text-[1.375rem] lg:text-[1.5rem]">
+              All with AI.
+            </span>
           </h1>
 
-          <p className="mt-7 max-w-2xl text-[16px] leading-8 text-pretty text-muted-foreground sm:text-[18px]">
+          <p className="mt-6 max-w-2xl text-[16px] leading-7 text-pretty text-muted-foreground sm:text-[17px] sm:leading-8">
             ISOBASH brings the best models, creative tools, live web research and automation into one
-            workspace — routed per request across local and cloud providers, and honest about what it
+            workspace, routed per request across local and cloud providers, and honest about what it
             cannot do.
           </p>
 
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <ButtonLink href="/register" size="lg" className="group shadow-glow">
               Start creating free
               <ArrowRightIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />

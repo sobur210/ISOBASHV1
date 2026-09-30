@@ -28,8 +28,8 @@
 
 Runtime data lives outside the source directory:
 
-- `ISOBASH-DATA/` — `uploads/`, `media/`, `temp/`, `logs/`, `cache/`, `knowledge/`, `generated/`
-- `ISOBASH-MODELS/` — local model files
+- `ISOBASH-DATA/`: `uploads/`, `media/`, `temp/`, `logs/`, `cache/`, `knowledge/`, `generated/`
+- `ISOBASH-MODELS/`: local model files
 
 These roots are resolved from `DATA_ROOT`, `UPLOAD_ROOT`, `MEDIA_ROOT`, `TEMP_ROOT`, `LOGS_ROOT`, `CACHE_ROOT`, `KNOWLEDGE_ROOT`, and `MODEL_ROOT` in `.env`, defaulting to directories beside the repository.
 
@@ -44,7 +44,7 @@ node scripts/verify-phase5.mjs   # chat streaming, persistence, ownership, valid
 node scripts/verify-phase6.mjs   # auth: register/me/duplicates/login/logout/validation + frontend gating
 ```
 
-All scripts report pass/fail per check and exit non-zero on any failure. The application must report dependency failures truthfully — a passing frontend build does not prove that PostgreSQL or Redis is running.
+All scripts report pass/fail per check and exit non-zero on any failure. The application must report dependency failures truthfully. A passing frontend build does not prove that PostgreSQL or Redis is running.
 
 ## Authentication (Phase 6)
 

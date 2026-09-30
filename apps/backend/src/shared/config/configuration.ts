@@ -54,6 +54,22 @@ export type AppConfig = {
     aspectRatios: string[];
     /** Generations started per account per hour, on top of the per-IP rate limit. */
     generationsPerHour: number;
+    /**
+     * Phase 14 video generation. Kept separate from the image limits because a
+     * clip is two orders of magnitude larger than a still and takes minutes, not
+     * seconds, to render.
+     */
+    video: {
+      maxPromptCharacters: number;
+      maxVideoBytes: number;
+      /** Durations in whole seconds the API accepts; anything else is refused. */
+      durations: number[];
+      aspectRatios: string[];
+      /** Video runs started per account per hour. */
+      generationsPerHour: number;
+      /** Video renders in flight at once for the whole process. */
+      maxConcurrent: number;
+    };
   };
   security: {
     appSecret: string;
@@ -257,6 +273,20 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
         .map((value) => value.trim())
         .filter(Boolean),
       generationsPerHour: Number(env.MEDIA_MAX_GENERATIONS_PER_HOUR || 20),
+      video: {
+        maxPromptCharacters: Number(env.MEDIA_VIDEO_MAX_PROMPT_CHARS || 1000),
+        maxVideoBytes: Number(env.MEDIA_VIDEO_MAX_BYTES || 100 * 1024 * 1024),
+        durations: (env.MEDIA_VIDEO_DURATIONS || '4,6,8')
+          .split(',')
+          .map((value) => Number(value.trim()))
+          .filter((value) => Number.isFinite(value)),
+        aspectRatios: (env.MEDIA_VIDEO_ASPECT_RATIOS || '16:9,9:16,1:1')
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+        generationsPerHour: Number(env.MEDIA_VIDEO_GENERATIONS_PER_HOUR || 6),
+        maxConcurrent: Number(env.MEDIA_VIDEO_MAX_CONCURRENT || 1),
+      },
     },
     storage,
   };
@@ -350,6 +380,36 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   }
   if (!Number.isInteger(config.media.generationsPerHour) || config.media.generationsPerHour < 1) {
     throw new Error(`MEDIA_MAX_GENERATIONS_PER_HOUR must be a positive integer, got "${env.MEDIA_MAX_GENERATIONS_PER_HOUR}".`);
+  }
+  if (!Number.isInteger(config.media.video.maxPromptCharacters) || config.media.video.maxPromptCharacters < 16) {
+    throw new Error(`MEDIA_VIDEO_MAX_PROMPT_CHARS must be an integer of at least 16, got "${env.MEDIA_VIDEO_MAX_PROMPT_CHARS}".`);
+  }
+  if (!Number.isInteger(config.media.video.maxVideoBytes) || config.media.video.maxVideoBytes < 1024) {
+    throw new Error(`MEDIA_VIDEO_MAX_BYTES must be an integer of at least 1024, got "${env.MEDIA_VIDEO_MAX_BYTES}".`);
+  }
+  // 1..120 is the widest duration any configured video model accepts; offering a
+  // length no renderer can produce would be a promise the API cannot keep.
+  if (
+    config.media.video.durations.length === 0 ||
+    config.media.video.durations.some((seconds) => !Number.isInteger(seconds) || seconds < 1 || seconds > 120)
+  ) {
+    throw new Error(
+      `MEDIA_VIDEO_DURATIONS must be a comma-separated list of whole seconds between 1 and 120 like "4,6,8", got "${env.MEDIA_VIDEO_DURATIONS}".`,
+    );
+  }
+  if (
+    config.media.video.aspectRatios.length === 0 ||
+    config.media.video.aspectRatios.some((ratio) => !/^\d{1,2}:\d{1,2}$/.test(ratio))
+  ) {
+    throw new Error(
+      `MEDIA_VIDEO_ASPECT_RATIOS must be a comma-separated list of W:H values like "16:9,9:16", got "${env.MEDIA_VIDEO_ASPECT_RATIOS}".`,
+    );
+  }
+  if (!Number.isInteger(config.media.video.generationsPerHour) || config.media.video.generationsPerHour < 1) {
+    throw new Error(`MEDIA_VIDEO_GENERATIONS_PER_HOUR must be a positive integer, got "${env.MEDIA_VIDEO_GENERATIONS_PER_HOUR}".`);
+  }
+  if (!Number.isInteger(config.media.video.maxConcurrent) || config.media.video.maxConcurrent < 1) {
+    throw new Error(`MEDIA_VIDEO_MAX_CONCURRENT must be a positive integer, got "${env.MEDIA_VIDEO_MAX_CONCURRENT}".`);
   }
 
   cached = config;

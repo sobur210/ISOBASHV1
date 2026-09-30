@@ -7,7 +7,7 @@
 //   - prompt/aspect-ratio/count/model/project validation is enforced;
 //   - a real generation request really runs and really terminates, and when the
 //     provider cannot render an image the run is FAILED with the provider's own
-//     code — never reported as an empty success and never leaving an asset behind;
+//     code, never reported as an empty success and never leaving an asset behind;
 //   - a pinned model that does not exist fails with the provider's real answer
 //     instead of being quietly swapped for a different one;
 //   - another account's generation answers 404, never 403;
@@ -27,8 +27,8 @@
 // can, the same branch runs against a second API instance started by this script
 // with `GEMINI_API_BASE_URL` pointed at a fixture that speaks Gemini's response
 // shape, which is the only substituted thing. That pass asserts the whole
-// completion path end to end — provider adapter, router, service, sniffer,
-// storage, serving, deletion — plus the text-only, refusal and provider-error
+// completion path end to end (provider adapter, router, service, sniffer,
+// storage, serving, deletion) plus the text-only, refusal and provider-error
 // directions, so no provider is needed to keep the image path honest.
 //
 // Requires the backend and PostgreSQL. Re-runnable: each run uses throwaway
@@ -55,13 +55,13 @@ let skipped = 0;
 
 function check(name, passed, detail = "") {
   results.push({ name, passed, detail });
-  console.log(`${passed ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${passed ? "PASS" : "FAIL"}  ${name}${detail ? `: ${detail}` : ""}`);
 }
 
 /** Reported loudly rather than silently passing a check that could not run. */
 function skip(name, reason) {
   skipped += 1;
-  console.log(`SKIP  ${name} — ${reason}`);
+  console.log(`SKIP  ${name}: ${reason}`);
   results.push({ name, passed: true, skipped: true, detail: reason });
 }
 
@@ -357,8 +357,14 @@ const main = async () => {
     );
     check(
       "video is reported as not wired rather than implied",
-      caps?.video?.available === false && /not wired/i.test(caps?.video?.detail ?? ""),
-      `detail=${String(caps?.video?.detail).slice(0, 60)}`,
+      // The wording of the reason is free to change; what must not change is that
+      // an unconfigured video provider is never implied to work. Asserting the
+      // literal "not wired" broke when Phase 14 replaced that phrase, without the
+      // underlying truth having changed.
+      caps?.video?.available === false &&
+        String(caps?.video?.detail ?? "").length > 0 &&
+        /no configured provider|not wired|not synthesised|cannot generate/i.test(String(caps?.video?.detail ?? "")),
+      `available=${caps?.video?.available} detail=${String(caps?.video?.detail).slice(0, 60)}`,
     );
     check(
       "capabilities reports this account's own usage",
@@ -955,13 +961,13 @@ const main = async () => {
       const liveDone = await settle(cookie, liveStart.body?.id, 90);
       const liveAsset = liveDone?.assets?.[0];
       // A live provider that cannot pay (no quota, no key, a retired model) is a
-      // fact about this environment, not a defect in the path — reported as a loud
+      // fact about this environment, not a defect in the path. Reported as a loud
       // skip with the provider's own reason. Anything else failing is a real fail.
       const cannotPay = new Set(["RATE_LIMITED", "INVALID_API_KEY", "PROVIDER_NOT_CONFIGURED", "MODEL_NOT_AVAILABLE", "NO_PROVIDER_AVAILABLE"]);
       if (liveDone?.status !== "COMPLETED" && cannotPay.has(liveDone?.errorCode)) {
         skip(
           "a live provider really renders, stores and serves an image",
-          `${liveModel.provider} cannot pay for a render on this machine: ${liveDone.errorCode} — ${attemptsSummary(liveDone.error)}`,
+          `${liveModel.provider} cannot pay for a render on this machine: ${liveDone.errorCode}: ${attemptsSummary(liveDone.error)}`,
         );
         skip(
           "the router fails over to a second image provider when the first refuses",

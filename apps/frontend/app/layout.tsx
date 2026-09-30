@@ -18,14 +18,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("http://localhost:3000"),
   title: {
-    default: "ISOBASH — Your AI. Your Agents. Your Workspace.",
+    default: "ISOBASH: Your AI. Your Agents. Your Workspace.",
     template: "%s | ISOBASH",
   },
   description:
-    "An AI operating platform for chat, agents, memory, projects, research, files and media — provider-agnostic, running locally, in the cloud, or both.",
+    "An AI operating platform for chat, agents, memory, projects, research, files and media. Provider-agnostic, running locally, in the cloud, or both.",
   keywords: ["AI platform", "AI agents", "local AI", "Ollama", "chat", "research", "automation"],
   openGraph: {
-    title: "ISOBASH — Your AI. Your Agents. Your Workspace.",
+    title: "ISOBASH: Your AI. Your Agents. Your Workspace.",
     description:
       "Chat, reasoning, autonomous agents, memory, projects, research, files and media on a provider-agnostic engine.",
     type: "website",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "ISOBASH — Your AI. Your Agents. Your Workspace.",
+    title: "ISOBASH: Your AI. Your Agents. Your Workspace.",
     description: "A provider-agnostic AI operating platform that runs locally, in the cloud, or both.",
   },
 };

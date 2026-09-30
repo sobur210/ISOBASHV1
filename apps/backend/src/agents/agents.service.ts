@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiToolsRegistry } from '../ai/tools.registry';
+import { strictBooleanValue } from '../shared/dto/strict-boolean.decorator';
 import { CreateAgentDto, UpdateAgentDto } from './dto/agent.dto';
 
 const MAX_TOOLS = 12;
@@ -87,7 +88,8 @@ export class AgentsService {
     if (input.instructions !== undefined) data.instructions = input.instructions.trim();
     if (input.providerModel !== undefined) data.providerModel = input.providerModel.trim() || null;
     if (input.maxSteps !== undefined) data.maxSteps = input.maxSteps;
-    if (input.memoryEnabled !== undefined) data.memoryEnabled = input.memoryEnabled;
+    const memoryEnabled = strictBooleanValue(input.memoryEnabled);
+    if (memoryEnabled !== undefined) data.memoryEnabled = memoryEnabled;
 
     if (input.toolNames !== undefined) {
       const toolNames = [...new Set(input.toolNames.map((tool) => tool.trim()).filter(Boolean))];

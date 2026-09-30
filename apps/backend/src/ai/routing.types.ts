@@ -1,7 +1,7 @@
 import { AiCapability, AiMode, AiProviderHealth } from './provider.types';
 
 /**
- * Phase 9 — AI orchestration and model routing contracts.
+ * Phase 9: AI orchestration and model routing contracts.
  *
  * A route is always explainable: every candidate carries the signals that
  * produced its score and the reason it was admitted or rejected. Nothing in the
@@ -37,6 +37,8 @@ export type RouteCandidate = {
   circuit: CircuitState;
   avgLatencyMs: number | null;
   successRate: number;
+  /** The operator preference registered with the model. Zero unless set. */
+  priority: number;
   score: number;
   eligible: boolean;
   reasons: string[];
@@ -56,7 +58,7 @@ export type RouteRequest = {
    * `AiProviderHealth` is per provider, and each adapter derives it from the
    * capability it was written for. Gemini's health is a live one-token call to its
    * *text* model, so a 503 on chat would otherwise stop an image request with a
-   * complaint about the wrong model — hiding the real image error (a zero image
+   * complaint about the wrong model, hiding the real image error (a zero image
    * quota, a retired image model) behind an unrelated outage. The plan still
    * records the health and the reason; it just does not treat it as a veto.
    * The circuit breaker still applies, because that is about this process, not
@@ -109,6 +111,12 @@ export const FAILOVER_BLOCKED_CODES: ReadonlySet<string> = new Set([
   'PROVIDER_OVERLOADED',
   'CAPABILITY_UNSUPPORTED',
   'STREAM_ABORTED',
+  /**
+   * The account has no credits left. Blocked on purpose: every renderer here bills
+   * the same shared pool, so failing over would spend credits that do not exist and
+   * turn one clear "this month is used up" into a chain of confusing refusals.
+   */
+  'PROVIDER_INSUFFICIENT_CREDITS',
 ]);
 
 export function isFailoverAllowed(code: string | undefined): boolean {
@@ -117,16 +125,17 @@ export function isFailoverAllowed(code: string | undefined): boolean {
 }
 
 /**
- * Image generation may leave a blocked provider for another renderer — but only
+ * Media generation may leave a blocked provider for another renderer, but only
  * when the caller pinned nothing, and only with the substitution reported.
  *
  * The text path deliberately does not do this: routing around a provider that
  * refused for quota, a bad key or a retired model hides the fact that the one the
- * user chose could not pay. For an unpinned image request there is no such choice
- * to hide — the user asked for "an image" — and refusing outright would mean a
- * deployment with a perfectly good second renderer can never draw anything.
+ * user chose could not pay. For an unpinned image or video request there is no
+ * such choice to hide, because the user asked for "a picture" or "a clip". Refusing
+ * outright would mean a deployment with a perfectly good second renderer can never
+ * draw anything.
  */
-export function isImageFailoverAllowed(code: string | undefined): boolean {
+export function isMediaFailoverAllowed(code: string | undefined): boolean {
   if (!code) return false;
   return isFailoverAllowed(code) || FAILOVER_BLOCKED_CODES.has(code);
 }

@@ -19,7 +19,7 @@ const results = [];
 
 function check(name, passed, detail = "") {
   results.push({ name, passed, detail });
-  console.log(`${passed ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${passed ? "PASS" : "FAIL"}  ${name}${detail ? `: ${detail}` : ""}`);
 }
 
 function cookieFrom(res, name) {
@@ -134,7 +134,7 @@ if (pool) {
   await pool.end();
   console.log("(test user restored to original role)");
 } else {
-  console.log("(skipped role round-trip — DATABASE_URL not found in .env)");
+  console.log("(skipped role round-trip: DATABASE_URL not found in .env)");
 }
 
 const logout = await fetch(`${API}/auth/logout`, { method: "POST", headers: { cookie: `isobash_session=${session}` } });

@@ -8,10 +8,13 @@ import { StorageService } from '../shared/storage/storage.service';
 import { RealtimeService } from '../realtime/realtime.service';
 import { AiProviderError, isProviderRefusal } from '../ai/provider.types';
 import { AiRouterService } from '../ai/ai-router.service';
+import { PromptComposerService } from './prompt-composer.service';
 import { sniffImage } from './media-images';
 
 export type StartImageGeneration = {
   prompt: string;
+  style: string | null;
+  enhance: boolean;
   aspectRatio: string | null;
   count: number;
   projectId: number | null;
@@ -51,6 +54,7 @@ export class ImageGenerationService implements OnModuleDestroy {
     private readonly storage: StorageService,
     private readonly ai: AiRouterService,
     private readonly realtime: RealtimeService,
+    private readonly composer: PromptComposerService,
     @InjectConfig() private readonly config: AppConfig,
   ) {}
 
@@ -64,6 +68,7 @@ export class ImageGenerationService implements OnModuleDestroy {
     const generation = await this.prisma.imageGeneration.create({
       data: {
         prompt: input.prompt,
+        style: input.style,
         aspectRatio: input.aspectRatio,
         requestedCount: input.count,
         userId,
@@ -112,11 +117,35 @@ export class ImageGenerationService implements OnModuleDestroy {
       });
       this.emit(userId, generationId, { status: 'RUNNING' });
 
+      /**
+       * Compose the text before the render, and write down what was composed. The
+       * caller's words stay in `prompt`; `enhancedPrompt` records the exact string
+       * handed to the renderer, and `style` the preset that shaped it. A rewrite
+       * that failed is reported in `warning` rather than hidden, so a run whose
+       * prompt reads differently from the box is explained by the run itself.
+       */
+      const composed = await this.composer.compose({
+        prompt: input.prompt,
+        style: input.style,
+        enhance: input.enhance,
+      });
+      if (composed.enhanced !== null) {
+        await this.prisma.imageGeneration.update({
+          where: { id: generationId },
+          data: { enhancedPrompt: composed.enhanced },
+        });
+      }
+      const renderPrompt = composed.enhanced ?? composed.original;
+      // Only a *failed* rewrite is worth surfacing. A clean run that simply
+      // appended a style preset is not a warning, and neither is a run where
+      // enhancement was off.
+      const composeWarning = composed.enhancerNote;
+
       let response;
       try {
         response = await this.ai.generateImage({
           capability: 'image-generation',
-          prompt: input.prompt,
+          prompt: renderPrompt,
           ...(input.aspectRatio ? { aspectRatio: input.aspectRatio } : {}),
           count: input.count,
           ...(input.model ? { model: input.model } : {}),
@@ -163,11 +192,11 @@ export class ImageGenerationService implements OnModuleDestroy {
           return;
         }
         try {
-          stored.push(await this.store(generationId, userId, input, image));
+          stored.push(await this.store(generationId, userId, input, image, composed.enhanced));
         } catch (error) {
           const message = error instanceof Error ? error.message : 'An image could not be stored.';
           skipped.push(`image ${index + 1}: ${message}`);
-          this.log.warn(`Image ${index + 1} of generation ${generationId} was not stored — ${message}`);
+          this.log.warn(`Image ${index + 1} of generation ${generationId} was not stored: ${message}`);
         }
       }
 
@@ -185,6 +214,7 @@ export class ImageGenerationService implements OnModuleDestroy {
 
       const providerFailures = (response.failures ?? []).map((failure) => `${failure.code}: ${failure.message}`);
       const shortfall: string[] = [];
+      if (composeWarning) shortfall.push(composeWarning);
       // A renderer that was skipped is reported on the run, so an image produced
       // by a second provider is never passed off as the one that was picked.
       if (response.failovers && response.failovers.length > 0) shortfall.push(...response.failovers);
@@ -229,6 +259,7 @@ export class ImageGenerationService implements OnModuleDestroy {
     userId: number,
     input: StartImageGeneration,
     image: { mimeType: string; data: string; note?: string },
+    enhancedPrompt: string | null,
   ): Promise<string> {
     const bytes = Buffer.from(image.data, 'base64');
     if (bytes.byteLength === 0) {
@@ -257,6 +288,8 @@ export class ImageGenerationService implements OnModuleDestroy {
         sha256: createHash('sha256').update(bytes).digest('hex'),
         note: image.note ?? null,
         prompt: input.prompt,
+        enhancedPrompt,
+        style: input.style,
         aspectRatio: input.aspectRatio,
         userId,
         projectId: input.projectId,

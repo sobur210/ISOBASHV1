@@ -25,7 +25,7 @@ const results = [];
 
 function check(name, passed, detail = "") {
   results.push({ name, passed, detail });
-  console.log(`${passed ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${passed ? "PASS" : "FAIL"}  ${name}${detail ? `: ${detail}` : ""}`);
 }
 
 function cookieFrom(res, name) {
@@ -572,7 +572,7 @@ if (pool) {
   await pool.query(`DELETE FROM "User" WHERE id = ANY($1)`, [[userA.id, userB.id]]);
   console.log("(throwaway test users removed; audit events retained as evidence)");
 } else {
-  console.log("(skipped DB checks + cleanup — DATABASE_URL not found in .env)");
+  console.log("(skipped DB checks + cleanup: DATABASE_URL not found in .env)");
 }
 
 console.log("");
@@ -581,7 +581,7 @@ console.log("== Summary ==");
 console.log(`${results.length - failed.length}/${results.length} checks passed.`);
 if (failed.length) {
   console.log("");
-  for (const row of failed) console.log(`FAILED: ${row.name}${row.detail ? ` — ${row.detail}` : ""}`);
+  for (const row of failed) console.log(`FAILED: ${row.name}${row.detail ? `: ${row.detail}` : ""}`);
 }
 await pool?.end();
 process.exit(failed.length ? 1 : 0);

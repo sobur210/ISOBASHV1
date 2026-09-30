@@ -22,7 +22,7 @@ export function AuthShell({
 }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
-      {/* Brand panel — collapses away below lg. */}
+      {/* Brand panel, collapses away below lg. */}
       <aside className="relative isolate hidden overflow-hidden border-r border-border lg:flex lg:flex-col lg:justify-between">
         <AuroraBackdrop />
 

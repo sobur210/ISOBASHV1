@@ -16,6 +16,7 @@ import { AgentsModule } from './agents/agents.module';
 import { ResearchModule } from './research/research.module';
 import { FilesModule } from './files/files.module';
 import { MediaModule } from './media/media.module';
+import { VideoAssemblyModule } from './media/video-assembly.module';
 import { MemoryModule } from './memory/memory.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ConfigModule as IsoConfigModule } from './shared/config/config.module';
@@ -45,6 +46,7 @@ import { SecurityHeadersMiddleware } from './security/security-headers.middlewar
     ResearchModule,
     FilesModule,
     MediaModule,
+    VideoAssemblyModule,
   ],
   controllers: [AppController, HealthController],
   providers: [

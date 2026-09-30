@@ -6,8 +6,8 @@
  * ISOBASH design tokens
  *
  * One palette drives the marketing site, the workspace and the admin
- * console. `:root` is the brand identity — deep navy with a neon blue
- * signal — and `.light` is its tuned light counterpart applied to
+ * console. `:root` is the brand identity (deep navy with a neon blue
+ * signal) and `.light` is its tuned light counterpart applied to
  * <html> by the theme toggle. No component reaches for a raw hex.
  * ------------------------------------------------------------------ */
 
@@ -216,7 +216,7 @@ html.light, html[data-theme="light"], .light {
   /*
    * The brand wordmark is deep blue, so it disappears on the dark
    * surface. Flip it to white there and leave it untouched in light
-   * mode — one rule, instead of a filter at every call site.
+   * mode. One rule, instead of a filter at every call site.
    */
   .logo-on-dark {
     filter: brightness(0) invert(1);

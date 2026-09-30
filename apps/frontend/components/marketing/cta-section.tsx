@@ -13,7 +13,7 @@ export function CtaSection() {
           <span className="text-gradient mt-1.5 block">Your Workspace.</span>
         </h2>
         <p className="mx-auto mt-6 max-w-xl text-[15.5px] leading-7 text-pretty text-muted-foreground">
-          Create an account and work in the real platform — running on your own machine, with your own
+          Create an account and work in the real platform, running on your own machine, with your own
           providers, and nothing simulated.
         </p>
         <div className="mt-9 flex flex-wrap items-center justify-center gap-3.5">

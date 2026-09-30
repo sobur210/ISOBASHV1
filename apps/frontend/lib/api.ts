@@ -701,20 +701,34 @@ export type MediaAsset = {
   sizeBytes: number;
   width: number | null;
   height: number | null;
+  /** Phase 14: playback length read from the container, null when unreadable. */
+  durationMs: number | null;
+  /** Phase 14: whether the container declares an audio track. */
+  hasAudio: boolean | null;
   sha256: string;
   note: string | null;
   prompt: string | null;
+  /** The expanded prompt actually sent to the renderer. Null when nothing expanded it. */
+  enhancedPrompt: string | null;
+  /** The style preset id applied, null when none. */
+  style: string | null;
   aspectRatio: string | null;
   provider: string | null;
   model: string | null;
   generationId: string | null;
+  videoGenerationId: string | null;
   projectId: number | null;
   createdAt: string;
 };
 
 export type ImageGeneration = {
   id: string;
+  /** Exactly what the caller typed. */
   prompt: string;
+  /** The expanded prompt actually sent to the renderer. Null when nothing expanded it. */
+  enhancedPrompt: string | null;
+  /** The style preset id applied, null when none. */
+  style: string | null;
   aspectRatio: string | null;
   requestedCount: number;
   status: MediaGenerationStatus;
@@ -758,6 +772,8 @@ export type MediaProviderState = {
   };
 };
 
+export type MediaStyleOption = { id: string; label: string };
+
 export type MediaCapabilities = {
   generation: {
     available: boolean;
@@ -765,6 +781,10 @@ export type MediaCapabilities = {
     providers: MediaProviderState[];
     models: MediaModelOption[];
     aspectRatios: string[];
+    /** Style presets, sourced from the server so the picker cannot drift. */
+    styles: MediaStyleOption[];
+    /** Whether a text model is registered to run the prompt enhancer. */
+    enhancementAvailable: boolean;
     maxPromptCharacters: number;
     maxImagesPerRequest: number;
     maxImageBytes: number;
@@ -774,7 +794,22 @@ export type MediaCapabilities = {
     detail: string;
   };
   moderation: { enforced: string; detail: string };
-  video: { available: boolean; detail: string };
+  video: {
+    available: boolean;
+    allProvidersHealthy: boolean;
+    providers: MediaProviderState[];
+    models: MediaModelOption[];
+    aspectRatios: string[];
+    durations: number[];
+    maxPromptCharacters: number;
+    maxVideoBytes: number;
+    generationsPerHour: number;
+    maxConcurrent: number;
+    containers: string[];
+    imageToVideo: boolean;
+    detail: string;
+    imageToVideoDetail: string;
+  };
   lastFailure: {
     id: string;
     errorCode: string | null;
@@ -782,7 +817,14 @@ export type MediaCapabilities = {
     finishReason: string | null;
     createdAt: string;
   } | null;
-  usage: { assets: number; storedBytes: number; generations: number };
+  lastVideoFailure: {
+    id: string;
+    errorCode: string | null;
+    error: string | null;
+    finishReason: string | null;
+    createdAt: string;
+  } | null;
+  usage: { assets: number; storedBytes: number; generations: number; videoGenerations: number };
 };
 
 export async function fetchMediaCapabilities(signal?: AbortSignal): Promise<MediaCapabilities> {
@@ -807,6 +849,8 @@ export async function fetchImageGeneration(id: string, signal?: AbortSignal): Pr
 
 export async function startImageGeneration(input: {
   prompt: string;
+  style?: string;
+  enhance?: boolean;
   aspectRatio?: string;
   count?: number;
   projectId?: number;
@@ -821,6 +865,69 @@ export async function cancelImageGeneration(id: string): Promise<ImageGeneration
 
 export async function deleteImageGeneration(id: string, signal?: AbortSignal): Promise<void> {
   return deleteJsonAuthed(`/media/generations/${id}`, signal);
+}
+
+/* Phase 14 video: one clip per run, text-to-video or animating a stored image. */
+
+export type VideoGeneration = {
+  id: string;
+  prompt: string;
+  aspectRatio: string | null;
+  requestedSeconds: number;
+  status: MediaGenerationStatus;
+  error: string | null;
+  errorCode: string | null;
+  warning: string | null;
+  finishReason: string | null;
+  provider: string | null;
+  model: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  cancelRequestedAt: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  createdAt: string;
+  projectId: number | null;
+  /** Set for image-to-video: the stored image used as the first frame. */
+  sourceAssetId: string | null;
+  assets: MediaAsset[];
+  _count?: { assets: number };
+};
+
+export async function fetchVideoGenerations(
+  query: { status?: MediaGenerationStatus; projectId?: number; limit?: number } = {},
+  signal?: AbortSignal,
+): Promise<VideoGeneration[]> {
+  const params = new URLSearchParams();
+  if (query.status) params.set("status", query.status);
+  if (query.projectId !== undefined) params.set("projectId", String(query.projectId));
+  if (query.limit !== undefined) params.set("limit", String(query.limit));
+  const suffix = params.toString();
+  return getJsonAuthed<VideoGeneration[]>(`/media/video-generations${suffix ? `?${suffix}` : ""}`, signal);
+}
+
+export async function fetchVideoGeneration(id: string, signal?: AbortSignal): Promise<VideoGeneration> {
+  return getJsonAuthed<VideoGeneration>(`/media/video-generations/${id}`, signal);
+}
+
+export async function startVideoGeneration(input: {
+  prompt: string;
+  aspectRatio?: string;
+  seconds?: number;
+  audio?: boolean;
+  projectId?: number;
+  model?: string;
+  sourceAssetId?: string;
+}): Promise<VideoGeneration> {
+  return sendJsonAuthed<VideoGeneration>("/media/video-generations", input);
+}
+
+export async function cancelVideoGeneration(id: string): Promise<VideoGeneration> {
+  return sendJsonAuthed<VideoGeneration>(`/media/video-generations/${id}/cancel`, {});
+}
+
+export async function deleteVideoGeneration(id: string, signal?: AbortSignal): Promise<void> {
+  return deleteJsonAuthed(`/media/video-generations/${id}`, signal);
 }
 
 export async function fetchMediaAssets(
@@ -838,6 +945,60 @@ export async function fetchMediaAssets(
 
 export async function deleteMediaAsset(id: string, signal?: AbortSignal): Promise<void> {
   return deleteJsonAuthed(`/media/assets/${id}`, signal);
+}
+
+/**
+ * Video assembly, which is a different contract from clip generation and is
+ * therefore reached on its own route: the caller supplies the scenes rather than a
+ * prompt, the provider has no model to choose, and the balance it spends is whole
+ * seconds of a grant that does not renew. Nothing here can be reused for
+ * `POST /media/video-generations` and nothing there can be reused here.
+ */
+export type AssemblyCapabilities = {
+  available: boolean;
+  provider: string;
+  status: "healthy" | "unconfigured" | "degraded";
+  /** The provider's own words, including why the feature is off. */
+  detail: string;
+  resolutions: string[];
+  maxSeconds: number;
+  /** Seconds of renderable video left, or null when the provider will not say. */
+  remainingSeconds: number | null;
+  /** False when the balance could not be read, which is not the same as zero. */
+  remainingReadable: boolean;
+  voiceoverAvailable: boolean;
+  watermarked: boolean;
+  nonRenewing: boolean;
+  maxBytes: number;
+};
+
+export type AssemblySceneInput = { heading: string; body: string };
+
+export type AssemblyResult = {
+  asset: MediaAsset & { note: string | null };
+  /** JSON2Video's own project id, so a stuck render can be looked up later. */
+  projectId: string;
+  durationSeconds: number | null;
+  remainingSeconds: number | null;
+  recipe: { resolution?: string; scenes?: Array<{ elements?: Array<{ type?: string; duration?: number }> }> };
+};
+
+export async function fetchAssemblyCapabilities(signal?: AbortSignal): Promise<AssemblyCapabilities> {
+  return getJsonAuthed<AssemblyCapabilities>("/media/assembly/capabilities", signal);
+}
+
+export async function startAssembly(input: {
+  title: string;
+  subtitle?: string;
+  scenes: AssemblySceneInput[];
+  voiceover?: boolean;
+  outro?: string;
+  resolution: string;
+  source: "research" | "chat";
+  sourceId?: string;
+  projectId?: number;
+}): Promise<AssemblyResult> {
+  return sendJsonAuthed<AssemblyResult>("/media/assembly", input);
 }
 
 /** Served by an authenticated, checksum-verified route, so the cookie must ride along. */

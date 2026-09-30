@@ -271,7 +271,7 @@ export function AgentsPanel() {
                   maxLength={80}
                 />
               </Field>
-              <Field label="Model" htmlFor="agent-model" hint="Optional — “provider” or “provider:model”.">
+              <Field label="Model" htmlFor="agent-model" hint="Optional. Use “provider” or “provider:model”.">
                 <Input
                   id="agent-model"
                   value={providerModel}
@@ -292,7 +292,7 @@ export function AgentsPanel() {
               />
             </Field>
 
-            <Field label="Instructions" htmlFor="agent-instructions" hint="Optional — up to 8000 characters.">
+            <Field label="Instructions" htmlFor="agent-instructions" hint="Optional. Up to 8000 characters.">
               <Textarea
                 id="agent-instructions"
                 value={instructions}
@@ -603,7 +603,7 @@ export function AgentsPanel() {
                         {ACTIVE.includes(activeRun.status) ? (
                           <p className="flex items-center gap-2 text-[11px] text-primary">
                             <RefreshIcon className="h-3.5 w-3.5" />
-                            Running on the server — this view refreshes on its own.
+                            Running on the server. This view refreshes on its own.
                           </p>
                         ) : null}
 

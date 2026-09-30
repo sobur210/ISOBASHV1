@@ -6,7 +6,7 @@ import { ApiError } from '../shared/errors/api-error';
  * A browser sends a filename and a MIME type, and both are attacker-controlled:
  * `evil.exe` arrives as `notes.txt`, and a ZIP bomb arrives as `report.pdf`. The
  * extension allow-list is the first gate, but the real one is the byte signature
- * below — a file whose contents do not match its claimed type is refused rather
+ * below: a file whose contents do not match its claimed type is refused rather
  * than stored under a name that lies about it.
  */
 export type FileKind = 'text' | 'markdown' | 'csv' | 'json' | 'html' | 'pdf' | 'image' | 'archive' | 'binary';
@@ -189,7 +189,7 @@ export function classifyUpload(rawName: string, declaredMimeType: string, bytes:
 
   // The bytes decide the type, not the name.
   //
-  // A format with a magic number must match its own signature — a `.pdf` that
+  // A format with a magic number must match its own signature. A `.pdf` that
   // is not a PDF is refused even when the bytes match nothing else at all, so
   // this check cannot be conditioned on detecting some *other* format.
   //

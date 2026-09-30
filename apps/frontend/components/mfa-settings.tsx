@@ -214,7 +214,7 @@ export function MfaSettings({ email, mfaEnabled: initialEnabled }: Props) {
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  Enabling rotates every other active session — other devices will need to sign in again.
+                  Enabling rotates every other active session. Other devices will need to sign in again.
                 </p>
               </div>
             ) : null}

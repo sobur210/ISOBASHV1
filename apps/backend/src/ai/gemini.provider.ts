@@ -57,10 +57,30 @@ const DEFAULT_MODEL = 'gemini-3.7-flash';
  */
 const DEFAULT_IMAGE_MODEL = 'gemini-3.1-flash-image';
 const MODEL_CHECK_TTL_MS = Number(process.env.GEMINI_MODEL_CHECK_TTL_MS || 10 * 60 * 1000);
+/**
+ * Output budget for the live health probe.
+ *
+ * Must comfortably exceed a thinking model's own reasoning, because Gemini
+ * spends `maxOutputTokens` on `thoughtsTokenCount` before it emits any text. The
+ * 3.x Flash line typically reasons for 60-95 tokens on a trivial prompt, so a
+ * budget near that returns 200 with `finishReason: MAX_TOKENS` and zero text.
+ * The probe still costs a handful of tokens and runs at most every 10 minutes.
+ */
+const HEALTH_PROBE_MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_HEALTH_PROBE_MAX_TOKENS || 512);
 /** Hard ceiling so a bad `count` cannot turn one request into an unbounded spend. */
 const MAX_IMAGES_PER_CALL = 8;
 
-function classifyGeminiError(status: number, body?: GeminiErrorBody | null): { code: string; detail: string } {
+/**
+ * `model` is the model the failing call actually asked for. It is a parameter
+ * because Gemini has separate text and image models: a 404 from the image path
+ * naming the text default would send the operator to check a model that was
+ * never the one that failed.
+ */
+function classifyGeminiError(
+  status: number,
+  model: string,
+  body?: GeminiErrorBody | null,
+): { code: string; detail: string } {
   const geminiStatus = body?.error?.status;
   const geminiMessage = body?.error?.message;
   switch (status) {
@@ -78,7 +98,7 @@ function classifyGeminiError(status: number, body?: GeminiErrorBody | null): { c
     case 404:
       return {
         code: 'MODEL_NOT_AVAILABLE',
-        detail: `Gemini does not serve model "${DEFAULT_MODEL}" for this API key.${geminiMessage ? ` ${geminiMessage}` : ''}`,
+        detail: `Gemini does not serve model "${model}" for this API key.${geminiMessage ? ` ${geminiMessage}` : ''}`,
       };
     case 429:
       // The body distinguishes a burst from a plan that grants zero of this metric.
@@ -132,9 +152,21 @@ export class GeminiProvider implements AiProvider {
    * Confirm the configured model can actually generate for this key.
    *
    * `GET /models/{model}` still answers 200 for models that are listed but no
-   * longer served to new keys, so metadata is not proof. A one-token generation is
-   * the only honest signal, and it is cached for 10 minutes so the admin health
+   * longer served to new keys, so metadata is not proof. A real generation is the
+   * only honest signal, and it is cached for 10 minutes so the admin health
    * panel (which polls every 10s) does not burn quota.
+   *
+   * Two things make this more than a "did it return 200" check:
+   *
+   * The budget must be large enough to actually yield text. The 3.x Flash line is
+   * a thinking model: it spends the output budget on `thoughtsTokenCount` first
+   * and returns a 200 with `finishReason: MAX_TOKENS` and **zero** text parts
+   * when the cap is too small to reach an answer. A probe asking for one token
+   * therefore passes on a model that cannot complete a one-word reply, which is
+   * the opposite of what this function exists to detect.
+   *
+   * And the response body must contain text, because that 200-with-no-parts is
+   * indistinguishable from success if the body is not read.
    */
   private async verifyConfiguredModel(apiKey: string): Promise<{ ok: boolean; detail: string }> {
     if (this.modelCheck && Date.now() - this.modelCheck.at < MODEL_CHECK_TTL_MS) {
@@ -149,17 +181,26 @@ export class GeminiProvider implements AiProvider {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: 'ping' }] }],
-            generationConfig: { maxOutputTokens: 1 },
+            generationConfig: { maxOutputTokens: HEALTH_PROBE_MAX_OUTPUT_TOKENS },
           }),
         },
       );
       if (!response.ok) {
         const body = await readError(response);
-        const { detail } = classifyGeminiError(response.status, body);
+        const { detail } = classifyGeminiError(response.status, model, body);
         this.modelCheck = { at: Date.now(), ok: false, detail };
         return { ok: false, detail };
       }
-      await response.json().catch(() => null);
+      const payload = (await response.json().catch(() => null)) as GeminiGenerateResponse | null;
+      const text = extractGeminiText(payload?.candidates);
+      if (!text) {
+        // 200 with nothing to show. Report the reason the provider gave rather
+        // than calling a model that cannot answer "healthy".
+        const reason = payload?.candidates?.[0]?.finishReason ?? payload?.promptFeedback?.blockReason;
+        const detail = `Gemini answered ${model} with no output text${reason ? ` (finishReason: ${reason})` : ''}. The key was accepted but the model did not produce a usable completion.`;
+        this.modelCheck = { at: Date.now(), ok: false, detail };
+        return { ok: false, detail };
+      }
       const detail = `Model ${model} is reachable and the API key was validated live.`;
       this.modelCheck = { at: Date.now(), ok: true, detail };
       return { ok: true, detail };
@@ -193,7 +234,9 @@ export class GeminiProvider implements AiProvider {
       const response = await fetch(`${API_BASE}/models?key=${encodeURIComponent(apiKey)}&pageSize=1`);
       if (!response.ok) {
         const body = await readError(response);
-        const { detail } = classifyGeminiError(response.status, body);
+        // A key-level failure is not attributable to one model, so the listing
+        // call reports the text default and the key problem in the same sentence.
+        const { detail } = classifyGeminiError(response.status, this.model, body);
         return { provider: this.name, status: 'unavailable', capabilities: [...this.capabilities], detail };
       }
       const modelCheck = await this.verifyConfiguredModel(apiKey);
@@ -234,7 +277,7 @@ export class GeminiProvider implements AiProvider {
       );
       if (!response.ok) {
         const body = await readError(response);
-        const { code, detail } = classifyGeminiError(response.status, body);
+        const { code, detail } = classifyGeminiError(response.status, model, body);
         throw new AiProviderError(detail, this.name, code);
       }
       const payload = (await response.json()) as GeminiGenerateResponse;
@@ -276,7 +319,7 @@ export class GeminiProvider implements AiProvider {
       );
       if (!response.ok) {
         const body = await readError(response);
-        const { code, detail } = classifyGeminiError(response.status, body);
+        const { code, detail } = classifyGeminiError(response.status, model, body);
         throw new AiProviderError(detail, this.name, code);
       }
       if (!response.body) {
@@ -362,7 +405,7 @@ export class GeminiProvider implements AiProvider {
         );
         if (!response.ok) {
           const body = await readError(response);
-          const { code, detail } = classifyGeminiError(response.status, body);
+          const { code, detail } = classifyGeminiError(response.status, model, body);
           throw new AiProviderError(detail, this.name, code);
         }
         const payload = (await response.json()) as { embedding?: { values?: number[] } };
@@ -434,7 +477,7 @@ export class GeminiProvider implements AiProvider {
 
       if (!response.ok) {
         const body = await readError(response);
-        const { code, detail } = classifyGeminiError(response.status, body);
+        const { code, detail } = classifyGeminiError(response.status, model, body);
         failures.push({ code, message: detail });
         // Quota, a rejected key and a retired model are answers, not blips: burning
         // the remaining calls would only spend the same budget to reach the same wall.

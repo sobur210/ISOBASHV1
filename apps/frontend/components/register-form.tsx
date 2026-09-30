@@ -47,7 +47,7 @@ export function RegisterForm() {
         onSubmit={(event) => void submit(event)}
         className="edge-light mt-8 space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-soft"
       >
-        <Field label="Name" htmlFor="name" hint="Optional — shown on your workspace.">
+        <Field label="Name" htmlFor="name" hint="Optional. Shown on your workspace.">
           <Input
             id="name"
             type="text"

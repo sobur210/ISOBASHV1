@@ -154,7 +154,7 @@ export function ResearchPanel() {
             <Field
               label="Sources to read"
               htmlFor="research-urls"
-              hint="Optional — one URL per line, or comma separated."
+              hint="Optional. One URL per line, or comma separated."
             >
               <Input
                 id="research-urls"
@@ -169,7 +169,7 @@ export function ResearchPanel() {
                 {capabilities
                   ? capabilities.search.available
                     ? `Search via ${capabilities.search.provider} · up to ${capabilities.retrieval.maxSources} sources`
-                    : "No search provider configured — supply URLs to research"
+                    : "No search provider configured. Supply URLs to research"
                   : "Retrieval capability unknown"}
               </p>
               <Button type="submit" disabled={!question.trim() || busy}>

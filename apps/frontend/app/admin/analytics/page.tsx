@@ -15,13 +15,13 @@ export default function AdminAnalyticsPage() {
         icon={<ChartIcon className="h-5 w-5" />}
         title="No analytics yet"
         description="Usage, job throughput, provider health, and error rates will be aggregated from real observability data."
-        feature="Integrated in Phase 31 — observability"
+        feature="Integrated in Phase 31: observability"
       />
       <PlaceholderCard
         icon={<DatabaseIcon className="h-5 w-5" />}
         title="Structured and truthful"
         description="Every metric will come from real request, job, and error streams. Nothing is simulated on this screen."
-        feature="Boundary only — no fake data"
+        feature="Boundary only: no fake data"
       />
     </div>
   );

@@ -22,6 +22,7 @@ import { AuditService } from '../security/audit.service';
 import { AdminUsersService } from './admin-users.service';
 import { ListUsersQueryDto, UpdateUserRoleDto } from './dto/admin-user.dto';
 import { SystemHealthService } from './system-health.service';
+import { ProviderCreditService } from '../ai/provider-credit.service';
 
 // Authorization is decided here and by RolesGuard, never by the client. The
 // frontend only renders what this surface returns.
@@ -33,11 +34,26 @@ export class AdminController {
     private readonly systemHealth: SystemHealthService,
     private readonly users: AdminUsersService,
     private readonly audit: AuditService,
+    private readonly credits: ProviderCreditService,
   ) {}
 
   @Get('system-health')
   getSystemHealth() {
     return this.systemHealth.checkAll();
+  }
+
+  /**
+   * The shared video credit pool, month to date.
+   *
+   * Admin-only, and deliberately not filtered by user: this is one budget for the
+   * whole deployment, so a per-user view of it would be actively misleading. The
+   * response separates the provider's own balance from ISOBASH's ledger, because
+   * they disagree whenever anything was rendered outside ISOBASH, and only the
+   * provider's number is the authority on what can still be spent.
+   */
+  @Get('video-credits')
+  getVideoCredits() {
+    return this.credits.summary('magic-hour');
   }
 
   @Get('users')

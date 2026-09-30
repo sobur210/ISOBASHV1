@@ -2,7 +2,7 @@
 
 Your AI. Your Agents. Your Workspace.
 
-ISOBASH is an AI operating platform: chat, reasoning, autonomous agents, memory, projects, web research, files, document intelligence, image and video generation — backed by a provider-agnostic engine that runs locally, in the cloud, or both.
+ISOBASH is an AI operating platform: chat, reasoning, autonomous agents, memory, projects, web research, files, document intelligence, image and video generation, backed by a provider-agnostic engine that runs locally, in the cloud, or both.
 
 ## Stack
 
@@ -69,10 +69,10 @@ Phases 1–8 are implemented and runtime-verified:
 - Phase 1: project foundation, route shells, Prisma schema, BullMQ worker, Socket.IO.
 - Phase 2: provider-agnostic AI bridge with a real Ollama adapter.
 - Phase 3: typed configuration (fail-fast), storage abstraction over externalized roots, structured request logging, normalized error format, component health, DTO validation.
-- Phase 4: complete product UI architecture — design-system primitives, real-state workspace dashboard (live system + AI capability panels), research/billing surfaces, route loading/error states, responsive navigation.
-- Phase 5: live chat — conversation + message persistence (Conversation/Message models), streaming orchestration (`POST /chat/stream` SSE via a provider `stream()`), ownership by client session, realtime `chat:updated` events, and a real `/app/chat` surface with a working composer.
-- Phase 6: authentication — register/login/logout with bcrypt hashing and server-side sessions (httpOnly cookie), `/app` and `/admin` gated behind a real session, real login/register forms.
-- Phase 7: authorization — `@Roles()` + `RolesGuard` on the admin surface, admin-only live system health, first registered account bootstrapped as `ADMIN`.
-- Phase 8: security hardening — Redis-backed rate limiting and login lockout, TOTP MFA with two-step sign-in, persistent audit trail, security headers and CSP on both apps.
+- Phase 4: complete product UI architecture (design-system primitives, real-state workspace dashboard (live system + AI capability panels), research/billing surfaces, route loading/error states, responsive navigation).
+- Phase 5: live chat (conversation + message persistence (Conversation/Message models), streaming orchestration (`POST /chat/stream` SSE via a provider `stream()`), ownership by client session, realtime `chat:updated` events, and a real `/app/chat` surface with a working composer).
+- Phase 6: authentication (register/login/logout with bcrypt hashing and server-side sessions (httpOnly cookie), `/app` and `/admin` gated behind a real session, real login/register forms).
+- Phase 7: authorization (`@Roles()` + `RolesGuard` on the admin surface, admin-only live system health, first registered account bootstrapped as `ADMIN`).
+- Phase 8: security hardening (Redis-backed rate limiting and login lockout, TOTP MFA with two-step sign-in, persistent audit trail, security headers and CSP on both apps).
 
-All empty states are truthful — nothing is simulated before its phase makes it real.
+All empty states are truthful. Nothing is simulated before its phase makes it real.

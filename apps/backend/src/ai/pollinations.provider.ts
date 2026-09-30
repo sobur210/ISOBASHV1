@@ -23,7 +23,7 @@ import {
  *
  * It is an ordinary HTTP image endpoint: the prompt is path-encoded and the
  * response is the image bytes themselves, not JSON. Nothing here fabricates a
- * result — if the endpoint does not return image bytes, the call fails and the
+ * result. If the endpoint does not return image bytes, the call fails and the
  * run is failed with the provider's own status.
  */
 const DEFAULT_BASE_URL = 'https://image.pollinations.ai';

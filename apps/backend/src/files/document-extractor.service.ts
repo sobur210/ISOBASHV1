@@ -24,7 +24,7 @@ export type Extraction = {
  *   - json: flattened to `path: value` lines instead of one unreadable blob,
  *   - html: tags, scripts and styles removed,
  *   - pdf: real text extraction with pdf.js (a scanned page has no text layer
- *     and is reported as such — no OCR is pretended).
+ *     and is reported as such. No OCR is pretended).
  * Images and ZIP-based office documents are stored and downloadable but are
  * explicitly not indexed, and they say so.
  */
@@ -156,7 +156,7 @@ function rowsToText(input: string): string {
       const value = cell.trim();
       return value ? `${name}: ${value}` : '';
     }).filter(Boolean);
-    if (cells.length > 0) lines.push(`Row ${lines.length + 1} — ${cells.join('; ')}`);
+    if (cells.length > 0) lines.push(`Row ${lines.length + 1}: ${cells.join('; ')}`);
   }
   return lines.join('\n');
 }

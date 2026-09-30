@@ -9,7 +9,7 @@ const results = [];
 
 function check(name, passed, detail = "") {
   results.push({ name, passed, detail });
-  console.log(`${passed ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${passed ? "PASS" : "FAIL"}  ${name}${detail ? `: ${detail}` : ""}`);
 }
 
 function fail(message, detail) {
@@ -107,7 +107,7 @@ try {
   fail("GET /ai/tools threw", e.message);
 }
 // The Phase 2 catalogue was empty on purpose. Phase 10 fills it with real governed
-// tools, so the invariant now is that whatever is published is fully described —
+// tools, so the invariant now is that whatever is published is fully described:
 // a tool without a schema, a risk class or a ceiling would be an ungoverned capability.
 check(
   "GET /ai/tools returns only fully governed tools",

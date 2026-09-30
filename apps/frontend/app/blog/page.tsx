@@ -27,7 +27,7 @@ export default function BlogPage() {
               Notes from the build.
             </h1>
             <p className="mt-6 max-w-xl text-[15.5px] leading-8 text-pretty text-muted-foreground">
-              Product decisions, architecture write-ups and the occasional post-mortem — published when
+              Product decisions, architecture write-ups and the occasional post-mortem, published when
               they are actually finished.
             </p>
           </div>
@@ -43,7 +43,7 @@ export default function BlogPage() {
             </h2>
             <p className="mx-auto mt-3 max-w-md text-[13.5px] leading-6 text-muted-foreground">
               We are still building ISOBASH phase by phase. Product notes and engineering write-ups will
-              appear here once they are published — nothing is listed before it is real.
+              appear here once they are published. Nothing is listed before it is real.
             </p>
             <ButtonLink href="/" variant="outline" className="mt-8">
               Back to ISOBASH
