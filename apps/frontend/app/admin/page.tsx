@@ -1,7 +1,6 @@
 import { PageHeader } from "@/components/page-header";
-import { PlaceholderCard } from "@/components/placeholder-card";
+import { AdminOverviewPanel } from "@/components/admin-overview-panel";
 import { SystemHealthPanel } from "@/components/system-health-panel";
-import { ShieldIcon } from "@/components/ui/icons";
 
 export default function AdminPage() {
   return (
@@ -9,9 +8,11 @@ export default function AdminPage() {
       <PageHeader
         eyebrow="Admin"
         title="Control center"
-        description="Administration for users, entitlements, providers, jobs, security, and audit events. System status below is checked live, never hardcoded."
+        description="Live counts for the whole deployment, what it is configured to do, and a system status check that is measured on every load rather than hardcoded."
         status="Admin session active"
       />
+
+      <AdminOverviewPanel />
 
       <section aria-labelledby="system-health-heading">
         <div className="mb-4 flex items-end justify-between">
@@ -26,15 +27,6 @@ export default function AdminPage() {
         </div>
         <SystemHealthPanel />
       </section>
-
-      <div className="grid gap-5 md:grid-cols-2">
-        <PlaceholderCard
-          icon={<ShieldIcon className="h-5 w-5" />}
-          title="Restricted boundary"
-          description="Every operation in this area will be authorization-checked server-side and fully audit-logged. MFA is required for admin access."
-          feature="Security requirement: spec §19.1"
-        />
-      </div>
     </div>
   );
 }

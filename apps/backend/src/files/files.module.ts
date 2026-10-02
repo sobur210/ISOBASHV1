@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
+import { BillingModule } from '../billing/billing.module';
 import { SecurityModule } from '../security/security.module';
 import { ConfigModule } from '../shared/config/config.module';
 import { StorageModule } from '../shared/storage/storage.module';
@@ -14,7 +15,7 @@ import { KnowledgeService } from './knowledge.service';
 
 @Module({
   // RealtimeModule is @Global, so RealtimeService is available without importing it.
-  imports: [AuthModule, AiModule, ConfigModule, SecurityModule, StorageModule],
+  imports: [AuthModule, AiModule, BillingModule, ConfigModule, SecurityModule, StorageModule],
   controllers: [FilesController, KnowledgeController],
   providers: [FilesService, FileProcessorService, DocumentExtractorService, EmbeddingService, KnowledgeService],
   exports: [FilesService, KnowledgeService, EmbeddingService],

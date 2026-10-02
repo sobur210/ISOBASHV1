@@ -4,6 +4,15 @@ Last updated: 2026-09-30
 
 ## Current status
 
+### Active handoff: admin shell feature (2026-10-02)
+
+- Feature implementation is in place for the admin-only shell runner and UI panel.
+- Files involved: `apps/backend/src/admin/admin-shell.service.ts`, `apps/backend/src/admin/admin.controller.ts`, `apps/backend/src/admin/admin.module.ts`, `apps/frontend/components/admin-shell-panel.tsx`, and `apps/frontend/app/admin/settings/page.tsx`.
+- The feature is intentionally read-only and restricted to a safe allow-list: `pwd`, `ls`, `whoami`, `date`, `hostname`, `git status`, simple diagnostics, and similarly low-risk commands. Dangerous shell chaining, pipes, redirects, and destructive actions are blocked.
+- The remaining blocker is the backend Jest/TypeScript bootstrap, not the feature logic itself. The test command fails before running any assertions with: `SyntaxError: Cannot use import statement outside a module`.
+- Relevant config to inspect: `apps/backend/jest.config.js`.
+- The next developer should fix the Jest TypeScript transform so the admin-shell test in `apps/backend/src/admin/admin-shell.service.test.ts` runs under the repo’s real config and validates the allow-list behavior.
+
 - Phase 1 (project foundation): implemented and runtime-verified.
 - Phase 2 (AI provider bridge): implemented and runtime-verified.
 - Phase 3 (core infrastructure/services): implemented and runtime-verified.

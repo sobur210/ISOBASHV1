@@ -18,6 +18,7 @@ const USER_SELECT = {
   mfaEnabledAt: true,
   createdAt: true,
   lastLoginAt: true,
+  subscription: { select: { plan: true } },
 } satisfies Prisma.UserSelect;
 
 export type AdminUserSummary = {
@@ -25,6 +26,8 @@ export type AdminUserSummary = {
   email: string;
   name: string | null;
   role: 'ADMIN' | 'USER';
+  /** Phase 16: the plan this account holds. Absent means the FREE default. */
+  plan: 'FREE' | 'PRO';
   mfaEnabled: boolean;
   createdAt: string;
   lastLoginAt: string | null;
@@ -58,6 +61,7 @@ export class AdminUsersService {
       mfaEnabledAt: Date | null;
       createdAt: Date;
       lastLoginAt: Date | null;
+      subscription: { plan: 'FREE' | 'PRO' } | null;
     },
     activeSessions: number,
   ): AdminUserSummary {
@@ -66,6 +70,7 @@ export class AdminUsersService {
       email: user.email,
       name: user.name,
       role: user.role,
+      plan: user.subscription?.plan ?? 'FREE',
       mfaEnabled: user.mfaEnabledAt !== null,
       createdAt: user.createdAt.toISOString(),
       lastLoginAt: user.lastLoginAt ? user.lastLoginAt.toISOString() : null,

@@ -50,7 +50,12 @@ export class PollinationsVideoProvider implements AiProvider {
   private readonly model = process.env.POLLINATIONS_VIDEO_MODEL || DEFAULT_MODEL;
 
   private get apiKey(): string | undefined {
-    return process.env.POLLINATIONS_VIDEO_API_KEY || process.env.POLLINATIONS_API_KEY || undefined;
+    return (
+      process.env.POLLINATIONS_VIDEO_API_KEY ||
+      process.env.POLLINATIONS_API_KEY ||
+      process.env.OPENROUTER_API_IMAGE_VIDEO ||
+      undefined
+    );
   }
 
   async health(): Promise<AiProviderHealth> {

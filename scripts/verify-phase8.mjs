@@ -3,7 +3,7 @@
 // admin MFA lifecycle (setup -> enable -> 2-step login -> verify -> disable),
 // security headers (backend + frontend), SameSite=Lax + HttpOnly cookies, and the
 // authorization surface regression from Phase 7.
-// Requires the full stack (frontend :3000, backend :3001, PostgreSQL) and DATABASE_URL in .env.
+// Requires the full stack (frontend :3002, backend :3001, PostgreSQL) and DATABASE_URL in .env.
 //
 // Each run uses unique throwaway identities and unique X-Forwarded-For IPs so every
 // rate-limit bucket starts fresh and the script can be re-run immediately.

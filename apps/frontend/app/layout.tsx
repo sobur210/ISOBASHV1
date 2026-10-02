@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { WEB_URL } from "@/lib/config";
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,6 +21,16 @@ export const metadata: Metadata = {
   // Env-driven so it cannot drift from the dev port pinned in package.json.
   // Falls back to 3002, which is what `next dev` is pinned to.
   metadataBase: new URL(WEB_URL),
+  // A static file in `public/`, not `app/manifest.ts`: the gateway rewrite in
+  // next.config.ts runs in the `afterFiles` phase, which is checked *before*
+  // dynamic routes, so a manifest route handler would be forwarded to the API
+  // instead of being served. `public/` wins because the filesystem is checked
+  // first.
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
   title: {
     default: "ISOBASH: Your AI. Your Agents. Your Workspace.",
     template: "%s | ISOBASH",
@@ -65,6 +76,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>

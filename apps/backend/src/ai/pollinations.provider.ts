@@ -84,6 +84,10 @@ export class PollinationsProvider implements AiProvider {
   private readonly baseUrl = (process.env.POLLINATIONS_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, '');
   private readonly model = process.env.POLLINATIONS_MODEL || DEFAULT_MODEL;
 
+  private get apiKey(): string | undefined {
+    return process.env.POLLINATIONS_API_KEY || process.env.OPENROUTER_API_IMAGE_VIDEO || undefined;
+  }
+
   /**
    * No key is needed, so there is nothing to be unconfigured about; `health()`
    * reports readiness and the truth about connectivity is established by the first
@@ -119,6 +123,14 @@ export class PollinationsProvider implements AiProvider {
     const requested = Math.min(Math.max(request.count ?? 1, 1), MAX_IMAGES_PER_CALL);
     const { width, height } = sizeForAspectRatio(request.aspectRatio);
 
+    // OpenRouter keys are accepted by the Pollinations-compatible endpoint used by
+    // this app, so when the project stores the generation key under the
+    // OpenRouter variable name we still make it work without a second code path.
+    // Typed as a header record rather than inferred from the conditional, so
+    // spreading it into `RequestInit.headers` keeps a single object type instead of
+    // a union that has no overload to satisfy.
+    const authHeaders: Record<string, string> = this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {};
+
     const images: AiGeneratedImage[] = [];
     const failures: { code: string; message: string }[] = [];
     let finishReason: string | undefined;
@@ -139,7 +151,11 @@ export class PollinationsProvider implements AiProvider {
       try {
         response = await fetch(url, {
           signal: controller.signal,
-          headers: { accept: 'image/*', 'user-agent': 'isobash/13 (image generation)' },
+          headers: {
+            accept: 'image/*',
+            'user-agent': 'isobash/13 (image generation)',
+            ...authHeaders,
+          },
         });
       } catch (error) {
         clearTimeout(timer);

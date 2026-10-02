@@ -1,5 +1,5 @@
 // Runtime verification for Phase 5: AI engine orchestration, streaming, persistence, chat.
-// Requires the full stack (frontend :3000, backend :3001, PostgreSQL, Redis, Ollama).
+// Requires the full stack (frontend :3002, backend :3001, PostgreSQL, Redis, Ollama).
 import { randomUUID } from "node:crypto";
 
 const API = process.env.API_URL || "http://localhost:3001";

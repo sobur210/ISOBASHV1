@@ -1,7 +1,7 @@
 // Runtime verification for Phase 7: role-based authorization.
 // AuthGuard (any session) + RolesGuard (@Roles('ADMIN')) on the admin surface,
 // role-aware frontend navigation links.
-// Requires the full stack (frontend :3000, backend :3001, PostgreSQL) and a App/DB reachable from DATABASE_URL in .env.
+// Requires the full stack (frontend :3002, backend :3001, PostgreSQL) and a App/DB reachable from DATABASE_URL in .env.
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";

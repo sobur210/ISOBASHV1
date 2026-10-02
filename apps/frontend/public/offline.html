@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline | ISOBASH</title>
+    <link rel="icon" href="/logo.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <style>
+      /* Standalone document: it is served straight from the service worker cache
+         with no Next.js runtime, so it cannot use the app's token stylesheet. The
+         palette values are the same ISOBASH tokens as `app/globals.css`, written
+         once here rather than duplicating the stylesheet into the cache. */
+      :root {
+        color-scheme: dark;
+        --background: #0b1020;
+        --surface: #111827;
+        --surface-2: #0e1526;
+        --border: #1f2937;
+        --foreground: #f8fafc;
+        --muted: #94a3b8;
+        --primary: #3b82f6;
+        --warning: #f59e0b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1.5rem;
+        background: var(--background);
+        color: var(--foreground);
+        font-family:
+          ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        width: 100%;
+        max-width: 46rem;
+      }
+      .eyebrow {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.6875rem;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--primary);
+      }
+      h1 {
+        margin: 1rem 0 0;
+        font-size: clamp(2rem, 6vw, 3rem);
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 1.1;
+      }
+      .lede {
+        margin: 1rem 0 0;
+        max-width: 38rem;
+        color: var(--muted);
+        font-size: 1rem;
+        line-height: 1.75;
+      }
+      .grid {
+        display: grid;
+        gap: 1rem;
+        margin-top: 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+      }
+      section {
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        background: var(--surface);
+        padding: 1.25rem;
+      }
+      h2 {
+        margin: 0 0 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+      ul {
+        margin: 0;
+        padding-left: 1.125rem;
+        color: var(--muted);
+        font-size: 0.875rem;
+        line-height: 1.75;
+      }
+      .yes {
+        color: var(--primary);
+      }
+      .no {
+        color: var(--warning);
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 2rem;
+      }
+      a,
+      button {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        background: var(--surface-2);
+        color: var(--foreground);
+        padding: 0.75rem 1.25rem;
+        font: inherit;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      a:hover,
+      button:hover {
+        border-color: rgba(59, 130, 246, 0.5);
+      }
+      .primary {
+        border-color: transparent;
+        background: var(--primary);
+        color: #ffffff;
+      }
+      footer {
+        margin-top: 2rem;
+        color: var(--muted);
+        font-size: 0.75rem;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">ISOBASH</p>
+      <h1>This page needs the local API.</h1>
+      <p class="lede">
+        The browser is offline, or the ISOBASH backend on this machine is not answering. ISOBASH keeps no copy of your
+        workspace on the device, so nothing here is being shown from a stale cache: what you see is the real state of
+        this machine right now.
+      </p>
+
+      <div class="grid">
+        <section>
+          <h2>Still available offline</h2>
+          <ul>
+            <li><span class="yes">Works</span> — this page and the marketing site</li>
+            <li><span class="yes">Works</span> — the sign-in and registration pages</li>
+            <li><span class="yes">Works</span> — every page you have already visited in this browser</li>
+          </ul>
+        </section>
+        <section>
+          <h2>Needs the backend</h2>
+          <ul>
+            <li><span class="no">Blocked</span> — chat, agents, research, files and media</li>
+            <li><span class="no">Blocked</span> — billing and usage, which are measured live</li>
+            <li><span class="no">Blocked</span> — the admin console and system health</li>
+          </ul>
+        </section>
+      </div>
+
+      <div class="row">
+        <button type="button" class="primary" onclick="window.location.reload()">Try again</button>
+        <a href="/">Go to the home page</a>
+      </div>
+
+      <footer>
+        To bring the workspace back: start PostgreSQL, Redis and Ollama, then the ISOBASH API, and reload. Nothing is lost
+        in the meantime — every message, run and asset is stored on the server, not in this browser.
+      </footer>
+    </main>
+  </body>
+</html>

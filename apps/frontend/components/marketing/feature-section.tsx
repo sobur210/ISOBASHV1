@@ -3,12 +3,12 @@ import { Section, SectionHeading } from "@/components/ui/section";
 import {
   BrainIcon,
   ChatIcon,
-  FileIcon,
+  CpuIcon,
   GlobeIcon,
   ImageIcon,
-  LayersIcon,
   SearchIcon,
   VideoIcon,
+  ZapIcon,
 } from "@/components/ui/icons";
 
 type Feature = {
@@ -50,10 +50,19 @@ const features: Feature[] = [
     span: "lg:col-span-3",
   },
   {
-    title: "Document Analysis",
-    description: "Upload PDFs, Markdown, HTML, CSV, JSON or text and query what was really extracted from them.",
-    icon: <FileIcon className="h-5 w-5" />,
+    title: "Code Workspace",
+    description:
+      "An editor over your own files, in the browser. Replaces Projects and Files, with one isolated directory per workspace.",
+    icon: <CpuIcon className="h-5 w-5" />,
     tone: "from-warning/18",
+    span: "lg:col-span-3",
+  },
+  {
+    title: "Coding Agent",
+    description:
+      "Runs beside the editor: proposes diffs you approve, one tool call at a time. Being built now.",
+    icon: <ZapIcon className="h-5 w-5" />,
+    tone: "from-violet/18",
     span: "lg:col-span-3",
   },
   {
@@ -61,13 +70,6 @@ const features: Feature[] = [
     description: "Your AI remembers, so you don’t have to.",
     icon: <BrainIcon className="h-5 w-5" />,
     tone: "from-primary/18",
-    span: "lg:col-span-3",
-  },
-  {
-    title: "Projects & Collaboration",
-    description: "Organise work and share it with your team.",
-    icon: <LayersIcon className="h-5 w-5" />,
-    tone: "from-violet/18",
     span: "lg:col-span-3",
   },
   {

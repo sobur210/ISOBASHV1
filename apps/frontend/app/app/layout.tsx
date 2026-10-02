@@ -5,9 +5,11 @@ import { SidebarNav } from "@/components/sidebar-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SignOutButton } from "@/components/sign-out-button";
 import { requireUser } from "@/lib/auth-server";
+import { type FeatureName, featureVisible } from "@/lib/feature-flags";
 import {
   BotIcon,
   ChatIcon,
+  CpuIcon,
   CreditCardIcon,
   FileIcon,
   FolderIcon,
@@ -18,13 +20,19 @@ import {
   ShieldIcon,
 } from "@/components/ui/icons";
 
-const workspaceNav = [
+/**
+ * `feature` marks an entry that a Phase 1 flag can retire. Entries without one
+ * are always shown. Filtering happens here rather than in `SidebarNav` so the
+ * decision is made once, on the server, from the session's role.
+ */
+const workspaceNav: { href: string; label: string; icon: React.ReactNode; feature?: FeatureName }[] = [
   { href: "/app", label: "Workspace", icon: <GridIcon className="h-4 w-4" /> },
   { href: "/app/chat", label: "Chat", icon: <ChatIcon className="h-4 w-4" /> },
   { href: "/app/research", label: "Research", icon: <SearchIcon className="h-4 w-4" /> },
   { href: "/app/agents", label: "Agents", icon: <BotIcon className="h-4 w-4" /> },
-  { href: "/app/projects", label: "Projects", icon: <FolderIcon className="h-4 w-4" /> },
-  { href: "/app/files", label: "Files", icon: <FileIcon className="h-4 w-4" /> },
+  { href: "/app/code", label: "Code", icon: <CpuIcon className="h-4 w-4" />, feature: "codeWorkspace" },
+  { href: "/app/projects", label: "Projects", icon: <FolderIcon className="h-4 w-4" />, feature: "projects" },
+  { href: "/app/files", label: "Files", icon: <FileIcon className="h-4 w-4" />, feature: "files" },
   { href: "/app/media", label: "Media", icon: <ImageIcon className="h-4 w-4" /> },
   { href: "/app/billing", label: "Billing", icon: <CreditCardIcon className="h-4 w-4" /> },
   { href: "/app/settings", label: "Settings", icon: <SettingsIcon className="h-4 w-4" /> },
@@ -34,6 +42,7 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
   const user = await requireUser();
   const identity = user.name ?? user.email;
   const initials = identity.trim().charAt(0).toUpperCase();
+  const nav = workspaceNav.filter((item) => !item.feature || featureVisible(item.feature, user.role));
 
   return (
     <div className="min-h-screen bg-background">
@@ -76,11 +85,11 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
             <p className="mb-4 px-3 font-mono text-[10px] font-medium tracking-[0.24em] text-muted-foreground uppercase">
               Workspace
             </p>
-            <SidebarNav items={workspaceNav} />
+            <SidebarNav items={nav} />
           </div>
         </div>
 
-        <MobileNav items={workspaceNav} label="Workspace" />
+        <MobileNav items={nav} label="Workspace" />
 
         <main className="min-w-0">{children}</main>
       </div>

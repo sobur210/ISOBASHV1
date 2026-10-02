@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
+import { BillingModule } from '../billing/billing.module';
 import { SecurityModule } from '../security/security.module';
 import { QueueModule } from '../queues/queue.module';
 import { ConfigModule } from '../shared/config/config.module';
@@ -14,7 +15,7 @@ import { VideoRenderQueue } from './video-render.queue';
 
 @Module({
   // RealtimeModule is @Global, so RealtimeService is available without importing it.
-  imports: [AuthModule, AiModule, ConfigModule, SecurityModule, StorageModule, QueueModule],
+  imports: [AuthModule, AiModule, BillingModule, ConfigModule, SecurityModule, StorageModule, QueueModule],
   controllers: [MediaController],
   providers: [MediaService, ImageGenerationService, VideoGenerationService, PromptComposerService, VideoRenderQueue],
   exports: [MediaService, ImageGenerationService, VideoGenerationService],

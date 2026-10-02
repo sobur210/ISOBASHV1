@@ -85,6 +85,38 @@ enum UserRole {
   USER
 }
 
+/// Phase 16 billing. The plan catalogue is code, not data: two plans whose
+/// limits are known at build time. This enum only ever holds a value the
+/// catalogue defines.
+enum PlanKey {
+  FREE
+  PRO
+}
+
+/// A user on a plan above FREE. There is deliberately no status and no billing
+/// period: no payment processor is configured in this deployment, so a
+/// subscription row means exactly "this account holds this entitlement", granted
+/// by an admin. Absence of a row is the FREE plan, which is also the default, so
+/// no user is ever left without one.
+model Subscription {
+  id     Int      @id @default(autoincrement())
+  userId Int      @unique
+  plan   PlanKey  @default(FREE)
+
+  /// The admin who granted it. Null means nobody granted it (it was never
+  /// upgraded), which is different from "granted by the system".
+  grantedById Int?
+  /// Why it was granted, recorded so an entitlement is never unexplained.
+  note     String?
+  grantedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy  User? @relation("SubscriptionGrants", fields: [grantedById], references: [id], onDelete: SetNull)
+
+  @@index([plan])
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
@@ -113,6 +145,10 @@ model User {
   /// Credits this user spent on metered providers. Attribution for the admin view,
   /// not a separate allowance: the provider bills one shared pool.
   providerCreditEntries ProviderCreditEntry[]
+  /// The plan this account holds above the FREE default. Absent = FREE.
+  subscription Subscription?
+  /// Subscriptions this account granted to other accounts.
+  subscriptionsGranted Subscription[] @relation("SubscriptionGrants")
 }
 
 model AuditEvent {

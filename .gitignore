@@ -14,6 +14,11 @@ npm-debug.log*
 dev-run.log
 frontend-dev.log
 
+# Local screenshot/verification scratch space. The Chrome profile inside it is
+# a real browser data dir (Login Data, Network/Cookies, Local State), so it must
+# never reach the remote.
+.tmpwork/chrome-profile/
+
 # Brand design sources duplicated at the repo root; the app assets are tracked
 # (apps/frontend/public/logo.png, apps/frontend/app/icon.png).
 /Futuristic Blue-Violet Monogram Icon.png

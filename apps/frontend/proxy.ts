@@ -26,6 +26,11 @@ function buildCsp(nonce: string) {
     "form-action 'self'",
     "object-src 'none'",
     "frame-src 'self'",
+    // The offline shell is a same-origin worker at /sw.js. Without this line the
+    // directive falls back to `script-src`, which already allows 'self'; stating
+    // it keeps the worker from inheriting anything looser if the script policy is
+    // ever relaxed.
+    "worker-src 'self'",
   ];
 
   return directives.join("; ");

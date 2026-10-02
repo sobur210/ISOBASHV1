@@ -90,7 +90,7 @@ const STATUS_FILE = join(RUN_ROOT, 'service-status.json');
 const SUPERVISOR_LOG = join(SERVICE_LOG_DIR, 'supervisor.log');
 
 const API_PORT = envNumber('PORT', 3001);
-const WEB_PORT = envNumber('WEB_PORT', 3000);
+const WEB_PORT = envNumber('WEB_PORT', 3002);
 const DATABASE_URL = env('DATABASE_URL', '');
 const REDIS_URL = env('REDIS_URL', 'redis://127.0.0.1:6379');
 const OLLAMA_BASE_URL = env('OLLAMA_BASE_URL', 'http://127.0.0.1:11434');
@@ -1034,7 +1034,9 @@ if (!handler) {
   log.error(`Unknown command "${command}". Expected one of: ${Object.keys(COMMANDS).join(', ')}`);
   process.exit(2);
 }
-handler().catch((error) => {
-  log.error(error instanceof Error ? error.stack ?? error.message : String(error));
-  process.exit(1);
-});
+Promise.resolve()
+  .then(() => handler())
+  .catch((error) => {
+    log.error(error instanceof Error ? error.stack ?? error.message : String(error));
+    process.exit(1);
+  });

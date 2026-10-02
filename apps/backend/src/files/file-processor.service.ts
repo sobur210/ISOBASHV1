@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../shared/storage/storage.service';
 import { RealtimeService } from '../realtime/realtime.service';
 import { DocumentExtractorService } from './document-extractor.service';
+import { EntitlementsService } from '../billing/entitlements.service';
 import { EmbeddingService } from './embedding.service';
 import { chunkText } from './text-chunker';
 import { asFileKind, classifyUpload, ClassifiedUpload } from './file-kinds';
@@ -44,6 +45,7 @@ export class FileProcessorService implements OnModuleDestroy {
     private readonly extractor: DocumentExtractorService,
     private readonly embeddings: EmbeddingService,
     private readonly realtime: RealtimeService,
+    private readonly entitlements: EntitlementsService,
     @InjectConfig() private readonly config: AppConfig,
   ) {}
 
@@ -233,21 +235,27 @@ export class FileProcessorService implements OnModuleDestroy {
   }
 
   private async assertQuota(userId: number, incoming: number) {
+    // Phase 16: the ceiling is this account's entitlement, which is the plan limit
+    // clamped to the deployment maximum. The deployment value is still what
+    // decides the hard cap; a plan can only lower it.
+    const entitlements = await this.entitlements.forUser(userId);
     const [count, aggregate] = await Promise.all([
       this.prisma.storedFile.count({ where: { userId } }),
       this.prisma.storedFile.aggregate({ where: { userId }, _sum: { sizeBytes: true } }),
     ]);
-    if (count >= this.config.files.maxFilesPerUser) {
+    const maxFiles = entitlements.limits.files.value;
+    if (count >= maxFiles) {
       throw new ApiError(
-        `This account already stores ${count} files (limit ${this.config.files.maxFilesPerUser}). Delete one before uploading another.`,
+        `This account already stores ${count} files (limit ${maxFiles} on the ${entitlements.plan} plan). Delete one before uploading another.`,
         413,
         'FILE_QUOTA_EXCEEDED',
       );
     }
+    const maxBytes = entitlements.limits.fileBytes.value;
     const used = aggregate._sum.sizeBytes ?? 0;
-    if (used + incoming > this.config.files.maxTotalBytesPerUser) {
+    if (used + incoming > maxBytes) {
       throw new ApiError(
-        `This account stores ${used} bytes and the new file is ${incoming} bytes, over the ${this.config.files.maxTotalBytesPerUser} byte quota.`,
+        `This account stores ${used} bytes and the new file is ${incoming} bytes, over the ${maxBytes} byte quota on the ${entitlements.plan} plan.`,
         413,
         'FILE_QUOTA_EXCEEDED',
       );

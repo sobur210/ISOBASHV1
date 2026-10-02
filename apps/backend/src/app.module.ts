@@ -19,6 +19,7 @@ import { MediaModule } from './media/media.module';
 import { VideoAssemblyModule } from './media/video-assembly.module';
 import { MemoryModule } from './memory/memory.module';
 import { ProjectsModule } from './projects/projects.module';
+import { BillingModule } from './billing/billing.module';
 import { ConfigModule as IsoConfigModule } from './shared/config/config.module';
 import { resolveEnvFile } from './shared/config/configuration';
 import { StorageModule } from './shared/storage/storage.module';
@@ -46,6 +47,7 @@ import { SecurityHeadersMiddleware } from './security/security-headers.middlewar
     ResearchModule,
     FilesModule,
     MediaModule,
+    BillingModule,
     VideoAssemblyModule,
   ],
   controllers: [AppController, HealthController],

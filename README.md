@@ -64,6 +64,19 @@ node scripts/verify-phase8.mjs   # security: headers, cookie hardening, MFA, rat
 
 ## Status
 
+### Current handoff note
+
+This repository currently contains a partial admin shell feature that is implemented but not fully verified through the repo test harness. The shell is intended to be admin-only and safe by default, with only read-only diagnostic commands allowed. The current blocker is a backend Jest/TypeScript bootstrap issue: the test run fails before executing with `SyntaxError: Cannot use import statement outside a module`.
+
+Relevant files:
+- `apps/backend/src/admin/admin-shell.service.ts`
+- `apps/backend/src/admin/admin.controller.ts`
+- `apps/backend/src/admin/admin.module.ts`
+- `apps/backend/src/admin/admin-shell.service.test.ts`
+- `apps/backend/jest.config.js`
+
+The next step is to fix the Jest TypeScript transform so the test can run and validate the safe allow-list behavior.
+
 Phases 1–8 are implemented and runtime-verified:
 
 - Phase 1: project foundation, route shells, Prisma schema, BullMQ worker, Socket.IO.

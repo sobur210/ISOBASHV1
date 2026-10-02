@@ -155,7 +155,7 @@ if ($InstallMode -in @('Both', 'Task')) {
 
             Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger @($atStartup, $atLogon) `
                 -Principal $principal -Settings $settings `
-                -Description 'ISOBASH supervisor: API (3001), web (3000), BullMQ worker, plus PostgreSQL/Redis/Ollama readiness.' | Out-Null
+                -Description 'ISOBASH supervisor: API (3001), web (3002), BullMQ worker, plus PostgreSQL/Redis/Ollama readiness.' | Out-Null
 
             $taskInstalled = $true
             Write-Host "  scheduled task : $TaskName (AtStartup+45s, AtLogOn+20s, identity=$Mode)"

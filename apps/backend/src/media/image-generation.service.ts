@@ -1,3 +1,4 @@
+import { EntitlementsService } from '../billing/entitlements.service';
 import { Injectable, Logger, NotFoundException, OnModuleDestroy } from '@nestjs/common';
 import { createHash, randomUUID } from 'node:crypto';
 import { ApiError } from '../shared/errors/api-error';
@@ -55,6 +56,7 @@ export class ImageGenerationService implements OnModuleDestroy {
     private readonly ai: AiRouterService,
     private readonly realtime: RealtimeService,
     private readonly composer: PromptComposerService,
+    private readonly entitlements: EntitlementsService,
     @InjectConfig() private readonly config: AppConfig,
   ) {}
 
@@ -368,17 +370,22 @@ export class ImageGenerationService implements OnModuleDestroy {
         'RATE_LIMITED',
       );
     }
-    if (assets >= this.config.media.maxAssetsPerUser) {
+    // Phase 16: the quota is this account's entitlement (plan limit clamped to the
+    // deployment ceiling), so a plan change takes effect on the next request.
+    const entitlements = await this.entitlements.forUser(userId);
+    const maxAssets = entitlements.limits.mediaAssets.value;
+    const maxBytes = entitlements.limits.mediaBytes.value;
+    if (assets >= maxAssets) {
       throw new ApiError(
-        `This account already stores ${assets} media file(s) (limit ${this.config.media.maxAssetsPerUser}). Delete one before generating another.`,
+        `This account already stores ${assets} media file(s) (limit ${maxAssets} on the ${entitlements.plan} plan). Delete one before generating another.`,
         413,
         'MEDIA_QUOTA_EXCEEDED',
       );
     }
     const used = aggregate._sum.sizeBytes ?? 0;
-    if (used >= this.config.media.maxTotalBytesPerUser) {
+    if (used >= maxBytes) {
       throw new ApiError(
-        `This account stores ${used} bytes of media, at the ${this.config.media.maxTotalBytesPerUser} byte quota.`,
+        `This account stores ${used} bytes of media, at the ${maxBytes} byte quota on the ${entitlements.plan} plan.`,
         413,
         'MEDIA_QUOTA_EXCEEDED',
       );

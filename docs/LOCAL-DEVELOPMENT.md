@@ -48,7 +48,7 @@ All scripts report pass/fail per check and exit non-zero on any failure. The app
 
 ## Authentication (Phase 6)
 
-Accounts are stored in PostgreSQL (`User` with bcrypt hash, `Session` with 30-day expiry). Register/login/httpOnly-cookie flows: sign in or register at `http://localhost:3000/login` / `/register`. Once signed in, `/app/*` and `/admin/*` render; signed-out visits redirect to `/login`. A logout button in the header revokes the session server-side.
+Accounts are stored in PostgreSQL (`User` with bcrypt hash, `Session` with 30-day expiry). Register/login/httpOnly-cookie flows: sign in or register at `http://localhost:3002/login` / `/register`. Once signed in, `/app/*` and `/admin/*` render; signed-out visits redirect to `/login`. A logout button in the header revokes the session server-side.
 
 ## Environment
 

@@ -13,11 +13,13 @@ import {
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { SessionUser } from '../auth/session.model';
+import { FeatureGuard, RequireFeature } from '../shared/config/feature-flags';
 import { CreateProjectDto, CreateTaskDto, UpdateProjectDto, UpdateTaskDto } from './dto/project.dto';
 import { ProjectsService } from './projects.service';
 
 @Controller('projects')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, FeatureGuard)
+@RequireFeature('projects')
 export class ProjectsController {
   constructor(private readonly projects: ProjectsService) {}
 

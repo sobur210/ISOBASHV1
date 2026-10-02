@@ -1,0 +1,25 @@
+{
+  "name": "ISOBASH — Your AI. Your Agents. Your Workspace.",
+  "short_name": "ISOBASH",
+  "description": "An AI operating platform for chat, agents, memory, projects, research, files and media. Provider-agnostic, running locally, in the cloud, or both.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1020",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

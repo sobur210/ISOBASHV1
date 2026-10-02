@@ -22,7 +22,11 @@ import { AuditService } from '../security/audit.service';
 import { AdminUsersService } from './admin-users.service';
 import { ListUsersQueryDto, UpdateUserRoleDto } from './dto/admin-user.dto';
 import { SystemHealthService } from './system-health.service';
+import { AdminSettingsService } from './admin-settings.service';
 import { ProviderCreditService } from '../ai/provider-credit.service';
+import { BillingService } from '../billing/billing.service';
+import { ChangePlanDto } from '../billing/dto/billing.dto';
+import { AdminShellService } from './admin-shell.service';
 
 // Authorization is decided here and by RolesGuard, never by the client. The
 // frontend only renders what this surface returns.
@@ -35,11 +39,33 @@ export class AdminController {
     private readonly users: AdminUsersService,
     private readonly audit: AuditService,
     private readonly credits: ProviderCreditService,
+    private readonly settings: AdminSettingsService,
+    private readonly billing: BillingService,
+    private readonly shell: AdminShellService,
   ) {}
 
   @Get('system-health')
   getSystemHealth() {
     return this.systemHealth.checkAll();
+  }
+
+  /**
+   * Phase 17 admin center: live counts for the overview. Every figure is an
+   * aggregate over the same tables the product surfaces read, so the console and
+   * the workspace cannot disagree.
+   */
+  @Get('overview')
+  overview() {
+    return this.settings.overview();
+  }
+
+  /**
+   * Phase 17: what this deployment is configured to do, with every secret
+   * reduced to a boolean. Read-only on purpose — see `AdminSettingsService`.
+   */
+  @Get('settings')
+  settingsView() {
+    return this.settings.settings();
   }
 
   /**
@@ -54,6 +80,25 @@ export class AdminController {
   @Get('video-credits')
   getVideoCredits() {
     return this.credits.summary('magic-hour');
+  }
+
+  @HttpCode(200)
+  @UseGuards(RateLimitGuard)
+  @RateLimit({ limit: 10, windowMs: 60_000 })
+  @Post('shell/exec')
+  async executeShell(@Body() body: { command?: string }) {
+    if (typeof body?.command !== 'string') {
+      return {
+        ok: false,
+        blocked: true,
+        command: '',
+        stdout: '',
+        stderr: 'A command string is required.',
+        exitCode: 1,
+      };
+    }
+
+    return this.shell.execute(body.command);
   }
 
   @Get('users')
@@ -73,6 +118,20 @@ export class AdminController {
     @Body() input: UpdateUserRoleDto,
   ) {
     return this.users.updateRole(actor, id, input);
+  }
+
+  /**
+   * Phase 16/17: grant or withdraw a plan. This is the only path to a plan above
+   * Free, because there is no payment processor: an entitlement that appeared on
+   * its own would be a claim ISOBASH cannot keep. Audited in the service.
+   */
+  @Patch('users/:id/plan')
+  updatePlan(
+    @CurrentUser() actor: SessionUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() input: ChangePlanDto,
+  ) {
+    return this.billing.grantPlan(actor, id, input.plan, input.note);
   }
 
   @HttpCode(200)

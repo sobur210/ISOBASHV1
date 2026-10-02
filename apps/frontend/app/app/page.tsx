@@ -2,9 +2,12 @@ import { PageHeader } from "@/components/page-header";
 import { HealthPanel } from "@/components/health-panel";
 import { CapabilitiesPanel } from "@/components/capabilities-panel";
 import { FeatureCard } from "@/components/feature-card";
+import { requireUser } from "@/lib/auth-server";
+import { type FeatureName, featureVisible } from "@/lib/feature-flags";
 import {
   BotIcon,
   ChatIcon,
+  CpuIcon,
   CreditCardIcon,
   FileIcon,
   FolderIcon,
@@ -12,7 +15,19 @@ import {
   SearchIcon,
 } from "@/components/ui/icons";
 
-const surfaces = [
+/**
+ * `feature` marks a card a Phase 1 flag can retire. Cards without one always
+ * show. The copy below states what each surface actually does — no card claims
+ * a capability the code does not have.
+ */
+const surfaces: {
+  href: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  phase: string;
+  feature?: FeatureName;
+}[] = [
   {
     href: "/app/chat",
     title: "Chat",
@@ -28,18 +43,28 @@ const surfaces = [
     phase: "Live now",
   },
   {
+    href: "/app/code",
+    title: "Code Workspace",
+    description: "An editor over your own files, replacing Projects and Files. Being built now.",
+    icon: <CpuIcon className="h-5 w-5" />,
+    phase: "Phase 17 · in build",
+    feature: "codeWorkspace",
+  },
+  {
     href: "/app/files",
     title: "Files",
     description: "Validated uploads, real document extraction, and keyword/vector knowledge search.",
     icon: <FileIcon className="h-5 w-5" />,
-    phase: "Live now",
+    phase: "Retiring",
+    feature: "files",
   },
   {
     href: "/app/projects",
     title: "Projects",
     description: "Project spaces that bring chats, files, and agents together.",
     icon: <FolderIcon className="h-5 w-5" />,
-    phase: "Phase 10 API",
+    phase: "Retiring",
+    feature: "projects",
   },
   {
     href: "/app/agents",
@@ -64,13 +89,17 @@ const surfaces = [
   },
 ];
 
-export default function WorkspacePage() {
+export default async function WorkspacePage() {
+  const user = await requireUser();
+  const visible = surfaces.filter(
+    (surface) => !surface.feature || featureVisible(surface.feature, user.role),
+  );
   return (
     <div className="space-y-8">
       <PageHeader
         eyebrow="Workspace"
         title="Your workspace"
-        description="Live system state from the API and everything you will work with: chat, research, files, projects, agents, and media."
+        description="Live system state from the API and everything you will work with: chat, research, code, agents, and media."
       />
 
       <div className="grid gap-5 lg:grid-cols-2">
@@ -90,7 +119,7 @@ export default function WorkspacePage() {
           </div>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {surfaces.map((surface) => (
+          {visible.map((surface) => (
             <FeatureCard key={surface.href} {...surface} />
           ))}
         </div>

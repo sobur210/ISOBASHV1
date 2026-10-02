@@ -20,6 +20,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { SessionUser } from '../auth/session.model';
 import { RateLimit, RateLimitGuard } from '../security/rate-limit.guard';
 import { AuditService } from '../security/audit.service';
+import { FeatureGuard, RequireFeature } from '../shared/config/feature-flags';
 import { FilesService } from './files.service';
 import { SUPPORTED_EXTENSIONS } from './file-kinds';
 
@@ -31,7 +32,8 @@ import { SUPPORTED_EXTENSIONS } from './file-kinds';
 type UploadFields = { projectId?: string };
 
 @Controller('files')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, FeatureGuard)
+@RequireFeature('files')
 export class FilesController {
   constructor(
     private readonly files: FilesService,

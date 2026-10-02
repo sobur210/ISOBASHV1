@@ -105,6 +105,16 @@ export type AppConfig = {
     minVectorMargin: number;
   };
   storage: StorageRoots;
+  /**
+   * Phase 1. Read by `FeatureGuard`, which is the only thing that refuses a
+   * route. Projects and Files default off: they are being retired in favour of
+   * the Code Workspace, and the tables stay for the records that reference them.
+   */
+  features: {
+    projects: boolean;
+    files: boolean;
+    codeWorkspace: boolean;
+  };
   env: string;
 };
 
@@ -127,6 +137,21 @@ function requireBoolean(env: NodeJS.ProcessEnv, key: string): boolean {
 function optionalString(env: NodeJS.ProcessEnv, key: string): string | undefined {
   const value = env[key];
   return value && value.length > 0 ? value : undefined;
+}
+
+/**
+ * A flag that is absent takes `fallback`; a flag that is present but is not
+ * exactly "true" or "false" refuses to start. Same reasoning as
+ * `requireBoolean`: a typo in a flag must not read as "off" (or "on") and
+ * silently retire a surface nobody meant to retire.
+ */
+function booleanWithDefault(env: NodeJS.ProcessEnv, key: string, fallback: boolean): boolean {
+  const value = env[key];
+  if (value === undefined || value === '') return fallback;
+  if (value !== 'true' && value !== 'false') {
+    throw new Error(`Environment variable ${key} must be "true" or "false", got "${value}".`);
+  }
+  return value === 'true';
 }
 
 function resolveRepoRoot(): string {
@@ -289,6 +314,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       },
     },
     storage,
+    features: {
+      projects: booleanWithDefault(env, 'FEATURE_PROJECTS', false),
+      files: booleanWithDefault(env, 'FEATURE_FILES', false),
+      // On in development so the surface is reachable while it is being built,
+      // and off in a production build unless it is asked for by name.
+      codeWorkspace: booleanWithDefault(env, 'FEATURE_CODE_WORKSPACE', (env.NODE_ENV || 'development') !== 'production'),
+    },
   };
 
   if (config.openai.enabled && !config.openai.apiKey) {

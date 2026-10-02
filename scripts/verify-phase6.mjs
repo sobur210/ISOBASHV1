@@ -1,5 +1,5 @@
 // Runtime verification for Phase 6: authentication (register/login/logout/me), session cookies, frontend gating.
-// Requires the full stack (frontend :3000, backend :3001, PostgreSQL).
+// Requires the full stack (frontend :3002, backend :3001, PostgreSQL).
 import { randomUUID } from "node:crypto";
 
 const API = process.env.API_URL || "http://localhost:3001";

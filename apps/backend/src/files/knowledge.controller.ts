@@ -3,10 +3,12 @@ import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { SessionUser } from '../auth/session.model';
 import { RateLimit, RateLimitGuard } from '../security/rate-limit.guard';
+import { FeatureGuard, RequireFeature } from '../shared/config/feature-flags';
 import { KnowledgeService } from './knowledge.service';
 
 @Controller('knowledge')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, FeatureGuard)
+@RequireFeature('files')
 export class KnowledgeController {
   constructor(private readonly knowledge: KnowledgeService) {}
 

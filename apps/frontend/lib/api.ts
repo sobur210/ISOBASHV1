@@ -107,6 +107,27 @@ export async function deleteJsonAuthed(path: string, signal?: AbortSignal): Prom
   }
 }
 
+/**
+ * `DELETE` that returns the updated body.
+ *
+ * The billing downgrade answers 200 with the new subscription rather than an
+ * empty body, so it cannot use `deleteJsonAuthed`, which discards the response.
+ */
+async function deleteJsonReturning<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "DELETE",
+    credentials: "include",
+    headers: { Accept: "application/json", ...sessionHeaders() },
+  });
+  if (res.status === 401) {
+    throw new Error("AUTH_REQUIRED: Sign in to use this area.");
+  }
+  if (!res.ok) {
+    throw new Error(await extractErrorMessage(res, `Request failed with status ${res.status}`));
+  }
+  return (await res.json()) as T;
+}
+
 async function extractErrorMessage(res: Response, fallback: string): Promise<string> {
   try {
     const body = (await res.json()) as ApiErrorBody;
@@ -1012,3 +1033,195 @@ export function mediaAssetDownloadUrl(id: string): string {
   return `${API_URL}/media/assets/${id}/file?download=1`;
 }
 
+
+/**
+ * Phase 16 billing.
+ *
+ * `BillingCapabilities` is read without a session because it describes the
+ * deployment rather than the caller; the subscription and usage reads are
+ * credentialed and owner-scoped by the API.
+ */
+export type PlanLimits = {
+  files: number | null;
+  fileBytes: number | null;
+  mediaAssets: number | null;
+  mediaBytes: number | null;
+};
+
+export type BillingCapabilities = {
+  plans: { key: string; name: string; summary: string; limits: PlanLimits }[];
+  defaultPlan: string;
+  payment: { available: boolean; processors: string[]; detail: string };
+  selfService: { upgrade: boolean; downgrade: boolean; detail: string };
+  enforced: Record<string, string>;
+  deploymentCeilings: {
+    files: number;
+    fileBytes: number;
+    mediaAssets: number;
+    mediaBytes: number;
+  };
+};
+
+export type BillingSubscription = {
+  plan: string;
+  name: string;
+  isDefault: boolean;
+  entitlements: {
+    plan: string;
+    limits: Record<"files" | "fileBytes" | "mediaAssets" | "mediaBytes", { value: number; source: string }>;
+  };
+  grantedAt: string | null;
+  updatedAt: string | null;
+  note: string | null;
+  grantedBy: { id: number; email: string } | null;
+  detail: string;
+};
+
+export type BillingUsage = {
+  plan: string;
+  measuredAt: string;
+  window: { days: number; startedAt: string };
+  metrics: {
+    key: string;
+    label: string;
+    used: number;
+    limit: number | null;
+    limitSource: "plan" | "deployment" | "none";
+    unit: "count" | "bytes";
+    atLimit: boolean;
+    detail: string;
+  }[];
+  detail: string;
+};
+
+export function fetchBillingCapabilities(signal?: AbortSignal): Promise<BillingCapabilities> {
+  return getJson<BillingCapabilities>("/billing/capabilities", signal);
+}
+
+export function fetchBillingSubscription(signal?: AbortSignal): Promise<BillingSubscription> {
+  return getJsonAuthed<BillingSubscription>("/billing/subscription", signal);
+}
+
+export function fetchBillingUsage(signal?: AbortSignal): Promise<BillingUsage> {
+  return getJsonAuthed<BillingUsage>("/billing/usage", signal);
+}
+
+/** Self-service downgrade only. There is no self-service upgrade to call. */
+export function downgradePlan(): Promise<BillingSubscription> {
+  return deleteJsonReturning<BillingSubscription>("/billing/subscription");
+}
+
+/**
+ * Phase 17 admin center.
+ *
+ * `AdminSettings` is read through `getJsonAuthed`, which turns a 401 or 403 into a
+ * message naming the reason instead of a bare status.
+ */
+export type AdminOverview = {
+  generatedAt: string;
+  accounts: {
+    total: number;
+    admins: number;
+    onFree: number;
+    onPro: number;
+    activeSessions: number;
+    registeredLast24h: number;
+  };
+  content: {
+    projects: number;
+    conversations: number;
+    messages: number;
+    agents: number;
+    agentRuns: number;
+    researchSessions: number;
+    files: number;
+    mediaAssets: number;
+  };
+  audit: { last24h: number; last7d: number };
+  detail: string;
+};
+
+export type AdminSettings = {
+  runtime: {
+    node: string;
+    platform: string;
+    uptimeSeconds: number;
+    apiUrl: string;
+    webUrl: string;
+    corsOrigins: string[];
+  };
+  storage: Record<string, string> & { detail: string };
+  providers: {
+    provider: string;
+    enabled: boolean;
+    baseUrl: string | null;
+    model: string;
+    embeddingModel: string;
+    credentialPresent: boolean;
+    credentialKind: string;
+  }[];
+  registeredProviders: string[];
+  limits: Record<string, Record<string, unknown>>;
+  queues: { counts: Record<string, number> | null; workers: number | null; ready: boolean; detail: string };
+  writable: false;
+  detail: string;
+};
+
+export type AdminUserSummary = {
+  id: number;
+  email: string;
+  name: string | null;
+  role: "ADMIN" | "USER";
+  plan: string;
+  mfaEnabled: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
+  activeSessions: number;
+};
+
+export type AdminUserList = {
+  users: AdminUserSummary[];
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
+export function fetchAdminOverview(signal?: AbortSignal): Promise<AdminOverview> {
+  return getJsonAuthed<AdminOverview>("/admin/overview", signal);
+}
+
+export function fetchAdminSettings(signal?: AbortSignal): Promise<AdminSettings> {
+  return getJsonAuthed<AdminSettings>("/admin/settings", signal);
+}
+
+export function fetchAdminUsers(
+  params: { q?: string; role?: "ADMIN" | "USER"; page?: number; pageSize?: number },
+  signal?: AbortSignal,
+): Promise<AdminUserList> {
+  const query = new URLSearchParams();
+  if (params.q) query.set("q", params.q);
+  if (params.role) query.set("role", params.role);
+  if (params.page) query.set("page", String(params.page));
+  if (params.pageSize) query.set("pageSize", String(params.pageSize));
+  const suffix = query.toString();
+  return getJsonAuthed<AdminUserList>(`/admin/users${suffix ? `?${suffix}` : ""}`, signal);
+}
+
+export function updateAdminUserRole(id: number, role: "ADMIN" | "USER"): Promise<AdminUserSummary> {
+  return sendJsonAuthed<AdminUserSummary>(`/admin/users/${id}/role`, { role });
+}
+
+export function updateAdminUserPlan(
+  id: number,
+  plan: string,
+  note?: string,
+): Promise<{ userId: number; plan: string; entitlements: unknown }> {
+  return sendJsonAuthed<{ userId: number; plan: string; entitlements: unknown }>(`/admin/users/${id}/plan`, {
+    plan,
+    ...(note ? { note } : {}),
+  });
+}
+
+export function revokeAdminUserSessions(id: number): Promise<{ id: number; revokedSessions: number }> {
+  return sendJsonAuthed<{ id: number; revokedSessions: number }>(`/admin/users/${id}/revoke-sessions`, {});
+}
