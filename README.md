@@ -40,9 +40,9 @@ Runtime data is externalized to `ISOBASH-DATA/` and `ISOBASH-MODELS/` beside the
 
 ## URLs
 
-- Frontend: http://localhost:3000
-- Backend: http://localhost:3001
-- Health: http://localhost:3001/health
+- Frontend and public API gateway: http://localhost:3002
+- Backend internal listener: http://localhost:3001
+- Health: http://localhost:3002/health
 - PostgreSQL: localhost:5432
 - Redis: localhost:6380
 - Ollama: 127.0.0.1:11434

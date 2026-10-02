@@ -19,12 +19,14 @@ set the backend URL if the API is not running on `http://localhost:3001`.
 Configure these environment variables in the hosting provider before building:
 
 ```text
-NEXT_PUBLIC_API_URL=https://api.example.com
+NEXT_PUBLIC_API_URL=https://app.example.com
 NEXT_PUBLIC_WEB_URL=https://app.example.com
+INTERNAL_API_URL=http://backend:3001
 ```
 
-Both values are required for production builds. `NEXT_PUBLIC_API_URL` is inlined
-into browser JavaScript, so rebuild whenever it changes.
+All three values are required in production. `NEXT_PUBLIC_API_URL` is inlined
+into browser JavaScript, while `INTERNAL_API_URL` is used by the Next server to
+forward backend routes through the same public origin.
 
 This is a standard Next.js Node deployment. Use the frontend directory as the
 project root, or run the equivalent workspace commands from the repository root:

@@ -4,9 +4,9 @@
 
 | Service | Location | Notes |
 | --- | --- | --- |
-| Web | `http://localhost:3002` | Next.js dev server, port pinned in `apps/frontend/package.json` |
-| API | `http://localhost:3001` | NestJS API |
-| API health | `http://localhost:3001/health` | Reports database + Redis component status |
+| Web and public API gateway | `http://localhost:3002` | Next.js dev server; backend routes are forwarded here |
+| API internal listener | `http://localhost:3001` | NestJS API process |
+| API health | `http://localhost:3002/health` | Public health route through the frontend gateway |
 | PostgreSQL | `localhost:5432` | Laragon PostgreSQL 18 |
 | Redis | `localhost:6380` | Laragon Redis 5 (`C:\laragon\bin\redis\redis-x64-5.0.14.1`) |
 | Local AI | `http://127.0.0.1:11434` | Ollama with `llama3.2:latest` |

@@ -16,7 +16,7 @@
  * the entry file actually exists on disk.
  */
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import net from 'node:net';
@@ -100,6 +100,7 @@ process.on('SIGTERM', () => shutdown(0));
 
 async function main() {
   const nestCommand = existsSync(nestBin) ? nestBin : bin('nest');
+  rmSync(entryFile, { force: true });
   console.log('[dev-backend] starting TypeScript watcher (nest build --watch)');
   if (isWindows) {
     run(process.execPath, [nestScript, 'build', '--watch'], { cwd: backendDir, label: 'nest build --watch' });

@@ -15,6 +15,8 @@ const baseSecurityHeaders = [
   { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
 ];
 
+const internalApiOrigin = (process.env.INTERNAL_API_URL ?? "http://localhost:3001").replace(/\/+$/, "");
+
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }],
@@ -26,6 +28,11 @@ const nextConfig: NextConfig = {
         headers: baseSecurityHeaders,
       },
     ];
+  },
+  async rewrites() {
+    return {
+      afterFiles: [{ source: "/:path*", destination: `${internalApiOrigin}/:path*` }],
+    };
   },
 };
 
