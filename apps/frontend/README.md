@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ISOBASH Frontend
 
-## Getting Started
+Next.js frontend for the ISOBASH workspace.
 
-First, run the development server:
+## Local development
+
+From the repository root:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev:web
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app runs at `http://localhost:3002`. Copy `.env.example` to `.env.local` and
+set the backend URL if the API is not running on `http://localhost:3001`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Production deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Configure these environment variables in the hosting provider before building:
 
-## Learn More
+```text
+NEXT_PUBLIC_API_URL=https://api.example.com
+NEXT_PUBLIC_WEB_URL=https://app.example.com
+```
 
-To learn more about Next.js, take a look at the following resources:
+Both values are required for production builds. `NEXT_PUBLIC_API_URL` is inlined
+into browser JavaScript, so rebuild whenever it changes.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This is a standard Next.js Node deployment. Use the frontend directory as the
+project root, or run the equivalent workspace commands from the repository root:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm --workspace apps/frontend run build
+npm --workspace apps/frontend run start
+```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The start command honors the platform-provided `PORT` value. For a monorepo host,
+set the build command to `npm --workspace apps/frontend run build` and the start
+command to `npm --workspace apps/frontend run start`.

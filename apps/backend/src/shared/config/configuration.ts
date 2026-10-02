@@ -191,10 +191,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const config: AppConfig = {
     env: env.NODE_ENV || 'development',
     port: Number(process.env.PORT || 3001),
-    webUrl: env.WEB_URL || 'http://localhost:3000',
+    webUrl: env.WEB_URL || 'http://localhost:3002',
     apiUrl: env.API_URL || `http://localhost:${process.env.PORT || 3001}`,
     corsOrigins: [
-      env.WEB_URL || 'http://localhost:3000',
+      env.WEB_URL || 'http://localhost:3002',
       ...(env.CORS_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean),
     ],
     databaseUrl: requireString(env, 'DATABASE_URL'),

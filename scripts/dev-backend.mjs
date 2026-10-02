@@ -29,6 +29,7 @@ const isWindows = process.platform === 'win32';
 
 const bin = (name) => (isWindows ? `${name}.cmd` : name);
 const nestBin = join(repoRoot, 'node_modules', '.bin', bin('nest'));
+const nestScript = join(repoRoot, 'node_modules', '@nestjs', 'cli', 'bin', 'nest.js');
 
 const children = new Set();
 let shuttingDown = false;
@@ -37,7 +38,7 @@ function run(command, args, options = {}) {
   const child = spawn(command, args, {
     cwd: options.cwd ?? repoRoot,
     stdio: 'inherit',
-    shell: isWindows,
+    shell: options.shell ?? false,
     windowsHide: true,
   });
   children.add(child);
@@ -100,7 +101,11 @@ process.on('SIGTERM', () => shutdown(0));
 async function main() {
   const nestCommand = existsSync(nestBin) ? nestBin : bin('nest');
   console.log('[dev-backend] starting TypeScript watcher (nest build --watch)');
-  run(nestCommand, ['build', '--watch'], { cwd: backendDir, label: 'nest build --watch' });
+  if (isWindows) {
+    run(process.execPath, [nestScript, 'build', '--watch'], { cwd: backendDir, label: 'nest build --watch' });
+  } else {
+    run(nestCommand, ['build', '--watch'], { cwd: backendDir, label: 'nest build --watch' });
+  }
 
   await waitForEntry();
   if (!(await portFree(3001))) {

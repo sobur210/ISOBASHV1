@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 
 const API = process.env.API_URL || "http://localhost:3001";
-const WEB = process.env.WEB_URL || "http://localhost:3000";
+const WEB = process.env.WEB_URL || "http://localhost:3002";
 
 const results = [];
 

@@ -4,7 +4,7 @@
 
 | Service | Location | Notes |
 | --- | --- | --- |
-| Web | `http://localhost:3000` | Next.js dev server |
+| Web | `http://localhost:3002` | Next.js dev server, port pinned in `apps/frontend/package.json` |
 | API | `http://localhost:3001` | NestJS API |
 | API health | `http://localhost:3001/health` | Reports database + Redis component status |
 | PostgreSQL | `localhost:5432` | Laragon PostgreSQL 18 |

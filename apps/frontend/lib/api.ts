@@ -1,10 +1,12 @@
 /**
  * Browser-visible API base URL. The NEXT_PUBLIC_ prefix is inlined into the
  * client bundle by Next.js at build time, so this must be set in
- * apps/frontend/.env.local (documented in the root .env.example). The literal
- * default keeps the app working when the variable is absent.
+ * apps/frontend/.env.local (documented in apps/frontend/.env.example). Local
+ * development falls back to the backend's local port; production does not.
  */
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+import { API_URL } from "./config";
+
+export { API_URL };
 
 const SESSION_KEY = "isobash_client_session";
 

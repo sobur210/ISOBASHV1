@@ -8,7 +8,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 config({ path: resolve(root, '.env') });
 
 const API_URL = process.env.API_URL || 'http://localhost:3001';
-const WEB_URL = process.env.WEB_URL || 'http://localhost:3000';
+const WEB_URL = process.env.WEB_URL || 'http://localhost:3002';
 
 const results = [];
 function record(name, pass, detail = '') {

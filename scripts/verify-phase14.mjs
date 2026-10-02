@@ -44,7 +44,7 @@ const REPO_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SNIFFER = join(REPO_ROOT, "apps/backend/dist/media/video-bytes.js");
 
 const API = process.env.API_URL || "http://localhost:3001";
-const WEB = process.env.WEB_URL || "http://localhost:3000";
+const WEB = process.env.WEB_URL || "http://localhost:3002";
 const env = readFileSync(new URL("../.env", import.meta.url), "utf8");
 const DATABASE_URL = env.match(/^DATABASE_URL="?([^"\r\n]+)"?/m)?.[1];
 const MEDIA_ROOT = env.match(/^MEDIA_ROOT="?([^"\r\n]+)"?/m)?.[1];

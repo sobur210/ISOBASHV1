@@ -15,7 +15,7 @@ const require = createRequire(import.meta.url);
 const { Pool } = require("../node_modules/pg");
 
 const API = process.env.API_URL || "http://localhost:3001";
-const WEB = process.env.WEB_URL || "http://localhost:3000";
+const WEB = process.env.WEB_URL || "http://localhost:3002";
 
 const env = readFileSync(new URL("../.env", import.meta.url), "utf8");
 const DATABASE_URL = env.match(/^DATABASE_URL="?([^"\r\n]+)"?/m)?.[1];

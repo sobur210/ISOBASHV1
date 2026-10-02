@@ -1,3 +1,5 @@
+import { API_URL } from "./config";
+
 export const AUTH_COOKIE_NAME = "isobash_session";
 
 export type SessionUser = {
@@ -10,5 +12,5 @@ export type SessionUser = {
 };
 
 export function apiUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+  return API_URL;
 }

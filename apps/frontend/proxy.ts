@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { API_URL } from "@/lib/config";
 
 /**
  * Per-request CSP nonce.
@@ -10,7 +11,7 @@ import { NextResponse, type NextRequest } from "next/server";
  */
 function buildCsp(nonce: string) {
   const isDev = process.env.NODE_ENV === "development";
-  const apiOrigin = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001").replace(/\/+$/, "");
+  const apiOrigin = API_URL;
 
   const directives = [
     "default-src 'self'",

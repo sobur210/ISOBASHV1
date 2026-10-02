@@ -7,10 +7,11 @@
   ],
   "scripts": {
     "clean:dev": "node scripts/clean-dev.js",
-    "dev:frontend": "npm --workspace apps/frontend run dev",
+    "dev:web": "npm --workspace apps/frontend run dev",
+    "dev:frontend": "npm run clean:dev && concurrently -k -n api,web -c blue,green \"npm run dev:backend\" \"npm run dev:web\"",
     "dev:backend": "npm --workspace apps/backend run start:dev",
     "dev:worker": "npm --workspace apps/worker run start:dev",
-    "dev": "npm run clean:dev && concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:worker\"",
+    "dev": "npm run clean:dev && concurrently -k -n api,web,worker -c blue,green,yellow \"npm run dev:backend\" \"npm run dev:web\" \"npm run dev:worker\"",
     "build:frontend": "npm --workspace apps/frontend run build",
     "build:backend": "npm --workspace apps/backend run build",
     "build:worker": "npm --workspace apps/worker run build",

@@ -62,22 +62,39 @@ export function HeroBackgroundSlider({
               className={`absolute inset-0 bg-gradient-to-br transition-all duration-1000 ${slide.gradient}`}
             />
 
-            {/* Background image layer */}
+            {/* Background image layer.
+             * Kept deliberately dim: these are decorative, and every overlay
+             * above assumes a photo that is already close to the page
+             * background in luminance. `brightness-75` plus low opacity is what
+             * stops a bright frame (the earth shot, slide 2) from punching a
+             * hole through the copy. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={slide.url}
               alt={slide.title}
-              className="h-full w-full object-cover object-center filter brightness-90 saturate-125 transition-transform duration-7000 ease-out opacity-70"
+              className="h-full w-full object-cover object-center filter brightness-75 saturate-125 transition-transform duration-7000 ease-out opacity-55"
             />
           </div>
         );
       })}
 
-      {/* Dynamic Contrast Vignette Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/40 to-background" />
+      {/* Base contrast wash. A linear gradient alone leaves the vertical middle
+       * of the hero exposed, which is exactly where the copy sits, so the mid
+       * stop stays high enough to calm the whole frame rather than only its
+       * top and bottom edges. */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/70 to-background" />
 
       {/* Grid line overlay */}
       <div className="absolute inset-0 grid-bg grid-fade opacity-25 mix-blend-overlay" />
+
+      {/* Copy scrim: a soft pool of the page background sitting under the
+       * headline, paragraph, buttons and trust row, fading out before it
+       * reaches the slide edges. Sizing is derived from the hero content
+       * column (max-w-4xl, vertically centred): the plateau covers the full
+       * text block, so no frame of the slideshow can outshine the type, while
+       * the photo stays visible around the outside. `light:` needs a slightly
+       * stronger wash because white-on-white has no headroom to spare. */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_68%_62%_at_50%_50%,var(--background)_0%,var(--background)_48%,transparent_85%)] opacity-90 light:opacity-[0.94]" />
     </div>
   );
 }
@@ -105,12 +122,17 @@ export function HeroSideNavButtons({
       </button>
 
       {/* Next Slide Button */}
+      {/* Resting state mirrors the previous button: a frosted surface chip with
+       * `text-foreground`. The earlier `bg-primary/20` + `text-primary` pairing
+       * put brand blue on a 20%-opacity blue wash, which measured ~2:1 against
+       * the hero in light mode. The primary fill is kept for hover so the
+       * forward affordance still reads. */}
       <button
         type="button"
         onClick={onNext}
         aria-label="Next background image"
         title="Next background image"
-        className="absolute right-3 sm:right-6 lg:right-10 top-1/2 -translate-y-1/2 z-30 flex h-12 w-12 items-center justify-center rounded-full border border-primary/50 bg-primary/20 backdrop-blur-md text-primary transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:scale-110 active:scale-95 shadow-glow cursor-pointer"
+        className="absolute right-3 sm:right-6 lg:right-10 top-1/2 -translate-y-1/2 z-30 flex h-12 w-12 items-center justify-center rounded-full border border-primary/50 bg-surface-2/80 backdrop-blur-md text-foreground transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:scale-110 active:scale-95 shadow-glow cursor-pointer"
       >
         <ChevronRightIcon className="h-6 w-6" />
       </button>

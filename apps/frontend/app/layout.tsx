@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
+import { WEB_URL } from "@/lib/config";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,7 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("http://localhost:3000"),
+  // Env-driven so it cannot drift from the dev port pinned in package.json.
+  // Falls back to 3002, which is what `next dev` is pinned to.
+  metadataBase: new URL(WEB_URL),
   title: {
     default: "ISOBASH: Your AI. Your Agents. Your Workspace.",
     template: "%s | ISOBASH",

@@ -9,7 +9,7 @@ import { io } from 'socket.io-client';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 config({ path: resolve(root, '.env') });
 
-const WEB_URL = process.env.WEB_URL || 'http://localhost:3000';
+const WEB_URL = process.env.WEB_URL || 'http://localhost:3002';
 const API_URL = process.env.API_URL || 'http://localhost:3001';
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
