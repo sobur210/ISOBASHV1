@@ -27,10 +27,10 @@ export const metadata: Metadata = {
   // instead of being served. `public/` wins because the filesystem is checked
   // first.
   manifest: "/manifest.webmanifest",
-  icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
-  },
+  // No `icons` override: `app/icon.png` is the 1254x1254 square monogram and
+  // Next serves it at /icon.png by convention. Pointing this at `/logo.png`
+  // instead handed the browser the 2051x767 wordmark, which rendered as a
+  // squashed, unreadable tab icon.
   title: {
     default: "ISOBASH: Your AI. Your Agents. Your Workspace.",
     template: "%s | ISOBASH",

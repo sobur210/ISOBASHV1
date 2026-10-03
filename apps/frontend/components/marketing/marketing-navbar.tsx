@@ -11,7 +11,7 @@ export function MarketingNavbar() {
     <header className="relative z-50 w-full">
       <div className="mx-auto flex h-[72px] w-full max-w-[1440px] items-center justify-between gap-6 px-5 sm:h-[80px] sm:px-8 lg:px-10">
         <Link href="/" className="flex shrink-0 items-center" aria-label="ISOBASH home">
-          <BrandLogo className="h-8 w-auto sm:h-9 lg:h-10" priority />
+          <BrandLogo className="h-7 w-auto sm:h-8" priority />
         </Link>
 
         <div className="flex items-center gap-3 sm:gap-4">

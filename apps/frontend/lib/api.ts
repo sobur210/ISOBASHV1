@@ -1191,7 +1191,7 @@ export function fetchAdminOverview(signal?: AbortSignal): Promise<AdminOverview>
 }
 
 export function fetchAdminSettings(signal?: AbortSignal): Promise<AdminSettings> {
-  return getJsonAuthed<AdminSettings>("/admin/settings", signal);
+  return getJsonAuthed<AdminSettings>("/admin/configuration", signal);
 }
 
 export function fetchAdminUsers(
@@ -1204,7 +1204,7 @@ export function fetchAdminUsers(
   if (params.page) query.set("page", String(params.page));
   if (params.pageSize) query.set("pageSize", String(params.pageSize));
   const suffix = query.toString();
-  return getJsonAuthed<AdminUserList>(`/admin/users${suffix ? `?${suffix}` : ""}`, signal);
+  return getJsonAuthed<AdminUserList>(`/admin/directory${suffix ? `?${suffix}` : ""}`, signal);
 }
 
 export function updateAdminUserRole(id: number, role: "ADMIN" | "USER"): Promise<AdminUserSummary> {
