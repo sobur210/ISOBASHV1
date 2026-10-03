@@ -1,8 +1,115 @@
 # ISOBASH Project Memory
 
-Last updated: 2026-09-30
+Last updated: 2026-10-03
 
 ## Current status
+
+### Marketing hero rebuild (2026-10-03) — committed and pushed
+
+Four commits on `master`, all pushed to `github.com/sobur210/ISOBASHV1`:
+
+| Commit | What |
+| --- | --- |
+| `1c4b7f2` | Hero rebuilt as a token-driven glass composition; nav links added; tree committed |
+| `df04ea0` | Local-image 5-state slideshow added; header nav links removed again |
+| `4200349` | Favicon restored to the square monogram; navbar logo shrunk |
+| `16dfeeb` | Slideshow reverted out; sub-headline shrunk |
+
+**The hero backdrop is now `components/marketing/hero-backdrop.tsx` and it is a single,
+static composition — no slideshow.** It is pure CSS/SVG with no photography: a vertical
+`background`→`surface` wash, a pale-blue lower-third glow in three stacked radials, a
+`grid-bg` masked so it is strongest at the edges, three rotated `.glass` panels pushing in
+from the sides, four 1px gradient hairlines emerging from the left/right edges, two blurred
+light trails, an angled developer panel bottom-left (`perspective(1600px) rotateY(17deg)`,
+decorative monospace bars only) and abstract glass + glowing circuitry bottom-right.
+
+- **No AI badge, chip, floating logo card or standalone emblem anywhere**, per the brief. The
+  lower-right is traces and nodes only.
+- The centre carries a `radial-gradient` veil of `--background` at 88%. That veil is the
+  reason the headline is legible without dimming the edges; do not remove it in exchange for
+  a heavier global scrim.
+- Every colour resolves through a design token, so the *same geometry* reads white/pale-blue
+  in light mode and deep navy with blue glow in dark mode. This is deliberate: the hero is
+  not hardcoded white, because the theme toggle drives it. `app/globals.css` was **not**
+  touched (repo rule) — the one-off treatments are arbitrary values and inline styles.
+- `marketing-hero.tsx` is a **server component** again (no `"use client"`, no timer, no
+  state). Keep it that way unless an interaction is genuinely needed.
+
+**Type sizes, as tuned across the four commits** (the brief asked for these twice; do not
+re-inflate without being asked):
+
+- Headline `Create, Research, Build.` — `2.3rem / 3.3rem / 4.4rem` (70.4px at `lg`).
+  `Build.` is `bg-clip-text` + `background-clip: text` over a `--primary`→`--accent`
+  gradient.
+- Sub-headline `Anything You Imagine.` — `1.1rem / 1.3rem / 1.55rem`.
+- Supporting paragraph — **plain black in light mode** (`text-foreground light:text-black`),
+  `font-medium`, `max-w-[620px]`. The owner asked for this explicitly; it is not a token
+  oversight.
+
+**Navbar** (`marketing-navbar.tsx`) is now: logo, theme toggle, `Sign in`, `Get started
+free →`. **The `Home / Features / Agents / Pricing / Docs` links were added in `1c4b7f2` and
+removed again in `df04ea0` at the owner's request — do not re-add them.** Logo is `h-7
+sm:h-8` (28/32px). The `Sign in` label is brand blue and needs the **important flag**
+(`text-blue-400! light:text-blue-600!`): the `ghost` button variant sets
+`text-muted-foreground` as a plain text utility, so a normal `text-*` class loses on source
+order rather than winning.
+
+#### Two theme mechanics that will bite again
+
+- **`dark:` does not work in this app.** `globals.css` only defines a `light` custom variant
+  (`@custom-variant light (&:where(.light, .light *))`), so Tailwind's `dark:` falls back to
+  `prefers-color-scheme` and silently never fires when the OS is light, even with
+  `<html class="light">` set. Write theme-conditional styles as `light:*` against a dark
+  default, e.g. `text-blue-400 light:text-blue-600`. Much of the existing `dark:` usage in
+  the repo is therefore dead.
+- **The theme script reads the cookie before localStorage** (`app/layout.tsx`). Setting only
+  `localStorage` and reloading does nothing; set `document.cookie` too. Verified: with the
+  cookie at `light` the page renders `#fff`, with only localStorage at `light` it stays dark.
+
+#### Favicon
+
+`app/layout.tsx` had `metadata.icons = { icon: "/logo.png", apple: "/logo.png" }`, but
+`/logo.png` is the **2051×767 wordmark** — browsers rendered a squashed, unreadable tab icon.
+The override is gone, so Next serves `app/icon.png` (the **1254×1254** square monogram) by
+convention; the served tag is `<link rel="icon" href="/icon.png" sizes="1254x1254">`.
+`public/manifest.webmanifest` had the same bug, declaring the wordmark as a `512x512` icon;
+both entries now point at `/icon.png`. **Open item:** `app/icon.png` is 1.35MB, which is very
+heavy for a favicon — a 512×512 or 256×256 re-encode would cut ~95% invisibly.
+
+#### How this was verified
+
+`npm run lint` (scoped to `components/marketing`), `tsc --noEmit` and `next build` are all
+green. Beyond that, rendered pixels were decoded from headless-Chrome screenshots (a small
+PNG decoder over CDP `Page.captureScreenshot`) and contrast measured per text box: headline
+**17.7:1** and paragraph **21:1** on the composition slide in light mode, 17.4:1 / 17.4:1 in
+dark. The centre veil is what buys this; re-measure if you touch the backdrop.
+
+#### Left undone on purpose
+
+- `components/marketing/hero-slider.tsx` is **dead code** — the old hot-linked Unsplash
+  `HERO_SLIDES` and `HeroSideNavButtons`. Nothing imports it (nor `hero-capabilities.tsx` or
+  `floating-cards.tsx`). Left in place rather than deleted, pending a decision.
+- Nav targets were never real pages. When links briefly existed they pointed at `/#features`,
+  `/app/agents`, `/app/billing`, `/blog`, because no pricing or docs page exists. If links
+  come back, those pages have to be built or the targets changed.
+
+#### Repo hygiene changed in `1c4b7f2`
+
+`.tmpwork/chrome-profile/` is now **gitignored**. It is a real Chrome data dir
+(`Login Data`, `Network/Cookies`, `Local State`, `Web Data`) and would have published session
+credentials to GitHub. `.tmpwork` itself is still tracked, as is `apps/backend/dist-gateway/`
+— both were committed deliberately at the owner's instruction, and both are build/scratch
+output that most repos would ignore.
+
+#### Concurrent writer — still true
+
+During this work `apps/frontend/components/{admin-overview-panel,admin-users-panel,billing}-panel.tsx`
+were being written by another session (mtimes minutes apart). **All three fail
+`npm run lint`** with `react-hooks/set-state-in-effect`, and they were swept into `1c4b7f2`.
+So: repo-wide `npm run lint` is **red** right now, and it is not the hero work. The canonical
+fix pattern is already in `capabilities-panel.tsx` — fetch in a promise chain and `setState`
+inside `.then`. Also still uncommitted in the tree: edits to
+`apps/backend/src/admin/admin-settings.service.ts` and `apps/frontend/lib/api.ts`.
 
 ### Active handoff: admin shell feature (2026-10-02)
 
@@ -297,6 +404,14 @@ Preflight `npm run clean:dev` clears stale listeners on 3000-3005. PostgreSQL, R
 
 ## Next session priorities
 
+0. **Marketing hero — read the 2026-10-03 entry above before touching it.** Four commits
+   (`1c4b7f2`, `df04ea0`, `4200349`, `16dfeeb`) landed and pushed; the design was tuned
+   across four rounds of owner feedback and is easy to undo by accident. Concretely: no
+   header nav links, no background photographs, sub-headline at 1.55rem, paragraph plain black
+   in light mode, `Sign in` label blue via the important flag. Cheapest wins still on the
+   table: resize the 1.35MB `app/icon.png`, delete the dead `hero-slider.tsx`, and fix the
+   three `set-state-in-effect` lint errors another session left in the admin/billing panels.
+   Full repo-wide `npm run lint` is red for exactly those three files.
 1. Phases 1-8, 10, 11, 12 and 13 are implemented and runtime-verified (351 checks, all green).
    Phase 14 (video) is implemented too and `verify:phase14` is **59/59** (3 skips by design).
    Phase 15 (Magic Hour video provider, provider credit ledger, provider-scoped render queues)

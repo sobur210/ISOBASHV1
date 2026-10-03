@@ -96,6 +96,33 @@ The UI is a single app with route groups: `/` (landing), `/login`, `/register`, 
 
 Workspace surfaces (research, agents, projects, files, media, billing, settings) are route shells with truthful empty states until their dedicated phase. Chat is live from Phase 5: the `/app/chat` surface renders persisted conversations, streams responses token-by-token, and shows real API errors. From Phase 6 all workspace and admin surfaces sit behind a real login.
 
+### Landing hero
+
+`components/marketing/` is the public landing surface. `marketing-navbar.tsx` holds the logo,
+theme toggle, `Sign in` and `Get started free`; it has no nav links. `marketing-hero.tsx` is a
+**server component** (no state, no timer) and renders one static composition from
+`hero-backdrop.tsx`.
+
+`hero-backdrop.tsx` draws the whole hero in CSS and inline SVG: a vertical
+`background`→`surface` wash, stacked radial glows, a `grid-bg` masked to the edges, three
+rotated `.glass` panels, gradient hairlines, blurred light trails, an angled
+`perspective(1600px) rotateY(17deg)` developer panel and abstract glass/circuitry bottom-right.
+There is no `<img>` and no remote background — the hero renders identically with the network
+off. All colours come from design tokens, so one geometry serves both themes; the text legibility
+comes from a `radial-gradient` veil of `--background` at the centre rather than a heavy global
+scrim. `app/globals.css` owns the reusable `.glass`/`.grid-bg`/`.noise-bg` helpers; per-hero
+one-offs are arbitrary values in `hero-backdrop.tsx`.
+
+Two mechanics to keep in mind when styling this surface: `globals.css` defines only a `light`
+custom variant, so **`dark:` variants never fire** — write `light:*` against a dark default; and
+the theme script reads its cookie before `localStorage`, so setting only `localStorage` and
+reloading will not switch the theme. The `Sign in` label is brand blue via `text-blue-400!
+light:text-blue-600!` because the `ghost` button variant's own colour utility wins on source
+order otherwise.
+
+`hero-slider.tsx`, `hero-capabilities.tsx` and `floating-cards.tsx` are unused by the current
+hero and kept only as dead code.
+
 ## Phase boundaries
 
 Phases 1–5 establish the foundation and live chat: routes, provider bridge, infrastructure services, design system, truthful empty states, and a real streaming, persisted chat surface. Phase 6 adds real authentication (register/login/logout with server-side sessions) and gates the product UI behind it. Admin role gating ships early with the system-health surface: the public hero panel was removed and rebuilt as a live, admin-only system health panel, and `AuthGuard`+`RolesGuard` with `requireAdmin()` enforce the `ADMIN` role server- and client-side. Phase 7 generalizes this into a reusable role/entitlement layer (`@Roles()` + `RolesGuard`). Full entitlements, media, and billing follow in their dedicated phases. Nothing else is simulated before it is real.
