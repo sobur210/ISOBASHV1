@@ -1,39 +1,16 @@
-"use client";
-
 /**
  * Hero backdrop for the marketing hero.
  *
- * A five-state slideshow. One state is the structural composition - a clean
- * vertical wash, a pale-blue atmospheric glow along the lower third, a masked
- * blueprint grid, floating glass panels, thin interface hairlines growing in
- * from the left and right edges, an angled developer panel bottom-left and
- * abstract glass/circuitry bottom-right. The other four are the photographic
- * atmospheres, cross-faded on a slow drift.
+ * Composition only: a clean vertical wash, a pale-blue atmospheric glow along
+ * the lower third, blueprint grid, thin interface hairlines that grow in from
+ * the left and right edges, floating glass panels, an angled developer panel
+ * in the lower left and abstract glass/circuitry structures in the lower
+ * right. The centre is kept clear so the headline stays dominant.
  *
- * Deliberately absent: any AI badge, chip, floating logo card or standalone
- * emblem in the lower right.
- *
- * The photography is local (`/hero/*.jpg`) rather than hot-linked, and every
- * wash resolves through a design token so the same geometry reads
- * white/pale-blue in light mode and deep navy with blue glow in dark mode.
- * The per-slide scrim and the centre veil are what keep the headline
- * measurable against any frame in the rotation.
+ * Every colour resolves through a design token, so the same geometry renders
+ * as white/pale-blue in light mode and deep navy with blue glow in dark mode.
+ * The centre veil is what guarantees the headline contrast in either theme.
  */
-
-type Slide = {
-  id: string;
-  /** Absent on the composition slide, which is drawn from tokens alone. */
-  src?: string;
-  alt: string;
-};
-
-export const HERO_SLIDES: Slide[] = [
-  { id: "composition", alt: "ISOBASH workspace" },
-  { id: "neural", src: "/hero/hero-neural.jpg", alt: "Fluid neural field" },
-  { id: "mesh", src: "/hero/hero-mesh.jpg", alt: "Global mesh network" },
-  { id: "matrix", src: "/hero/hero-matrix.jpg", alt: "Code and data matrix" },
-  { id: "engine", src: "/hero/hero-engine.jpg", alt: "High performance engine" },
-];
 
 const HAIRLINES = [
   { side: "left", top: "30%", width: "30%" },
@@ -160,7 +137,13 @@ function Circuitry() {
   );
 }
 
-function GlassPanel({ className, style }: { className?: string; style?: React.CSSProperties }) {
+function GlassPanel({
+  className,
+  style,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <div
       className={`glass rounded-[2rem] ${className ?? ""}`}
@@ -169,36 +152,13 @@ function GlassPanel({ className, style }: { className?: string; style?: React.CS
   );
 }
 
-/** Atmospheric glow and blueprint grid: present on every slide. */
-function CommonAtmosphere() {
-  return (
-    <>
-      <div
-        className="grid-bg absolute inset-0 opacity-40"
-        style={{
-          maskImage: "radial-gradient(ellipse 92% 70% at 50% 46%, transparent 34%, #000 100%)",
-          WebkitMaskImage: "radial-gradient(ellipse 92% 70% at 50% 46%, transparent 34%, #000 100%)",
-        }}
-      />
-      <div
-        className="absolute inset-x-0 top-0 h-full"
-        style={{
-          background:
-            "radial-gradient(58% 52% at 50% 44%, color-mix(in srgb, var(--background) 88%, transparent) 0%, transparent 78%)",
-        }}
-      />
-    </>
-  );
-}
-
-/** The token-drawn composition: the "one there now", kept as slide zero. */
-function CompositionSlide({ active }: { active: boolean }) {
+export function HeroBackdrop() {
   return (
     <div
-      className={`absolute inset-0 transition-opacity duration-[1400ms] ease-in-out ${
-        active ? "opacity-100" : "opacity-0"
-      }`}
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 overflow-hidden select-none"
     >
+      {/* Base wash: page background bleeding into the surface tone at the foot. */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-surface" />
 
       {/* Atmospheric glow hugging the lower portion of the hero. */}
@@ -224,12 +184,25 @@ function CompositionSlide({ active }: { active: boolean }) {
         }}
       />
 
-      <CommonAtmosphere />
+      {/* Blueprint grid, strongest at the edges so the middle stays quiet. */}
+      <div
+        className="grid-bg absolute inset-0 opacity-40"
+        style={{
+          maskImage: "radial-gradient(ellipse 92% 70% at 50% 46%, transparent 34%, #000 100%)",
+          WebkitMaskImage: "radial-gradient(ellipse 92% 70% at 50% 46%, transparent 34%, #000 100%)",
+        }}
+      />
 
       {/* Architectural glass panels pushing in from the edges. */}
-      <GlassPanel className="absolute -left-24 top-[8%] h-[38%] w-[30%] rotate-[-8deg] opacity-60" />
-      <GlassPanel className="absolute -right-28 top-[4%] h-[34%] w-[26%] rotate-[10deg] opacity-55" />
-      <GlassPanel className="absolute -left-16 bottom-[18%] h-[30%] w-[20%] rotate-[6deg] opacity-45" />
+      <GlassPanel
+        className="absolute -left-24 top-[8%] h-[38%] w-[30%] rotate-[-8deg] opacity-60"
+      />
+      <GlassPanel
+        className="absolute -right-28 top-[4%] h-[34%] w-[26%] rotate-[10deg] opacity-55"
+      />
+      <GlassPanel
+        className="absolute -left-16 bottom-[18%] h-[30%] w-[20%] rotate-[6deg] opacity-45"
+      />
 
       {/* Thin futuristic interface lines emerging from the left and right edges. */}
       {HAIRLINES.map((line) => (
@@ -268,109 +241,16 @@ function CompositionSlide({ active }: { active: boolean }) {
 
       <DeveloperPanel />
       <Circuitry />
-    </div>
-  );
-}
 
-/**
- * A photographic atmosphere. Two washes rather than a `brightness` cut: a
- * `background`-token scrim to sit the photo in the current theme, and an
- * edge-darkening pass so the open sides stay readable.
- */
-function PhotoSlide({
-  slide,
-  active,
-}: {
-  slide: Slide;
-  active: boolean;
-}) {
-  if (!slide.src) return null;
-  return (
-    <div
-      className={`absolute inset-0 transition-opacity duration-[1400ms] ease-in-out ${
-        active ? "opacity-100" : "opacity-0"
-      }`}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={slide.src}
-        alt={slide.alt}
-        className="hero-drift h-full w-full object-cover object-center"
-        loading="lazy"
-        decoding="async"
-      />
+      {/* Centre veil. Guarantees the headline keeps its contrast against any of
+          the structures above, without dimming the edges. */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-x-0 top-0 h-full"
         style={{
           background:
-            "linear-gradient(180deg, color-mix(in srgb, var(--background) 82%, transparent) 0%, color-mix(in srgb, var(--background) 52%, transparent) 45%, color-mix(in srgb, var(--background) 88%, transparent) 100%)",
+            "radial-gradient(58% 52% at 50% 44%, color-mix(in srgb, var(--background) 88%, transparent) 0%, transparent 78%)",
         }}
       />
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(90deg, color-mix(in srgb, var(--background) 70%, transparent) 0%, transparent 28%, transparent 72%, color-mix(in srgb, var(--background) 70%, transparent) 100%)",
-        }}
-      />
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(60% 46% at 50% 100%, color-mix(in srgb, var(--primary) 20%, transparent) 0%, transparent 72%)",
-        }}
-      />
-      <CommonAtmosphere />
-    </div>
-  );
-}
-
-export function HeroBackdrop({ currentIndex }: { currentIndex: number }) {
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 overflow-hidden select-none"
-    >
-      {/* Ken Burns for the photo frames. Declared locally because
-       * app/globals.css is the untouched token source of truth and has no
-       * drift keyframes; style-src allows 'unsafe-inline'. */}
-      <style>{`
-        @keyframes hero-drift {
-          from { transform: scale(1.04) translate3d(0, 0, 0); }
-          to   { transform: scale(1.14) translate3d(-1.5%, -1%, 0); }
-        }
-        .hero-drift { animation: hero-drift 24s ease-in-out infinite alternate; }
-        @media (prefers-reduced-motion: reduce) {
-          .hero-drift { animation: none; transform: scale(1.06); }
-        }
-      `}</style>
-
-      {/* Base wash sits under every slide so a cross-fade never flashes the page. */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-surface" />
-
-      {HERO_SLIDES.map((slide, index) =>
-        slide.src ? (
-          <PhotoSlide key={slide.id} slide={slide} active={index === currentIndex} />
-        ) : (
-          <CompositionSlide key={slide.id} active={index === currentIndex} />
-        ),
-      )}
-    </div>
-  );
-}
-
-/** Discreet position readout for the rotation. */
-export function HeroSlideDots({ currentIndex }: { currentIndex: number }) {
-  return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-6 z-20 flex items-center justify-center gap-2">
-      {HERO_SLIDES.map((slide, index) => (
-        <span
-          key={slide.id}
-          className={`h-1.5 rounded-full transition-all duration-500 ${
-            index === currentIndex ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/35"
-          }`}
-        />
-      ))}
     </div>
   );
 }

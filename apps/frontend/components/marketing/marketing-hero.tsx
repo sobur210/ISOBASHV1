@@ -1,11 +1,6 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import { ButtonLink } from "@/components/ui/button";
 import { ArrowRightIcon, CheckIcon } from "@/components/ui/icons";
-import { HeroBackdrop, HeroSlideDots, HERO_SLIDES } from "@/components/marketing/hero-backdrop";
-
-const SLIDE_MS = 5200;
+import { HeroBackdrop } from "@/components/marketing/hero-backdrop";
 
 const trustPoints = [
   "No vendor lock-in",
@@ -26,23 +21,9 @@ function TrustPoint({ label }: { label: string }) {
 }
 
 export function MarketingHero() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  // Cross-fade through the rotation, but stand down entirely when the visitor
-  // has asked for reduced motion: an autoplaying background is exactly the kind
-  // of movement that setting is meant to stop.
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = window.setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, SLIDE_MS);
-    return () => window.clearInterval(timer);
-  }, []);
-
   return (
     <section className="relative isolate flex min-h-[calc(100svh-80px)] flex-col justify-center overflow-hidden">
-      <HeroBackdrop currentIndex={currentIndex} />
-      <HeroSlideDots currentIndex={currentIndex} />
+      <HeroBackdrop />
 
       <div className="relative z-10 mx-auto w-full max-w-[1280px] px-4 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
         <div className="animate-rise mx-auto flex max-w-4xl flex-col items-center text-center">
@@ -60,7 +41,7 @@ export function MarketingHero() {
             </span>
           </h1>
 
-          <p className="mt-4 text-[1.3rem] font-medium leading-snug tracking-[-0.02em] text-foreground/90 sm:text-[1.6rem] lg:text-[2rem]">
+          <p className="mt-4 text-[1.1rem] font-medium leading-snug tracking-[-0.015em] text-foreground/90 sm:text-[1.3rem] lg:text-[1.55rem]">
             Anything You Imagine.
           </p>
 
