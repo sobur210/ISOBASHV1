@@ -24,4 +24,6 @@ Requests are validated with class-validator DTOs. Invalid input returns `400` wi
 
 Local configuration uses `OLLAMA_ENABLED`, `OLLAMA_BASE_URL`, and `OLLAMA_MODEL` in `.env`. Provider credentials, when added for cloud adapters, must remain server-side and must be validated at startup (the process fails fast when `OPENAI_ENABLED` is set without `OPENAI_API_KEY`).
 
+OpenRouter image generation uses the dedicated `POST /api/v1/images` endpoint. Set `OPENROUTER_API_IMAGE_VIDEO` in the backend environment and optionally choose an image-output model with `OPENROUTER_IMAGE_MODEL` (defaults to `openai/gpt-image-1`). The key is sent only from the backend; model requests may incur OpenRouter charges. The provider is registered only when its key is configured.
+
 The capability endpoint reports unsupported vision, embeddings, image, video, and research features as unavailable until a real adapter is configured. It never reports simulated success.

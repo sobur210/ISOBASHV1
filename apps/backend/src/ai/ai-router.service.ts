@@ -59,7 +59,7 @@ export class AiRouterService {
   /** Build (and probe) the routing plan without executing anything. */
   async plan(request: RouteRequest): Promise<RoutePlan> {
     const mode = request.mode ?? DEFAULT_MODE;
-    const selection = parseSelection(request.model);
+    const selection = parseSelection(request.model, this.registry.names());
     const strict = selection.provider !== null;
 
     const candidates: RouteCandidate[] = [];
@@ -575,10 +575,17 @@ export class AiRouterService {
   }
 }
 
-function parseSelection(model?: string): { provider: string | null; model: string | null } {
+export function parseSelection(
+  model: string | undefined,
+  providers: readonly string[] = [],
+): { provider: string | null; model: string | null } {
   if (!model) return { provider: null, model: null };
   const separator = model.indexOf(':');
-  if (separator <= 0) return { provider: model, model: null };
+  if (separator <= 0) {
+    return providers.includes(model)
+      ? { provider: model, model: null }
+      : { provider: null, model };
+  }
   return { provider: model.slice(0, separator), model: model.slice(separator + 1) || null };
 }
 

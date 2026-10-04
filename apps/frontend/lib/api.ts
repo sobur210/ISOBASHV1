@@ -1141,6 +1141,23 @@ export type AdminOverview = {
   detail: string;
 };
 
+/**
+ * Storage roots are named explicitly rather than typed as `Record<string, string>`
+ * intersected with the writability map. An intersection of an index signature with
+ * `writable: Record<string, boolean>` widens every value to `string | Record<...>`,
+ * which is unrenderable and silently forces a cast at the call site.
+ */
+export type AdminStorageRoots = {
+  dataRoot: string;
+  uploadRoot: string;
+  mediaRoot: string;
+  tempRoot: string;
+  logsRoot: string;
+  cacheRoot: string;
+  knowledgeRoot: string;
+  modelRoot: string;
+};
+
 export type AdminSettings = {
   runtime: {
     node: string;
@@ -1150,7 +1167,15 @@ export type AdminSettings = {
     webUrl: string;
     corsOrigins: string[];
   };
-  storage: Record<string, string> & { detail: string };
+  storage: AdminStorageRoots & {
+    /**
+     * Probed live with `W_OK` on every load; never a constant. Only the roots a
+     * request actually writes to are probed — cache, knowledge and model roots are
+     * created on demand and are legitimately absent on a fresh deployment.
+     */
+    writable: Partial<Record<keyof AdminStorageRoots, boolean>>;
+    detail: string;
+  };
   providers: {
     provider: string;
     enabled: boolean;
@@ -1163,7 +1188,8 @@ export type AdminSettings = {
   registeredProviders: string[];
   limits: Record<string, Record<string, unknown>>;
   queues: { counts: Record<string, number> | null; workers: number | null; ready: boolean; detail: string };
-  writable: false;
+  /** Says this view is read-only. Not a statement about the machine: see `storage.writable`. */
+  configurationWritable: false;
   detail: string;
 };
 

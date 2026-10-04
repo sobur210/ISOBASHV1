@@ -1,19 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { StatusChip } from "@/components/ui/status-chip";
-import { Button } from "@/components/ui/button";
-import { SkeletonRows } from "@/components/ui/skeleton";
+import { ActionButton, Notice, Panel, PanelBody, PanelFooter, PanelHeader } from "@/components/admin/ui";
 import {
   ActivityIcon,
-  AlertTriangleIcon,
   BotIcon,
-  ClockIcon,
   CpuIcon,
   DatabaseIcon,
   RefreshIcon,
 } from "@/components/ui/icons";
+import { SkeletonRows } from "@/components/ui/skeleton";
 import { getJson } from "@/lib/api";
 
 type ComponentStatus = { name: string; status: "ok" | "error"; detail?: string };
@@ -33,39 +30,19 @@ type ProviderHealth = {
 const REFRESH_MS = 30_000;
 
 const infrastructure: Record<string, { label: string; icon: React.ReactNode; fallback: string }> = {
-  database: { label: "PostgreSQL", icon: <DatabaseIcon className="h-4 w-4" />, fallback: "Laragon PostgreSQL on 5432" },
-  redis: { label: "Redis", icon: <ActivityIcon className="h-4 w-4" />, fallback: "Redis 5 on 6380" },
+  database: {
+    label: "PostgreSQL",
+    icon: <DatabaseIcon className="h-4 w-4" />,
+    fallback: "The API reached the database",
+  },
+  redis: { label: "Redis", icon: <ActivityIcon className="h-4 w-4" />, fallback: "The API reached Redis" },
 };
 
-function Row({
-  icon,
-  label,
-  detail,
-  children,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  detail: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4 py-3">
-      <div className="flex min-w-0 items-center gap-3.5">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-2 text-muted-foreground">
-          {icon}
-        </span>
-        <div className="min-w-0">
-          <p className="text-[13.5px] font-medium text-foreground">{label}</p>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground" title={detail}>
-            {detail}
-          </p>
-        </div>
-      </div>
-      {children}
-    </div>
-  );
-}
-
+/**
+ * Live infrastructure and provider state, straight from `/health` and
+ * `/ai/providers/health`. Rows are a list rather than a grid of cards: this is a
+ * status table, and it should stay readable at a glance without scrolling.
+ */
 export function HealthPanel() {
   const [data, setData] = useState<HealthResult | null>(null);
   const [providers, setProviders] = useState<ProviderHealth[]>([]);
@@ -108,77 +85,102 @@ export function HealthPanel() {
     void refresh().finally(() => setRetrying(false));
   };
 
+  const rows = [
+    ...(data?.components ?? []).map((component) => {
+      const meta = infrastructure[component.name] ?? {
+        label: component.name,
+        icon: <CpuIcon className="h-4 w-4" />,
+        fallback: "No detail reported.",
+      };
+      return {
+        key: component.name,
+        icon: meta.icon,
+        label: meta.label,
+        detail: component.detail ?? meta.fallback,
+        tone: component.status === "ok" ? ("success" as const) : ("danger" as const),
+        status: component.status,
+      };
+    }),
+    ...providers.map((provider) => ({
+      key: provider.provider,
+      icon: <BotIcon className="h-4 w-4" />,
+      label: provider.provider,
+      detail: provider.detail ?? `${provider.capabilities.length} capabilities registered`,
+      tone: provider.status === "healthy" ? ("success" as const) : ("warning" as const),
+      status: provider.status,
+    })),
+  ];
+
+  const failing = rows.filter((row) => row.tone !== "success").length;
+
   return (
-    <Card>
-      <CardHeader
+    <Panel>
+      <PanelHeader
         title="System status"
-        subtitle="Live information directly from the API. Nothing here is simulated."
+        description="Live from the API. Nothing here is simulated."
         icon={<ActivityIcon className="h-4 w-4" />}
-        action={
-          lastUpdated ? (
-            <span className="inline-flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
-              <ClockIcon className="h-3.5 w-3.5" />
-              {lastUpdated.toLocaleTimeString()}
-            </span>
-          ) : null
+        meta={
+          <>
+            {data ? (
+              <StatusChip
+                tone={failing === 0 ? "success" : "warning"}
+                label={failing === 0 ? "all ok" : `${failing} degraded`}
+              />
+            ) : null}
+            {lastUpdated ? (
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {lastUpdated.toLocaleTimeString()}
+              </span>
+            ) : null}
+          </>
         }
       />
-      <CardBody className="pt-1">
+
+      <PanelBody className="px-0 py-0">
         {error ? (
-          <div className="flex flex-col items-start gap-4 rounded-xl border border-danger/25 bg-danger/5 p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
-              <div>
-                <p className="text-[13.5px] font-medium text-foreground">API unreachable</p>
-                <p className="mt-1 text-xs text-muted-foreground">{error}</p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" onClick={retry} disabled={retrying}>
-              <RefreshIcon className="h-3.5 w-3.5" />
+          <div className="px-5 py-4">
+            <Notice tone="danger">{error}</Notice>
+            <ActionButton
+              className="mt-3"
+              onClick={retry}
+              disabled={retrying}
+              icon={<RefreshIcon className={`h-3.5 w-3.5 ${retrying ? "animate-spin" : ""}`} />}
+            >
               {retrying ? "Retrying" : "Retry"}
-            </Button>
+            </ActionButton>
           </div>
         ) : loading && !data ? (
-          <SkeletonRows count={4} />
-        ) : (
-          <div className="divide-y divide-border">
-            {data?.components.map((component) => {
-              const meta = infrastructure[component.name] ?? {
-                label: component.name,
-                icon: <CpuIcon className="h-4 w-4" />,
-                fallback: "No detail reported.",
-              };
-              return (
-                <Row
-                  key={component.name}
-                  icon={meta.icon}
-                  label={meta.label}
-                  detail={component.detail ?? meta.fallback}
-                >
-                  <StatusChip
-                    tone={component.status === "ok" ? "success" : "danger"}
-                    label={component.status}
-                  />
-                </Row>
-              );
-            })}
-
-            {providers.map((provider) => (
-              <Row
-                key={provider.provider}
-                icon={<BotIcon className="h-4 w-4" />}
-                label={provider.provider}
-                detail={provider.detail ?? `${provider.capabilities.length} capabilities`}
-              >
-                <StatusChip
-                  tone={provider.status === "healthy" ? "success" : "warning"}
-                  label={provider.status}
-                />
-              </Row>
-            ))}
+          <div className="px-5 py-4">
+            <SkeletonRows count={4} />
           </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {rows.map((row) => (
+              <li
+                key={row.key}
+                className="flex items-center justify-between gap-4 px-5 py-2.5 transition-colors hover:bg-surface-2/50"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="shrink-0 text-muted-foreground">{row.icon}</span>
+                  <div className="min-w-0">
+                    <p className="text-[12.5px] font-medium text-foreground">{row.label}</p>
+                    <p className="mt-0.5 truncate text-[11.5px] text-muted-foreground" title={row.detail}>
+                      {row.detail}
+                    </p>
+                  </div>
+                </div>
+                <StatusChip tone={row.tone} label={row.status} />
+              </li>
+            ))}
+          </ul>
         )}
-      </CardBody>
-    </Card>
+      </PanelBody>
+
+      <PanelFooter>
+        <span className="font-mono text-[11px] text-muted-foreground">
+          {data ? data.service : "api"} · auto-refresh every {REFRESH_MS / 1000}s
+        </span>
+      </PanelFooter>
+    </Panel>
   );
 }

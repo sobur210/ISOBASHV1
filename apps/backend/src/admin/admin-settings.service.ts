@@ -1,3 +1,4 @@
+import { accessSync, constants } from 'node:fs';
 import { Injectable } from '@nestjs/common';
 import { InjectConfig } from '../shared/config/inject-config';
 import { AppConfig } from '../shared/config/configuration';
@@ -32,6 +33,25 @@ export class AdminSettingsService {
     return typeof value === 'string' && value.trim().length > 0;
   }
 
+  /**
+   * Whether a path can actually be written, checked now rather than reported as a
+   * constant. A storage root that is read-only or missing is the single most
+   * common way a healthy-looking deployment starts failing uploads, and an
+   * operator has to be able to see that without leaving the console.
+   *
+   * `W_OK` is the honest test: it is what the process itself would hit. Probing
+   * with a real write would be stricter and would litter the data root, so this
+   * is used instead.
+   */
+  private writable(path: string): boolean {
+    try {
+      accessSync(path, constants.W_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async settings() {
     const [queues, workers] = await Promise.all([
       this.queues.getJobCounts().catch(() => null),
@@ -56,8 +76,15 @@ export class AdminSettingsService {
         cacheRoot: this.config.storage.cacheRoot,
         knowledgeRoot: this.config.storage.knowledgeRoot,
         modelRoot: this.config.storage.modelRoot,
+        writable: {
+          dataRoot: this.writable(this.config.storage.dataRoot),
+          uploadRoot: this.writable(this.config.storage.uploadRoot),
+          mediaRoot: this.writable(this.config.storage.mediaRoot),
+          tempRoot: this.writable(this.config.storage.tempRoot),
+          logsRoot: this.writable(this.config.storage.logsRoot),
+        },
         detail:
-          'Absolute paths are shown to an administrator because they are what an operator has to change. They are not exposed on any user-facing route.',
+          'Absolute paths are shown to an administrator because they are what an operator has to change. They are not exposed on any user-facing route. Writable is probed with W_OK on every load; a root that is missing or read-only fails uploads at request time, not here.',
       },
       providers: [
         {
@@ -120,7 +147,11 @@ export class AdminSettingsService {
         ready: this.queues.isReady(),
         detail: 'Counts are aggregated over every queue this process has touched.',
       },
-      writable: false,
+      // Named explicitly because it is a statement about this endpoint, not about
+      // the machine: an earlier `writable: false` sat next to the storage roots
+      // and read as "this deployment is broken" when it only meant "this view is
+      // read-only". The real storage state is under `storage.writable`.
+      configurationWritable: false,
       detail:
         'Configuration is environment-driven and read at startup. This endpoint is read-only by design: a control that wrote a row would report a change the running process had not applied. Edit the environment and restart the service to change anything here.',
     };

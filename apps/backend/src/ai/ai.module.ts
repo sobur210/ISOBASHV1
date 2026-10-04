@@ -7,6 +7,7 @@ import { UnconfiguredAiProvider } from './unconfigured.provider';
 import { OllamaProvider } from './ollama.provider';
 import { AiModelRegistry } from './model.registry';
 import { OpenAiProvider } from './openai.provider';
+import { OpenRouterImageProvider } from './openrouter-image.provider';
 import { AiCapabilityRegistry } from './capability.registry';
 import { AiToolsRegistry } from './tools.registry';
 import { GeminiProvider } from './gemini.provider';
@@ -30,6 +31,7 @@ import { SecurityModule } from '../security/security.module';
     ProviderCreditService,
     OllamaProvider,
     OpenAiProvider,
+    OpenRouterImageProvider,
     GeminiProvider,
     PollinationsProvider,
     PollinationsVideoProvider,
@@ -41,12 +43,13 @@ import { SecurityModule } from '../security/security.module';
     AiToolsRegistry,
     {
       provide: 'AI_PROVIDER_REGISTRATION',
-      inject: [AiProviderRegistry, AiModelRegistry, OllamaProvider, OpenAiProvider, GeminiProvider, PollinationsProvider, PollinationsVideoProvider, MagicHourVideoProvider, DeepAiVideoProvider, DeepAiImageProvider],
+      inject: [AiProviderRegistry, AiModelRegistry, OllamaProvider, OpenAiProvider, OpenRouterImageProvider, GeminiProvider, PollinationsProvider, PollinationsVideoProvider, MagicHourVideoProvider, DeepAiVideoProvider, DeepAiImageProvider],
       useFactory: (
         registry: AiProviderRegistry,
         models: AiModelRegistry,
         ollama: OllamaProvider,
         openai: OpenAiProvider,
+        openrouterImage: OpenRouterImageProvider,
         gemini: GeminiProvider,
         pollinations: PollinationsProvider,
         pollinationsVideo: PollinationsVideoProvider,
@@ -98,6 +101,17 @@ import { SecurityModule } from '../security/security.module';
               enabled: true,
             });
           }
+        }
+        if (process.env.OPENROUTER_API_IMAGE_VIDEO) {
+          registry.register(openrouterImage);
+          models.register({
+            id: process.env.OPENROUTER_IMAGE_MODEL || 'openai/gpt-image-1',
+            provider: openrouterImage.name,
+            capabilities: ['image-generation'],
+            modes: ['online', 'hybrid'],
+            enabled: true,
+            priority: 60,
+          });
         }
         if (process.env.GEMINI_ENABLED === 'true') {
           registry.register(gemini);

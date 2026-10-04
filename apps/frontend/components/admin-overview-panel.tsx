@@ -1,50 +1,73 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { StatusChip } from "@/components/ui/status-chip";
-import { SkeletonTextRow } from "@/components/ui/skeleton";
+import {
+  EmptyState,
+  KeyValue,
+  KeyValueList,
+  MetricGrid,
+  Notice,
+  Panel,
+  PanelBody,
+  PanelFooter,
+  PanelHeader,
+  RefreshButton,
+  SectionLabel,
+  TableWrap,
+  Td,
+  Th,
+  Tr,
+  type MetricSpec,
+} from "@/components/admin/ui";
+import {
+  formatDuration,
+  formatLimitValue,
+  formatNumber,
+  formatTimestamp,
+  humanizeKey,
+} from "@/components/admin/format";
 import {
   ActivityIcon,
-  AlertTriangleIcon,
-  CheckIcon,
+  ChatIcon,
   CreditCardIcon,
   DatabaseIcon,
   FileIcon,
   FolderIcon,
-  ChatIcon,
-  RefreshIcon,
   SearchIcon,
   ServerIcon,
   UsersIcon,
 } from "@/components/ui/icons";
+import { SkeletonTextRow } from "@/components/ui/skeleton";
 import {
   fetchAdminOverview,
   fetchAdminSettings,
   type AdminOverview,
   type AdminSettings,
+  type AdminStorageRoots,
 } from "@/lib/api";
 
 /**
- * Phase 17 admin center: the deployment at a glance and what it is configured to
- * do.
+ * The deployment at a glance, and what it is configured to do.
  *
- * Everything on this page is a read. There is no toggle, because every setting
- * behind it is environment-driven: a switch that wrote a row would report a change
- * the running process had not applied, which is the one thing an admin console
- * must not do. Credentials are shown as present or absent and never echoed, not
- * even partially.
+ * Everything here is a read. There is no toggle, because every setting behind one
+ * is environment-driven: a switch that wrote a row would report a change the
+ * running process had not applied, which is the one thing a console must never do.
+ * Credentials appear as present or absent and are never echoed, not even partially.
+ *
+ * Layout rule: counts go in divided metric grids (they are a table of numbers),
+ * configuration goes in definition rows, and providers and storage roots go in
+ * tables. Nothing is boxed individually, so the eye scans rows instead of cards.
  */
 export function AdminOverviewPanel({ section = "all" }: { section?: "all" | "settings" }) {
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [settings, setSettings] = useState<AdminSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(
-    (signal?: AbortSignal) => {
-    Promise.all([fetchAdminOverview(signal), fetchAdminSettings(signal)])
+  const load = useCallback((signal?: AbortSignal) => {
+    return Promise.all([fetchAdminOverview(signal), fetchAdminSettings(signal)])
       .then(([view, config]) => {
         setOverview(view);
         setSettings(config);
@@ -63,233 +86,352 @@ export function AdminOverviewPanel({ section = "all" }: { section?: "all" | "set
     return () => controller.abort();
   }, [load]);
 
+  const refresh = useCallback(() => {
+    setRefreshing(true);
+    load().finally(() => setRefreshing(false));
+  }, [load]);
+
   const accounts = overview?.accounts;
   const content = overview?.content;
 
-  const accountStats: { label: string; value: number; icon: React.ReactNode }[] = accounts
+  const accountMetrics: MetricSpec[] = accounts
     ? [
-        { label: "Accounts", value: accounts.total, icon: <UsersIcon className="h-4 w-4" /> },
-        { label: "Administrators", value: accounts.admins, icon: <ServerIcon className="h-4 w-4" /> },
-        { label: "On Free", value: accounts.onFree, icon: <CreditCardIcon className="h-4 w-4" /> },
-        { label: "On Pro", value: accounts.onPro, icon: <CreditCardIcon className="h-4 w-4" /> },
-        { label: "Live sessions", value: accounts.activeSessions, icon: <ActivityIcon className="h-4 w-4" /> },
-        { label: "Joined (24h)", value: accounts.registeredLast24h, icon: <UsersIcon className="h-4 w-4" /> },
+        {
+          key: "total",
+          label: "Accounts",
+          value: formatNumber(accounts.total),
+          icon: <UsersIcon className="h-3.5 w-3.5" />,
+          tone: "primary",
+        },
+        {
+          key: "admins",
+          label: "Administrators",
+          value: formatNumber(accounts.admins),
+          icon: <ServerIcon className="h-3.5 w-3.5" />,
+          tone: accounts.admins === 0 ? "warning" : "neutral",
+          hint: accounts.admins === 0 ? "nobody can reach this console" : undefined,
+        },
+        { key: "free", label: "On Free", value: formatNumber(accounts.onFree), icon: <CreditCardIcon className="h-3.5 w-3.5" /> },
+        { key: "pro", label: "On Pro", value: formatNumber(accounts.onPro), icon: <CreditCardIcon className="h-3.5 w-3.5" /> },
+        {
+          key: "sessions",
+          label: "Live sessions",
+          value: formatNumber(accounts.activeSessions),
+          icon: <ActivityIcon className="h-3.5 w-3.5" />,
+        },
+        {
+          key: "new",
+          label: "Joined in 24h",
+          value: formatNumber(accounts.registeredLast24h),
+          icon: <UsersIcon className="h-3.5 w-3.5" />,
+        },
       ]
     : [];
 
-  const contentStats: { label: string; value: number; icon: React.ReactNode }[] = content
+  const contentMetrics: MetricSpec[] = content
     ? [
-        { label: "Projects", value: content.projects, icon: <FolderIcon className="h-4 w-4" /> },
-        { label: "Conversations", value: content.conversations, icon: <ChatIcon className="h-4 w-4" /> },
-        { label: "Messages", value: content.messages, icon: <ChatIcon className="h-4 w-4" /> },
-        { label: "Agents", value: content.agents, icon: <ActivityIcon className="h-4 w-4" /> },
-        { label: "Agent runs", value: content.agentRuns, icon: <ActivityIcon className="h-4 w-4" /> },
-        { label: "Research sessions", value: content.researchSessions, icon: <SearchIcon className="h-4 w-4" /> },
-        { label: "Stored files", value: content.files, icon: <FileIcon className="h-4 w-4" /> },
-        { label: "Media assets", value: content.mediaAssets, icon: <FileIcon className="h-4 w-4" /> },
+        { key: "projects", label: "Projects", value: formatNumber(content.projects), icon: <FolderIcon className="h-3.5 w-3.5" /> },
+        { key: "conversations", label: "Conversations", value: formatNumber(content.conversations), icon: <ChatIcon className="h-3.5 w-3.5" /> },
+        { key: "messages", label: "Messages", value: formatNumber(content.messages), icon: <ChatIcon className="h-3.5 w-3.5" /> },
+        { key: "agents", label: "Agents", value: formatNumber(content.agents), icon: <ActivityIcon className="h-3.5 w-3.5" /> },
+        { key: "runs", label: "Agent runs", value: formatNumber(content.agentRuns), icon: <ActivityIcon className="h-3.5 w-3.5" /> },
+        { key: "research", label: "Research", value: formatNumber(content.researchSessions), icon: <SearchIcon className="h-3.5 w-3.5" /> },
+        { key: "files", label: "Files", value: formatNumber(content.files), icon: <FileIcon className="h-3.5 w-3.5" /> },
+        { key: "media", label: "Media assets", value: formatNumber(content.mediaAssets), icon: <FileIcon className="h-3.5 w-3.5" /> },
       ]
+    : [];
+
+  /**
+   * `storage` carries the roots, the writability map and a sentence, so only the
+   * string-valued entries are paths. Selecting on the value type narrows honestly
+   * instead of filtering by key name and hoping the set of names stays the same.
+   */
+  const storageRoots = settings
+    ? (Object.entries(settings.storage).filter(
+        (entry): entry is [string, string] => typeof entry[1] === "string",
+      ) as [keyof AdminStorageRoots, string][])
     : [];
 
   return (
-    <div className="space-y-6">
-      {error ? (
-        <Card className="border-danger/40">
-          <CardBody className="flex items-start gap-3">
-            <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">The admin overview could not be read</p>
-              <p className="mt-1 text-[13px] leading-6 break-words text-muted-foreground">{error}</p>
-            </div>
-          </CardBody>
-        </Card>
-      ) : null}
+    <div className="space-y-5">
+      {error ? <Notice tone="danger">{error}</Notice> : null}
 
       {section === "all" ? (
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader
-            title="Accounts"
-            subtitle={overview ? `Counted at ${new Date(overview.generatedAt).toLocaleTimeString()}` : "Live counts"}
-            icon={<UsersIcon className="h-4 w-4" />}
-            action={
-              <button
-                type="button"
-                onClick={() => {
-                  setLoading(true);
-                  load();
-                }}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <RefreshIcon className="h-3 w-3" />
-                Refresh
-              </button>
-            }
-          />
-          <CardBody>
+        <>
+          <Panel>
+            <PanelHeader
+              title="Accounts"
+              description="Counted live from the database on every load."
+              icon={<UsersIcon className="h-4 w-4" />}
+              meta={
+                <>
+                  {overview ? (
+                    <span className="font-mono text-[11px] text-muted-foreground">
+                      {formatTimestamp(overview.generatedAt)}
+                    </span>
+                  ) : null}
+                  <RefreshButton busy={refreshing} onClick={refresh} />
+                </>
+              }
+            />
             {loading ? (
-              <SkeletonTextRow rows={3} />
+              <PanelBody>
+                <SkeletonTextRow rows={3} />
+              </PanelBody>
+            ) : accountMetrics.length ? (
+              <MetricGrid metrics={accountMetrics} columns={6} />
             ) : (
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {accountStats.map((stat) => (
-                  <li key={stat.label} className="rounded-xl border border-border bg-surface-2 px-3 py-2.5">
-                    <span className="text-muted-foreground">{stat.icon}</span>
-                    <p className="mt-1.5 font-mono text-xl font-semibold text-foreground">{stat.value}</p>
-                    <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">{stat.label}</p>
-                  </li>
-                ))}
-              </ul>
+              <PanelBody>
+                <EmptyState title="No counts returned" description="The overview response carried no account block." />
+              </PanelBody>
             )}
-            {overview ? (
-              <p className="mt-3 text-[11px] leading-5 text-muted-foreground">{overview.detail}</p>
-            ) : null}
-          </CardBody>
-        </Card>
+            {overview ? <PanelFooter>{overview.detail}</PanelFooter> : null}
+          </Panel>
 
-        <Card>
-          <CardHeader title="Content" subtitle="What exists across every account" icon={<DatabaseIcon className="h-4 w-4" />} />
-          <CardBody>
+          <Panel>
+            <PanelHeader
+              title="Content"
+              description="What exists across every account on this deployment."
+              icon={<DatabaseIcon className="h-4 w-4" />}
+              meta={
+                overview ? (
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    audit {formatNumber(overview.audit.last24h)} / 24h · {formatNumber(overview.audit.last7d)} / 7d
+                  </span>
+                ) : null
+              }
+            />
             {loading ? (
-              <SkeletonTextRow rows={3} />
+              <PanelBody>
+                <SkeletonTextRow rows={3} />
+              </PanelBody>
+            ) : contentMetrics.length ? (
+              <MetricGrid metrics={contentMetrics} columns={4} />
             ) : (
-              <>
-                <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {contentStats.map((stat) => (
-                    <li key={stat.label} className="rounded-xl border border-border bg-surface-2 px-3 py-2.5">
-                      <span className="text-muted-foreground">{stat.icon}</span>
-                      <p className="mt-1.5 font-mono text-xl font-semibold text-foreground">{stat.value}</p>
-                      <p className="mt-0.5 text-[11px] leading-4 text-muted-foreground">{stat.label}</p>
-                    </li>
-                  ))}
-                </ul>
-                {overview ? (
-                  <p className="mt-3 text-[11px] leading-5 text-muted-foreground">
-                    Audit events recorded in the last 24 hours: <span className="font-mono">{overview.audit.last24h}</span>.
-                    Last 7 days: <span className="font-mono">{overview.audit.last7d}</span>.
-                  </p>
-                ) : null}
-              </>
+              <PanelBody>
+                <EmptyState title="No counts returned" description="The overview response carried no content block." />
+              </PanelBody>
             )}
-          </CardBody>
-        </Card>
-      </div>
-
+          </Panel>
+        </>
       ) : null}
 
       {section === "all" || section === "settings" ? (
-      <Card>
-        <CardHeader
-          title="Configuration"
-          subtitle="What this deployment is set up to do"
-          icon={<ServerIcon className="h-4 w-4" />}
-          action={settings ? <Badge tone="warning">Read-only</Badge> : null}
-        />
-        <CardBody className="space-y-5">
-          {loading ? (
-            <SkeletonTextRow rows={5} />
-          ) : settings ? (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-border px-3 py-3">
-                  <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">Runtime</p>
-                  <dl className="mt-2 space-y-1.5 text-[12px]">
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-muted-foreground">Node</dt>
-                      <dd className="font-mono text-foreground">{settings.runtime.node}</dd>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-muted-foreground">Platform</dt>
-                      <dd className="font-mono text-foreground">{settings.runtime.platform}</dd>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-muted-foreground">Uptime</dt>
-                      <dd className="font-mono text-foreground">{Math.round(settings.runtime.uptimeSeconds / 60)} min</dd>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-muted-foreground">Public entry</dt>
-                      <dd className="font-mono text-foreground">{settings.runtime.webUrl}</dd>
-                    </div>
-                  </dl>
-                </div>
+        <>
+          <div className="grid gap-5 xl:grid-cols-2">
+            <Panel>
+              <PanelHeader title="Runtime" description="The process serving this console." icon={<ServerIcon className="h-4 w-4" />} />
+              <PanelBody>
+                {loading ? (
+                  <SkeletonTextRow rows={4} />
+                ) : settings ? (
+                  <KeyValueList>
+                    <KeyValue label="Node" value={settings.runtime.node} />
+                    <KeyValue label="Platform" value={`${settings.runtime.platform}`} />
+                    <KeyValue label="Uptime" value={formatDuration(settings.runtime.uptimeSeconds)} />
+                    <KeyValue label="API entry" value={settings.runtime.apiUrl} />
+                    <KeyValue label="Web entry" value={settings.runtime.webUrl} />
+                    <KeyValue
+                      label="CORS origins"
+                      value={
+                        settings.runtime.corsOrigins.length
+                          ? settings.runtime.corsOrigins.join(", ")
+                          : "none configured"
+                      }
+                    />
+                  </KeyValueList>
+                ) : null}
+              </PanelBody>
+            </Panel>
 
-                <div className="rounded-xl border border-border px-3 py-3">
-                  <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">Queues</p>
-                  <dl className="mt-2 space-y-1.5 text-[12px]">
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-muted-foreground">Redis</dt>
-                      <dd>
-                        <StatusChip tone={settings.queues.ready ? "success" : "danger"} label={settings.queues.ready ? "ready" : "down"} />
-                      </dd>
-                    </div>
+            <Panel>
+              <PanelHeader title="Queues" description="Redis-backed work, counted live." icon={<ActivityIcon className="h-4 w-4" />} />
+              <PanelBody>
+                {loading ? (
+                  <SkeletonTextRow rows={4} />
+                ) : settings ? (
+                  <KeyValueList>
+                    <KeyValue
+                      label="Redis"
+                      value={
+                        <StatusChip
+                          tone={settings.queues.ready ? "success" : "danger"}
+                          label={settings.queues.ready ? "ready" : "down"}
+                        />
+                      }
+                    />
+                    <KeyValue label="Workers" value={settings.queues.workers ?? "unknown"} />
                     {settings.queues.counts
                       ? Object.entries(settings.queues.counts).map(([state, count]) => (
-                          <div key={state} className="flex justify-between gap-3">
-                            <dt className="text-muted-foreground">{state}</dt>
-                            <dd className="font-mono text-foreground">{count}</dd>
-                          </div>
+                          <KeyValue key={state} label={state} value={formatNumber(count)} />
                         ))
                       : null}
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-muted-foreground">Workers</dt>
-                      <dd className="font-mono text-foreground">{settings.queues.workers ?? "unknown"}</dd>
-                    </div>
-                  </dl>
-                </div>
-              </div>
+                  </KeyValueList>
+                ) : null}
+              </PanelBody>
+              {settings ? (
+                <PanelFooter>
+                  <span className="text-muted-foreground">{settings.queues.detail}</span>
+                </PanelFooter>
+              ) : null}
+            </Panel>
+          </div>
 
-              <div>
-                <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">Providers</p>
-                <ul className="mt-2 space-y-2">
+          <Panel>
+            <PanelHeader
+              title="Providers"
+              description="Every registered adapter, whether it is switched on, and whether a credential is present."
+              icon={<ServerIcon className="h-4 w-4" />}
+            />
+            {loading ? (
+              <PanelBody>
+                <SkeletonTextRow rows={4} />
+              </PanelBody>
+            ) : settings && settings.providers.length ? (
+              <TableWrap>
+                <thead>
+                  <tr className="border-b border-border">
+                    <Th>Provider</Th>
+                    <Th>State</Th>
+                    <Th>Model</Th>
+                    <Th>Credential</Th>
+                    <Th>Base URL</Th>
+                  </tr>
+                </thead>
+                <tbody>
                   {settings.providers.map((provider) => (
-                    <li
-                      key={provider.provider}
-                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border px-3 py-2.5"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-[13px] font-medium text-foreground">{provider.provider}</span>
+                    <Tr key={provider.provider}>
+                      <Td className="font-medium text-foreground">{provider.provider}</Td>
+                      <Td>
                         <StatusChip
                           tone={provider.enabled ? "success" : "neutral"}
                           label={provider.enabled ? "enabled" : "disabled"}
                         />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[11px] text-muted-foreground">{provider.model}</span>
-                        <Badge tone={provider.credentialPresent ? "neutral" : "warning"}>
-                          {provider.credentialPresent ? `${provider.credentialKind} present` : "no credential"}
-                        </Badge>
-                      </div>
-                    </li>
+                      </Td>
+                      <Td className="font-mono text-[11.5px] text-muted-foreground">
+                        {provider.model}
+                        {provider.embeddingModel ? (
+                          <span className="text-muted-foreground/70"> · {provider.embeddingModel}</span>
+                        ) : null}
+                      </Td>
+                      <Td>
+                        <StatusChip
+                          tone={provider.credentialPresent ? "primary" : "warning"}
+                          label={
+                            provider.credentialPresent
+                              ? `${provider.credentialKind} present`
+                              : "no credential"
+                          }
+                        />
+                      </Td>
+                      <Td className="max-w-[22ch] truncate font-mono text-[11.5px] text-muted-foreground">
+                        {provider.baseUrl ?? "default endpoint"}
+                      </Td>
+                    </Tr>
                   ))}
-                </ul>
-                <p className="mt-2 text-[11px] leading-5 text-muted-foreground">
-                  A credential is reported as present or absent only. The value is never returned, not even partially.
-                  Registered provider adapters:{" "}
-                  <span className="font-mono">{settings.registeredProviders.join(", ") || "none"}</span>.
-                </p>
-              </div>
+                </tbody>
+              </TableWrap>
+            ) : (
+              <PanelBody>
+                <EmptyState
+                  title="No providers configured"
+                  description="No adapter is enabled in this environment, so chat, embeddings and media have nothing to route to."
+                />
+              </PanelBody>
+            )}
+            {settings ? (
+              <PanelFooter>
+                <span className="text-muted-foreground">
+                  Credentials are reported as present or absent only; the value is never returned. Registered
+                  adapters:{" "}
+                  <span className="font-mono text-foreground">
+                    {settings.registeredProviders.join(", ") || "none"}
+                  </span>
+                  .
+                </span>
+              </PanelFooter>
+            ) : null}
+          </Panel>
 
-              <div>
-                <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">Storage roots</p>
-                <ul className="mt-2 space-y-1">
-                  {Object.entries(settings.storage)
-                    .filter(([key]) => key !== "detail")
-                    .map(([key, value]) => (
-                      <li key={key} className="flex justify-between gap-3 text-[12px]">
-                        <span className="text-muted-foreground">{key}</span>
-                        <span className="truncate font-mono text-foreground">{value}</span>
-                      </li>
-                    ))}
-                </ul>
-                <p className="mt-2 text-[11px] leading-5 text-muted-foreground">{settings.storage.detail}</p>
-              </div>
+          <div className="grid gap-5 xl:grid-cols-2">
+            <Panel>
+              <PanelHeader
+                title="Storage roots"
+                description="Probed with W_OK on every load, not assumed."
+                icon={<DatabaseIcon className="h-4 w-4" />}
+              />
+              {loading ? (
+                <PanelBody>
+                  <SkeletonTextRow rows={5} />
+                </PanelBody>
+              ) : settings ? (
+                <TableWrap>
+                  <thead>
+                    <tr className="border-b border-border">
+                      <Th>Root</Th>
+                      <Th>Path</Th>
+                      <Th className="text-right">Writable</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {storageRoots.map(([root, path]) => {
+                      const writable = settings.storage.writable[root];
+                      return (
+                        <Tr key={root}>
+                          <Td className="whitespace-nowrap font-medium text-foreground">
+                            {humanizeKey(root)}
+                          </Td>
+                          <Td className="max-w-[26ch] truncate font-mono text-[11.5px] text-muted-foreground" title={path}>
+                            {path}
+                          </Td>
+                          <Td className="text-right">
+                            <StatusChip
+                              tone={writable === true ? "success" : writable === false ? "danger" : "neutral"}
+                              label={
+                                writable === true ? "yes" : writable === false ? "no" : "not probed"
+                              }
+                            />
+                          </Td>
+                        </Tr>
+                      );
+                    })}
+                  </tbody>
+                </TableWrap>
+              ) : null}
+              {settings ? (
+                <PanelFooter>
+                  <span className="text-muted-foreground">{settings.storage.detail}</span>
+                </PanelFooter>
+              ) : null}
+            </Panel>
 
-              <p className="flex items-start gap-2 rounded-xl border border-warning/40 bg-surface-2 px-3 py-2.5 text-[12px] leading-6 text-muted-foreground">
-                <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-                {settings.detail}
-              </p>
-            </>
-          ) : null}
-        </CardBody>
-      </Card>
+            <Panel>
+              <PanelHeader
+                title="Enforced limits"
+                description="The ceilings the running process enforces, as configured."
+                icon={<ServerIcon className="h-4 w-4" />}
+              />
+              <PanelBody className="space-y-4">
+                {loading ? (
+                  <SkeletonTextRow rows={6} />
+                ) : settings ? (
+                  Object.entries(settings.limits).map(([group, entries]) => (
+                    <div key={group}>
+                      <SectionLabel>{humanizeKey(group)}</SectionLabel>
+                      <KeyValueList className="mt-1.5">
+                        {Object.entries(entries).map(([key, value]) => (
+                          <KeyValue key={key} label={humanizeKey(key)} value={formatLimitValue(key, value)} />
+                        ))}
+                      </KeyValueList>
+                    </div>
+                  ))
+                ) : null}
+              </PanelBody>
+            </Panel>
+          </div>
+
+          {settings ? <Notice tone="info">{settings.detail}</Notice> : null}
+        </>
       ) : null}
     </div>
   );

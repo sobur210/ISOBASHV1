@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { StatusChip } from "@/components/ui/status-chip";
-import { SkeletonTextRow } from "@/components/ui/skeleton";
+import { Notice, Panel, PanelBody, PanelHeader } from "@/components/admin/ui";
 import {
-  AlertTriangleIcon,
   ChatIcon,
   CpuIcon,
   ImageIcon,
@@ -13,6 +11,7 @@ import {
   SparklesIcon,
   VideoIcon,
 } from "@/components/ui/icons";
+import { SkeletonTextRow } from "@/components/ui/skeleton";
 import { getJson } from "@/lib/api";
 
 type CapabilityStatus = {
@@ -31,6 +30,11 @@ const capabilityMeta: Record<string, { label: string; icon: React.ReactNode }> =
   research: { label: "Web research", icon: <SearchIcon className="h-4 w-4" /> },
 };
 
+/**
+ * What ISOBASH can actually do with the providers configured right now. An
+ * unavailable capability keeps its row and shows the reason, because "off" and
+ * "missing" are different answers and hiding the row would claim the first.
+ */
 export function CapabilitiesPanel() {
   const [capabilities, setCapabilities] = useState<CapabilityStatus[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,36 +53,35 @@ export function CapabilitiesPanel() {
     return () => controller.abort();
   }, []);
 
-  const available = capabilities?.filter((c) => c.status === "available").length ?? 0;
+  const available = capabilities?.filter((capability) => capability.status === "available").length ?? 0;
 
   return (
-    <Card>
-      <CardHeader
+    <Panel>
+      <PanelHeader
         title="AI capabilities"
-        subtitle="What ISOBASH can actually do with the providers configured right now."
+        description="What this deployment can do with the providers configured right now."
         icon={<CpuIcon className="h-4 w-4" />}
-        action={
+        meta={
           capabilities ? (
-            <span className="font-mono text-[11px] text-muted-foreground">
+            <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
               {available}/{capabilities.length} ready
             </span>
           ) : null
         }
       />
-      <CardBody className="pt-1">
+      <PanelBody className="px-0 py-0">
         {error ? (
-          <div className="flex items-start gap-3 rounded-xl border border-danger/25 bg-danger/5 p-4">
-            <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
-            <p className="text-xs text-muted-foreground">{error}</p>
+          <div className="px-5 py-4">
+            <Notice tone="danger">{error}</Notice>
           </div>
         ) : !capabilities ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-x-5 gap-y-4 px-5 py-4 sm:grid-cols-2">
             {Array.from({ length: 6 }).map((_, index) => (
               <SkeletonTextRow key={index} />
             ))}
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <ul className="divide-y divide-border">
             {capabilities.map((capability) => {
               const meta = capabilityMeta[capability.capability] ?? {
                 label: capability.capability.replace(/-/g, " "),
@@ -86,34 +89,33 @@ export function CapabilitiesPanel() {
               };
               const isAvailable = capability.status === "available";
               return (
-                <div
+                <li
                   key={capability.capability}
-                  className={`flex items-start justify-between gap-3 rounded-xl border p-4 transition-colors ${
-                    isAvailable ? "border-border bg-surface-2" : "border-dashed border-border"
-                  }`}
+                  className="flex items-center justify-between gap-4 px-5 py-2.5 transition-colors hover:bg-surface-2/50"
                 >
-                  <div className="flex min-w-0 items-start gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <span
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                        isAvailable ? "bg-primary-soft text-primary" : "bg-muted text-muted-foreground"
-                      }`}
+                      className={`shrink-0 ${isAvailable ? "text-primary" : "text-muted-foreground/60"}`}
                     >
                       {meta.icon}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-[13.5px] font-medium text-foreground">{meta.label}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
+                      <p className="text-[12.5px] font-medium text-foreground">{meta.label}</p>
+                      <p className="mt-0.5 truncate text-[11.5px] text-muted-foreground">
                         {isAvailable ? capability.providers.join(", ") : capability.detail}
                       </p>
                     </div>
                   </div>
-                  <StatusChip tone={isAvailable ? "success" : "neutral"} label={isAvailable ? "ready" : "off"} />
-                </div>
+                  <StatusChip
+                    tone={isAvailable ? "success" : "neutral"}
+                    label={isAvailable ? "ready" : "unavailable"}
+                  />
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
-      </CardBody>
-    </Card>
+      </PanelBody>
+    </Panel>
   );
 }

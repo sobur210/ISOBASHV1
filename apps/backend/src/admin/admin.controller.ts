@@ -62,8 +62,15 @@ export class AdminController {
   /**
    * Phase 17: what this deployment is configured to do, with every secret
    * reduced to a boolean. Read-only on purpose — see `AdminSettingsService`.
+   *
+   * Named `configuration`, not `settings`, because `/admin/settings` is a
+   * frontend page route. The gateway forwards unmatched paths to the API with an
+   * `afterFiles` rewrite, and `afterFiles` is evaluated *after* the filesystem,
+   * so a page at the same path would be served instead of this handler and the
+   * admin console would silently receive HTML where it expected JSON.
+   * `scripts/check-route-collisions.mjs` fails the build if that ever recurs.
    */
-  @Get('settings')
+  @Get('configuration')
   settingsView() {
     return this.settings.settings();
   }
@@ -101,7 +108,10 @@ export class AdminController {
     return this.shell.execute(body.command);
   }
 
-  @Get('users')
+  /** `directory`, not `users`: `/admin/users` is a frontend page route, and the
+   gateway rewrite would let the page shadow this handler. See the note on
+   `@Get('configuration')` above and `scripts/check-route-collisions.mjs`. */
+  @Get('directory')
   listUsers(@Query() query: ListUsersQueryDto) {
     return this.users.list(query);
   }

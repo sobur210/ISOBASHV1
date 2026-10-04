@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { sendJsonAuthed } from "@/lib/api";
+import { Console, ActionButton, Notice, Panel, PanelBody, PanelHeader } from "@/components/admin/ui";
+import { StatusChip } from "@/components/ui/status-chip";
+import { PlayIcon, TerminalIcon } from "@/components/ui/icons";
 
 type ShellResponse = {
   ok: boolean;
@@ -13,86 +16,109 @@ type ShellResponse = {
   reason?: string;
 };
 
+const EXAMPLES = ["pwd", "node --version", "git status --short", "ls -la"];
+
+/**
+ * The admin-only diagnostics runner, presented as a terminal rather than a form
+ * with a result box under it: the command, its verdict and its output belong in
+ * one object, in reading order.
+ */
 export function AdminShellPanel() {
   const [command, setCommand] = useState("pwd");
   const [response, setResponse] = useState<ShellResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
 
-  const runCommand = async () => {
+  const runCommand = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || running) return;
     setRunning(true);
     setError(null);
-    try {
-      const result = await sendJsonAuthed<ShellResponse>("/admin/shell/exec", { command }, "POST");
-      setResponse(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "The shell command could not be run.");
-    } finally {
-      setRunning(false);
-    }
+    sendJsonAuthed<ShellResponse>("/admin/shell/exec", { command: trimmed }, "POST")
+      .then((result) => setResponse(result))
+      .catch((err) => setError(err instanceof Error ? err.message : "The shell command could not be run."))
+      .finally(() => setRunning(false));
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-surface-2 p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <p className="font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-muted-foreground">
-            Admin shell
-          </p>
-          <h3 className="mt-1 text-base font-semibold text-foreground">Safe diagnostics runner</h3>
-        </div>
-        <span className="rounded-full border border-accent/30 bg-accent-soft px-2 py-1 text-[10px] uppercase tracking-[0.2em] text-accent">
-          Read-only
-        </span>
-      </div>
-
-      <div className="space-y-3">
-        <label className="block text-sm font-medium text-foreground" htmlFor="admin-shell-command">
-          Command
-        </label>
-        <textarea
-          id="admin-shell-command"
-          value={command}
-          onChange={(event) => setCommand(event.target.value)}
-          rows={3}
-          className="w-full rounded-xl border border-border bg-[color:var(--surface)] px-3 py-2 text-sm text-foreground outline-none ring-0 placeholder:text-muted-foreground focus:border-accent"
-          placeholder="pwd"
-        />
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={runCommand}
-            disabled={running || !command.trim()}
-            className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {running ? "Running…" : "Run command"}
-          </button>
-          <p className="text-xs text-muted-foreground">
-            Allowed: process information, repo status, and simple file listing. No pipes, redirects, or destructive actions.
-          </p>
-        </div>
-      </div>
-
-      {error ? (
-        <div className="mt-4 rounded-xl border border-danger/30 bg-danger/10 p-3 text-sm text-danger">{error}</div>
-      ) : null}
-
-      {response ? (
-        <div className="mt-4 space-y-3 rounded-xl border border-border bg-background/60 p-3">
-          <div className="flex items-center justify-between gap-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-            <span>Result</span>
-            <span className={response.ok ? "text-success" : "text-danger"}>
-              {response.ok ? "OK" : response.blocked ? "BLOCKED" : "FAILED"}
+    <Panel>
+      <PanelHeader
+        title="Diagnostics runner"
+        description="A read-only shell: process information, repo status and simple listings. No pipes, redirects or destructive actions."
+        icon={<TerminalIcon className="h-4 w-4" />}
+        meta={<StatusChip tone="warning" label="read-only" />}
+      />
+      <PanelBody className="space-y-3">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            runCommand(command);
+          }}
+        >
+          <label htmlFor="admin-shell-command" className="sr-only">
+            Command
+          </label>
+          <div className="flex items-stretch gap-2">
+            <span
+              aria-hidden="true"
+              className="flex select-none items-center rounded-lg border border-border bg-surface-2 px-3 font-mono text-[12px] text-accent"
+            >
+              $
             </span>
+            <input
+              id="admin-shell-command"
+              value={command}
+              onChange={(event) => setCommand(event.target.value)}
+              spellCheck={false}
+              autoComplete="off"
+              className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 font-mono text-[12.5px] text-foreground transition-colors placeholder:text-muted-foreground/70 hover:border-border-strong focus:border-primary/60 focus:outline-none"
+              placeholder="pwd"
+            />
+            <ActionButton
+              onClick={() => runCommand(command)}
+              disabled={running || !command.trim()}
+              icon={<PlayIcon className={`h-3.5 w-3.5 ${running ? "animate-pulse" : ""}`} />}
+              className="h-10 border border-primary/40 bg-primary-soft px-3.5 text-primary hover:bg-primary hover:text-primary-foreground"
+            >
+              {running ? "Running" : "Run"}
+            </ActionButton>
           </div>
-          <div className="text-xs text-muted-foreground">Command: {response.command}</div>
-          <pre className="max-h-56 overflow-auto rounded-lg border border-border bg-surface-2 p-3 text-xs text-foreground whitespace-pre-wrap">
-            {response.stdout || response.stderr || response.reason || "No output."}
-          </pre>
-          <div className="text-xs text-muted-foreground">Exit code: {response.exitCode ?? "n/a"}</div>
+        </form>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+            Try
+          </span>
+          {EXAMPLES.map((example) => (
+            <button
+              key={example}
+              type="button"
+              onClick={() => {
+                setCommand(example);
+                runCommand(example);
+              }}
+              className="rounded-md border border-border bg-surface-2 px-2 py-1 font-mono text-[11px] text-muted-foreground transition-colors hover:border-border-strong hover:text-foreground"
+            >
+              {example}
+            </button>
+          ))}
         </div>
+
+        {error ? <Notice tone="danger">{error}</Notice> : null}
+
+        {response ? (
+          <Console
+            command={response.command}
+            tone={response.ok ? "ok" : response.blocked ? "blocked" : "failed"}
+            lines={response.stdout || response.stderr || response.reason || "No output."}
+          />
+        ) : null}
+      </PanelBody>
+      {response ? (
+        <footer className="border-t border-border px-5 py-3 font-mono text-[11px] text-muted-foreground">
+          exit code {response.exitCode ?? "n/a"}
+        </footer>
       ) : null}
-    </div>
+    </Panel>
   );
 }

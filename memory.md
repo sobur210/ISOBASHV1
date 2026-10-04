@@ -4,6 +4,64 @@ Last updated: 2026-10-03
 
 ## Current status
 
+### Phase 16 (billing) + Phase 17 (admin center) — implemented, `verify:phase16-17` **55/55**
+
+Picked up on 2026-10-04 from the uncommitted Phase 17 state. Everything below was
+verified against the live gateway on 3002, not against a fixture.
+
+- **Phase 16 billing** (`apps/backend/src/billing/`) takes no payment and says so in the
+  response rather than in the UI: `capabilities()` returns `payment.available: false` with an
+  empty `processors` array, so there is no card form, no checkout and no renewal date to
+  misread. Usage is a **live aggregate** over the rows the owning phases wrote
+  (`storedFile`, `mediaAsset`, `conversation`, `message`, `agent`, `agentRun`,
+  `researchSession`), so deleting a file lowers the number on the next read. Every metric
+  carries `limitSource: plan | deployment | none`, because `null` in the catalogue means
+  "inherit the deployment ceiling" and the API must not present a ceiling as if the plan
+  invented it. A plan is a real entitlement: `EntitlementsService` is what the files and
+  media quota checks already read, so a grant changes behaviour, not display. Only a
+  self-service **downgrade** exists — an upgrade would have to be paid for and nothing here
+  can take payment. Grants are admin-only and audited.
+- **Phase 17 admin center** (`apps/backend/src/admin/`) is deliberately **read-only**.
+  There is no toggle, because every setting behind one is environment-driven: a switch that
+  wrote a row would report a change the running process had not applied. Credentials are
+  reduced to `credentialPresent` and never echoed, not even partially.
+- **Route-collision fix (important, and it was a live bug).** `next.config.ts` forwards
+  unmatched paths to the API with an `afterFiles` rewrite, and `afterFiles` is evaluated
+  *after* the filesystem — so a frontend page at the same path silently shadowed the API
+  handler and the console received HTML where it expected JSON. `@Get('settings')` →
+  `@Get('configuration')` and `@Get('users')` → `@Get('directory')` because `/admin/settings`
+  and `/admin/users` are real page routes. `scripts/check-route-collisions.mjs` diffs both
+  route tables and now runs first in `npm run build` (`verify:routes`). Current state: 19
+  page routes, 60 controller routes, no collision.
+- **`storage.writable` is probed, not declared.** `accessSync(path, W_OK)` on every load of
+  `/admin/configuration`. A read-only or missing storage root is the commonest way a
+  healthy-looking deployment starts failing uploads, and an operator has to see it without
+  leaving the console. `W_OK` is the honest test because it is what the process itself would
+  hit; a real write would be stricter and would litter the data root. The old top-level
+  `writable: false` was renamed to **`configurationWritable`** — it is a statement about the
+  endpoint ("this view is read-only"), and sitting next to the storage roots it read as "this
+  deployment is broken".
+- **Frontend typing fix.** `storage` was typed `Record<string, string> & { writable: ... }`.
+  An intersection widens every value to `string | Record<string, boolean>`, which is
+  unrenderable and forced a cast at the call site (`tsc` error TS2322). It is now
+  `AdminStorageRoots` — named keys — plus the writability map, and the panel selects the
+  string-valued entries with a **type predicate** rather than filtering by key name.
+- **Real bug found and fixed: the admin shell could not list a directory.**
+  `AdminShellService.resolveCommand` builds a node script as a TypeScript string. It
+  contained `join('\n')`, and in a TS string literal `\n` is a **real newline**, so the
+  emitted JS had a newline inside its own quotes and node rejected the entire script:
+  `SyntaxError: Invalid or unexpected token`, exit 1, empty stdout. It failed on *every*
+  platform, not just Windows. `pwd`, `whoami` and `cat` were fine, which is why it survived.
+  Fixed by emitting `\\n`. The test only ran `dir` on Windows and `pwd` on Linux, so the
+  broken branch was executed on one platform or the other and never both; the suite now
+  asserts `ls` **and** `dir` unconditionally, plus `cat`.
+- Verified live on 3002 before the fix: `ls` → `ok=false exit=1 stdout=""` with `[eval]:1`
+  on stderr, while `pwd` → `ok=true`. Backend unit tests **11 suites / 140 pass**,
+  `typecheck` and `lint` clean, `verify:routes` clean.
+- **Not yet live:** the `\n` fix needs `npm run build:backend` + a service restart, because
+  the api on 3001 keeps running the previous build. Confirm with
+  `POST /admin/shell/exec {"command":"ls"}` → `ok: true` and a non-empty `stdout`.
+
 ### Marketing hero rebuild (2026-10-03) — committed and pushed
 
 Four commits on `master`, all pushed to `github.com/sobur210/ISOBASHV1`:
@@ -119,6 +177,15 @@ inside `.then`. Also still uncommitted in the tree: edits to
 - The remaining blocker is the backend Jest/TypeScript bootstrap, not the feature logic itself. The test command fails before running any assertions with: `SyntaxError: Cannot use import statement outside a module`.
 - Relevant config to inspect: `apps/backend/jest.config.js`.
 - The next developer should fix the Jest TypeScript transform so the admin-shell test in `apps/backend/src/admin/admin-shell.service.test.ts` runs under the repo’s real config and validates the allow-list behavior.
+
+### Runtime/provider handoff (2026-10-03)
+
+- Root `.env` and `.env.example` now set `AI_DEFAULT_MODE="hybrid"` and `AI_OFFLINE_STRICT=false`. The backend was restarted through the elevated Windows scheduled-task handoff. A fresh `GET /ai/routing` returned `defaultMode: "hybrid"`; Magic Hour was healthy and exposed `ltx-2.5` and `sora-2`.
+- The login page showed the offline fallback because the browser had a stale service-worker cache. Backend and web health probes were passing. The stale service worker and cache were removed from the browser origin; reloading the original tab returned the normal Sign in page. No app source changes were needed for this incident.
+- A real Pollinations image test using model `flux` succeeded, and a real Magic Hour video test using `ltx-2.5` succeeded (4 seconds, 480p, MP4, 509,682 bytes). Magic Hour reported 112 credits before the render and charged 96, leaving 16. Do not submit another 4-second LTX render unless the live provider balance is at least 96; no renewal date was established. The follow-up smoke run correctly skipped video at 16 credits.
+- The generated prompt-test image and video were subsequently removed from `ISOBASH-DATA/media/prompt-tests` at the owner’s request to return the workspace to normal. The temporary runner and VS Code tasks were also removed. No test media or helper script should remain in the repo.
+- At the last live route check, Magic Hour was healthy; Gemini returned a temporary HTTP 503. Image generation through Pollinations remains a separate capability from Magic Hour video.
+- API key values were inspected during this work. Do not copy them into docs/logs; rotate the provider keys from their dashboards when convenient and update the local root `.env`.
 
 - Phase 1 (project foundation): implemented and runtime-verified.
 - Phase 2 (AI provider bridge): implemented and runtime-verified.
@@ -420,8 +487,9 @@ Preflight `npm run clean:dev` clears stale listeners on 3000-3005. PostgreSQL, R
    One open item on 13: its "prompt verbatim" image check now conflicts with the concurrent
    `NO_TEXT_CLAUSE` suffix (`apps/backend/src/media/image-styles.ts`), which is another writer's
    in-flight feature. That is their call to reconcile, not a regression to paper over.
-   The master spec is **not** in this repo, so the remaining phases are defined by the surface
-   pages: billing (16), admin center (17). The dashboard phase labels in
+   The master spec is **not** in this repo, so the phases were defined by the surface pages:
+   billing (16) and admin center (17) are now both implemented and `verify:phase16-17` is
+   **55/55**, so every phase this repo can infer is done. The dashboard phase labels in
    `apps/frontend/app/app/page.tsx` were reconciled with the real order during Phase 12. Check
    them again before labelling anything new.
 2. Agent runs, file indexing and image generation are **still in-process**; only video is on a

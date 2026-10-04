@@ -2,36 +2,45 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function WorkspaceLoading() {
   return (
-    <div className="space-y-8">
-      <div className="space-y-2">
-        <Skeleton className="h-3 w-16" />
+    <div className="space-y-7">
+      <div className="space-y-2 border-b border-border pb-5">
+        <Skeleton className="h-2.5 w-20" />
         <Skeleton className="h-7 w-56" />
-        <Skeleton className="h-4 w-full max-w-xl" />
+        <Skeleton className="h-3.5 w-full max-w-2xl" />
       </div>
-      <div className="grid gap-5 lg:grid-cols-2">
-        <div className="rounded-2xl border border-foreground/10 bg-surface p-5">
-          <Skeleton className="h-4 w-32" />
-          <div className="mt-4 divide-y divide-foreground/5">
-            <Skeleton className="h-4 w-full" />
-            <div className="py-2" />
-            <Skeleton className="h-4 w-full" />
-            <div className="py-2" />
-            <Skeleton className="h-4 w-3/4" />
-          </div>
-        </div>
-        <div className="rounded-2xl border border-foreground/10 bg-surface p-5">
-          <Skeleton className="h-4 w-36" />
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
+      <div className="space-y-3">
+        <Skeleton className="h-2.5 w-16" />
+        <div className="grid gap-5 xl:grid-cols-2">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <div key={index} className="overflow-hidden rounded-xl border border-border bg-surface">
+              <div className="border-b border-border px-5 py-4">
+                <Skeleton className="h-3.5 w-32" />
+                <Skeleton className="mt-2 h-3 w-56" />
+              </div>
+              <div className="divide-y divide-border">
+                {Array.from({ length: 4 }).map((__, row) => (
+                  <div key={row} className="flex items-center gap-3 px-5 py-3">
+                    <Skeleton className="h-4 w-4 rounded-md" />
+                    <Skeleton className="h-3 w-1/3" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-44 w-full rounded-2xl" />
-        ))}
+      <div className="space-y-3">
+        <Skeleton className="h-2.5 w-16" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="space-y-3 rounded-xl border border-border bg-surface p-5">
+              <Skeleton className="h-9 w-9 rounded-lg" />
+              <Skeleton className="h-3.5 w-32" />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-4/5" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

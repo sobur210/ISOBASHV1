@@ -50,7 +50,14 @@ function resolveCommand(binary: string, args: string[]): { command: string; args
       command: process.execPath,
       args: [
         '-e',
-        "const fs=require('fs'); const path=require('path'); const entries=fs.readdirSync(process.cwd(),{withFileTypes:true}); console.log(entries.map(e=>path.join(e.name)).join('\n'));",
+        // `\\n`, not `\n`. This is a JavaScript source string that node parses at
+        // run time, so the backslash has to survive this file. Written as `\n` the
+        // TypeScript compiler turns it into a real newline *inside* the emitted
+        // quotes, node refuses the whole script with a SyntaxError, and every
+        // directory listing in the admin shell returned exit code 1 with an empty
+        // stdout. It failed the same way on every platform, so a Windows-only test
+        // (`dir`) hid it from a Linux run that only exercised `pwd`.
+        "const fs=require('fs'); const path=require('path'); const entries=fs.readdirSync(process.cwd(),{withFileTypes:true}); console.log(entries.map(e=>path.join(e.name)).join('\\n'));",
       ],
     };
   }
