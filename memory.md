@@ -128,11 +128,51 @@ order rather than winning.
 
 `app/layout.tsx` had `metadata.icons = { icon: "/logo.png", apple: "/logo.png" }`, but
 `/logo.png` is the **2051×767 wordmark** — browsers rendered a squashed, unreadable tab icon.
-The override is gone, so Next serves `app/icon.png` (the **1254×1254** square monogram) by
-convention; the served tag is `<link rel="icon" href="/icon.png" sizes="1254x1254">`.
-`public/manifest.webmanifest` had the same bug, declaring the wordmark as a `512x512` icon;
-both entries now point at `/icon.png`. **Open item:** `app/icon.png` is 1.35MB, which is very
-heavy for a favicon — a 512×512 or 256×256 re-encode would cut ~95% invisibly.
+The override is gone, so Next serves `app/icon.png` by convention and stamps `sizes` from the
+file itself. `public/manifest.webmanifest` had the same bug, declaring the wordmark as a
+`512x512` icon; both entries now point at `/icon.png`.
+
+`app/icon.png` was then **re-encoded 1254×1254 / 1.35MB → 512×512 / 270KB (an 80% cut)**. It is a
+Lanczos3 downscale of the original and nothing more — verified bit-exact against
+`sharp(ORIG).resize(512,512,{kernel:'lanczos3'})` at **max delta 0 across all four channels,
+alpha included**, so no colour drift and no coverage change. Provenance is nailed down:
+the repo-root `Futuristic Blue-Violet Monogram Icon.png` is **byte-identical** to the pre-re-encode
+`HEAD:apps/frontend/app/icon.png`, so the root PNG is the source of truth, not a lookalike. The
+result is 512×512 8-bit RGBA, non-interlaced, `pHYs` 72 DPI, and the 21KB `caBX` colour-primaries
+chunk from the original is gone — which is *more* correct for a web asset, since browsers assume
+sRGB anyway. `sizes="512x512"` in the manifest is now literally true, which it never was before.
+
+**Do not chase the remaining ~200KB with palette/WebP quantisation.** sharp will turn any
+`png({effort})` write into a **palette (colourType 3) PNG** — even with `palette:false` — so the
+candidates measure at PSNR ~22dB / maxErr 217 against the true truecolour pixels and their
+"RMSE" is inflated further by palette-index expansion. That 68KB figure is only reachable by
+lossy-quantising the brand mark, which risks banding on the smooth blue-violet plate, and that
+plate *is* the installed-PWA icon at full 512². 270KB is already close to lossless floor for
+truecolour RGBA here (2.11 bits/px, vs the original's 1.76 at 4.6× the pixels).
+
+**sharp cannot be trusted for lossless verification on this image.** Its RGBA decode/encode round
+trip is **not idempotent** on partially transparent pixels (fully-transparent pixels come back
+with stray RGB), so `decode -> encode -> decode != decode` and any PSNR computed with it is
+meaningless. `min` transparent-region audit is clean in both files (0 stray-RGB pixels under
+alpha=0), so nothing is actually corrupted on disk — the tool is just wrong. Verify PNG pixels
+with a dependency-free decoder (inflate the IDATs and un-filter; PNG stores non-premultiplied
+RGBA, so there is no transform ambiguity) whenever a byte-level claim about an image matters.
+
+#### Maskable, and why the transparent corners are fine
+
+The plate is a rounded squircle, **not** full-bleed: corners are `rgba(0,0,0,0)` and the
+interior sits at alpha ~252 (in both the original and the re-encode, so that is the artwork, not
+a re-encode artifact). Only ~0.2% of pixels are fully opaque. This matters because
+`manifest.webmanifest` declares `purpose: "maskable"` for this icon and a maskable icon has its
+edges cropped by the platform.
+
+**Measured safe, don't "fix" it:** of the 14,251 bright glyph pixels, **0 (0.00%)** fall outside
+the maskable safe zone (the central circle of radius 40% of the tile). The monogram is centred and
+entirely inside it; only the decorative plate gets cropped, which is exactly what maskable is for.
+A future re-crop that pads or re-centres the artwork should re-run that measurement.
+
+Note there is **no `apple-touch-icon`**. iOS composites transparency onto black, so if one is ever
+added it must be an opaque 180×180, not this file reused as-is.
 
 #### How this was verified
 
@@ -159,15 +199,19 @@ credentials to GitHub. `.tmpwork` itself is still tracked, as is `apps/backend/d
 — both were committed deliberately at the owner's instruction, and both are build/scratch
 output that most repos would ignore.
 
-#### Concurrent writer — still true
+#### Concurrent writer — the lint half of this is now resolved
 
-During this work `apps/frontend/components/{admin-overview-panel,admin-users-panel,billing}-panel.tsx`
-were being written by another session (mtimes minutes apart). **All three fail
-`npm run lint`** with `react-hooks/set-state-in-effect`, and they were swept into `1c4b7f2`.
-So: repo-wide `npm run lint` is **red** right now, and it is not the hero work. The canonical
-fix pattern is already in `capabilities-panel.tsx` — fetch in a promise chain and `setState`
-inside `.then`. Also still uncommitted in the tree: edits to
-`apps/backend/src/admin/admin-settings.service.ts` and `apps/frontend/lib/api.ts`.
+During the hero work `apps/frontend/components/{admin-overview-panel,admin-users-panel,billing}-panel.tsx`
+were being written by another session (mtimes minutes apart). **All three failed
+`npm run lint`** with `react-hooks/set-state-in-effect`, and they were swept into `1c4b7f2`,
+which left repo-wide `npm run lint` **red**. **That is fixed as of `53e40fb`** (Phase 17 admin
+center), which rewrote `admin-overview-panel.tsx` (+554/-…) and `admin-users-panel.tsx` (+318/-…)
+using the canonical pattern already in `capabilities-panel.tsx` — fetch in a promise chain and
+`setState` inside `.then`. Re-verified 2026-10-05: `npm run lint` is **clean repo-wide**
+(0 errors, 0 warnings) and `npx eslint` on all three panels plus `app/layout.tsx` exits 0.
+
+The rest of this note is still true: re-check `git status` and file mtimes before assuming a
+diff is yours, because that concurrent session is still active (see the entries below).
 
 ### Active handoff: admin shell feature (2026-10-02)
 
@@ -476,9 +520,10 @@ Preflight `npm run clean:dev` clears stale listeners on 3000-3005. PostgreSQL, R
    across four rounds of owner feedback and is easy to undo by accident. Concretely: no
    header nav links, no background photographs, sub-headline at 1.55rem, paragraph plain black
    in light mode, `Sign in` label blue via the important flag. Cheapest wins still on the
-   table: resize the 1.35MB `app/icon.png`, delete the dead `hero-slider.tsx`, and fix the
-   three `set-state-in-effect` lint errors another session left in the admin/billing panels.
-   Full repo-wide `npm run lint` is red for exactly those three files.
+   table: delete the dead `hero-slider.tsx`. That was the last of the three items here —
+   the `app/icon.png` resize shipped (see Favicon above) and the three
+   `set-state-in-effect` lint errors were fixed by `53e40fb`, so repo-wide
+   `npm run lint` is now **green** (verified 2026-10-05).
 1. Phases 1-8, 10, 11, 12 and 13 are implemented and runtime-verified (351 checks, all green).
    Phase 14 (video) is implemented too and `verify:phase14` is **59/59** (3 skips by design).
    Phase 15 (Magic Hour video provider, provider credit ledger, provider-scoped render queues)
