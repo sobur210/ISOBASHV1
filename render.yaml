@@ -86,10 +86,12 @@ services:
       - key: COOKIE_SECURE
         value: "true"
       # Ephemeral: media written here is gone after a redeploy or spin-down.
+      # Render instances run as an unprivileged user: /var is not writable
+      # (EACCES), while /tmp always is.
       - key: DATA_ROOT
-        value: /var/isobash-data
+        value: /tmp/isobash-data
       - key: MODEL_ROOT
-        value: /var/isobash-data/models
+        value: /tmp/isobash-data/models
       # Feature flags must match the frontend's NEXT_PUBLIC_FEATURE_* values.
       - key: FEATURE_PROJECTS
         value: "false"
