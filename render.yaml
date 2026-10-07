@@ -50,7 +50,11 @@ services:
     name: isobash-api
     runtime: node
     plan: free
-    buildCommand: npm ci && npx prisma generate && npm run build:backend && npx prisma migrate deploy
+    # NODE_ENV=production is set for the running server, and it also applies
+    # to this build: plain `npm ci` would then skip devDependencies and
+    # `nest build` dies with "command not found" (127). --include=dev forces
+    # them back in so the Nest CLI and TypeScript are present.
+    buildCommand: npm ci --include=dev && npx prisma generate && npm run build:backend && npx prisma migrate deploy
     startCommand: node apps/backend/dist/main.js
     healthCheckPath: /health
     envVars:
