@@ -39,7 +39,7 @@ export function MarketingFooter() {
         <div className="grid gap-12 lg:grid-cols-[1.3fr_2fr]">
           <div>
             <Link href="/" className="inline-flex items-center" aria-label="ISOBASH home">
-              <BrandLogo className="h-7 w-auto" />
+              <BrandLogo className="h-8 w-auto" />
             </Link>
             <p className="mt-5 max-w-xs text-[13px] leading-6 text-muted-foreground">
               A provider-agnostic AI operating platform that runs locally, in the cloud, or both.

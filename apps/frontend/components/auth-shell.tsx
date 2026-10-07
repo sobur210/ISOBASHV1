@@ -27,7 +27,7 @@ export function AuthShell({
         <AuroraBackdrop />
 
         <Link href="/" className="relative inline-flex items-center self-start p-10" aria-label="ISOBASH home">
-          <BrandLogo className="h-7 w-auto" priority />
+          <BrandLogo className="h-8 w-auto" priority />
         </Link>
 
         <div className="relative px-10 pb-4">
@@ -57,7 +57,7 @@ export function AuthShell({
       <div className="relative flex flex-col">
         <header className="flex items-center justify-between gap-4 px-5 py-5 sm:px-8">
           <Link href="/" className="inline-flex items-center lg:hidden" aria-label="ISOBASH home">
-            <BrandLogo className="h-6 w-auto" priority />
+            <BrandLogo className="h-7 w-auto" priority />
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />

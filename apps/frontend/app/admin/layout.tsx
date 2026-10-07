@@ -42,7 +42,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Link href="/admin" className="inline-flex shrink-0 items-center" aria-label="ISOBASH admin">
-              <BrandLogo className="h-5 w-auto" priority />
+              <BrandLogo className="h-6 w-auto" priority />
             </Link>
             <span
               className="hidden items-center gap-1.5 rounded-md border border-accent/30 bg-accent-soft px-2 py-1 font-mono text-[10px] font-medium tracking-[0.14em] text-accent uppercase sm:inline-flex"

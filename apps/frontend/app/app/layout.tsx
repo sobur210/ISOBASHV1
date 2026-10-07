@@ -77,7 +77,7 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6">
           <Link href="/app" className="inline-flex shrink-0 items-center" aria-label="ISOBASH workspace">
-            <BrandLogo className="h-5 w-auto" priority />
+            <BrandLogo className="h-6 w-auto" priority />
           </Link>
 
           <div className="flex items-center gap-2">
