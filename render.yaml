@@ -1,4 +1,4 @@
-# ISOBASH — Render blueprint.
+# ISOBASH — Render blueprint (FREE tier).
 #
 # This describes the existing application; it does not simplify or replace it.
 #   isobash-web  : Next.js 16 frontend (apps/frontend)
@@ -11,44 +11,48 @@
 # API process (apps/backend/src/media/video-render.queue.ts). Deploying the stub
 # would add a service that consumes and acks jobs without doing the work.
 #
+# FREE TIER LIMITS this file is designed around (render.com/docs/free):
+#   * 750 free instance-hours per workspace per month, shared by BOTH web
+#     services — a service running the whole month alone already uses ~720.
+#   * Services spin down after 15 minutes without traffic (~1 minute to wake).
+#   * The filesystem is ephemeral: uploads, generated media and knowledge
+#     indexes are lost on every redeploy, restart and spin-down. There is no
+#     disk on the free plan, so DATA_ROOT only ever holds scratch data.
+#   * Free Postgres expires 30 DAYS after creation (14-day grace to upgrade,
+#     then the data is deleted). Export or upgrade before that.
+#   * Free Key Value is in-memory only: a restart empties the render queue.
+#   * Free services can SEND private-network requests to these datastores but
+#     cannot RECEIVE them, which is why the API reaches Postgres/Redis over
+#     their internal URLs and the web app reaches the API over its public URL.
+#
 # The public URLs are derived from the service names below. If Render reports a
 # name collision, rename the service AND the matching `value:` URL together.
 
 databases:
   - name: isobash-db
+    plan: free
     databaseName: isobash
     user: isobash
-    # `connectionString` is the private-network URL; it requires a paid plan for
-    # both the database and the API. On a free workspace, take the external URL
-    # from the Render dashboard and set DATABASE_URL by hand instead.
 
 services:
   - type: keyvalue
     name: isobash-redis
-    # Internal only. On a plan without private networking, use
-    # `ipAllowList: [{ source: 0.0.0.0/0, description: everywhere }]`.
+    plan: free
+    # Internal only: the API connects with the instance's internal URL.
     ipAllowList: []
     # BullMQ holds queued video renders in memory until they run: an LRU policy
-    # would evict a waiting job and silently drop the user's render.
+    # would evict a waiting job and silently drop the user's render. (Free
+    # instances are in-memory anyway — a restart loses every queued job.)
     maxmemoryPolicy: noeviction
-    persistenceMode: journal-snapshot
+    persistenceMode: off
 
   - type: web
     name: isobash-api
     runtime: node
-    # Render disks are not available on the free plan. The disk holds generated
-    # media, uploads, knowledge indexes and logs (DATA_ROOT); without it those
-    # live only for the lifetime of the instance.
-    # Disks need a paid plan (free has none). `0.5c-512mb` is the cheapest
-    # plan ID that supports a disk — see render.com/docs/blueprint-spec.
-    plan: 0.5c-512mb
+    plan: free
     buildCommand: npm ci && npx prisma generate && npm run build:backend && npx prisma migrate deploy
     startCommand: node apps/backend/dist/main.js
     healthCheckPath: /health
-    disk:
-      name: isobash-data
-      mountPath: /var/isobash-data
-      sizeGB: 5
     envVars:
       - key: NODE_VERSION
         value: "22"
@@ -77,6 +81,7 @@ services:
         value: none
       - key: COOKIE_SECURE
         value: "true"
+      # Ephemeral: media written here is gone after a redeploy or spin-down.
       - key: DATA_ROOT
         value: /var/isobash-data
       - key: MODEL_ROOT
@@ -92,9 +97,11 @@ services:
       # loopback address that will never answer.
       - key: OLLAMA_ENABLED
         value: "false"
-      # Provider keys are entered in the Render dashboard, never in this file.
+      # The API REFUSES TO BOOT if a provider is enabled without its key, so
+      # providers ship disabled. Paste the key in the dashboard (below), then
+      # flip its *_ENABLED flag to "true" and redeploy.
       - key: GEMINI_ENABLED
-        value: "true"
+        value: "false"
       - key: GEMINI_API_KEY
         sync: false
       - key: OPENAI_ENABLED
@@ -121,6 +128,7 @@ services:
   - type: web
     name: isobash-web
     runtime: node
+    plan: free
     buildCommand: npm ci && npm run build:frontend
     startCommand: npm --workspace apps/frontend run start
     healthCheckPath: /
