@@ -1,6 +1,7 @@
 import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { randomUUID } from 'crypto';
+import { redactUrl } from './redact';
 
 @Injectable()
 export class RequestLoggingMiddleware implements NestMiddleware {
@@ -18,7 +19,12 @@ export class RequestLoggingMiddleware implements NestMiddleware {
       const line = JSON.stringify({
         requestId,
         method: req.method,
-        url: req.originalUrl,
+        // `redactUrl`, not `originalUrl`: a caller can put a bearer token in a
+        // query string, and this is the one place caller-controlled text reaches
+        // a log verbatim. It strips sensitive parameters and inline URL
+        // credentials. No headers and no body are logged, so `Authorization` and
+        // `Cookie` cannot appear here at all.
+        url: redactUrl(req.originalUrl),
         status: res.statusCode,
         durationMs,
         userAgent: req.headers['user-agent'] ?? undefined,

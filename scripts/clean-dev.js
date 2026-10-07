@@ -1,13 +1,32 @@
 const { execSync } = require('child_process');
+const { existsSync, readFileSync, unlinkSync } = require('fs');
+const path = require('path');
 
 const ports = [3000, 3001, 3002, 3003, 3004, 3005];
 const pids = new Set();
+const backendLock = path.resolve(__dirname, '..', '.dev-backend.lock');
+
+if (existsSync(backendLock)) {
+  const backendPid = Number(readFileSync(backendLock, 'utf8').trim());
+  if (Number.isInteger(backendPid) && backendPid > 0) {
+    console.log(`[clean-dev] Stopping backend watcher PID ${backendPid}.`);
+    pids.add(backendPid);
+  }
+}
 
 function run(command) {
   try {
     return execSync(command, { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' });
   } catch (error) {
     return error.stdout || '';
+  }
+}
+
+function removeBackendLock() {
+  try {
+    unlinkSync(backendLock);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
   }
 }
 
@@ -25,6 +44,7 @@ for (const line of (output || '').split(/\r?\n/)) {
 
 if (pids.size === 0) {
   console.log('[clean-dev] No stale listeners found on app ports.');
+  removeBackendLock();
   process.exit(0);
 }
 
@@ -38,3 +58,4 @@ for (const pid of [...pids].sort((a, b) => a - b)) {
 }
 
 console.log('[clean-dev] Finished clearing stale dev processes.');
+removeBackendLock();

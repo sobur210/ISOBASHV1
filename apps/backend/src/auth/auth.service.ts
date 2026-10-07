@@ -15,6 +15,7 @@ import { AuditService } from '../security/audit.service';
 import { RateLimitService } from '../security/rate-limit.service';
 import { SecretCipher } from '../security/secret-cipher';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from '../security/totp';
+import { parseSameSite } from '../shared/config/configuration';
 import { AUTH_COOKIE_NAME, AuthSession, SESSION_TTL_MS, SessionUser } from './session.model';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -27,7 +28,20 @@ type PendingMfa = { userId: number; attempts: number; expiresAt: number };
 @Injectable()
 export class AuthService {
   private readonly saltRounds = 10;
-  private readonly secure = process.env.NODE_ENV === 'production';
+  /**
+   * From the environment, not from NODE_ENV. The two are not the same question:
+   * NODE_ENV says the code is a production build, while the cookie flags have to
+   * match whether the browser is actually talking to the API cross-origin. On
+   * Render the web service and the API are separate `*.onrender.com` hosts, so
+   * the session needs `SameSite=None; Secure` even though NODE_ENV is
+   * `production` — and `lax` (the NODE_ENV-derived default) is dropped by the
+   * browser there. Read once at construction, same as the old `secure` field.
+   */
+  private readonly cookieSameSite = parseSameSite(process.env.COOKIE_SAMESITE);
+  private readonly cookieSecure =
+    process.env.COOKIE_SECURE === undefined || process.env.COOKIE_SECURE === ''
+      ? process.env.NODE_ENV === 'production'
+      : process.env.COOKIE_SECURE === 'true';
   private readonly pendingMfa = new Map<string, PendingMfa>();
   private readonly loginFailures: { limit: number; windowMs: number };
 
@@ -347,8 +361,8 @@ export class AuthService {
   setAuthCookie(res: Response, sessionId: string) {
     res.cookie(AUTH_COOKIE_NAME, sessionId, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: this.secure,
+      sameSite: this.cookieSameSite,
+      secure: this.cookieSecure,
       path: '/',
       maxAge: SESSION_TTL_MS,
     });
@@ -357,8 +371,8 @@ export class AuthService {
   clearAuthCookie(res: Response) {
     res.clearCookie(AUTH_COOKIE_NAME, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: this.secure,
+      sameSite: this.cookieSameSite,
+      secure: this.cookieSecure,
       path: '/',
     });
   }

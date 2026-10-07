@@ -15,14 +15,32 @@ export type StorageRoots = {
 
 export type AppConfig = {
   port: number;
+  /**
+   * Interface to bind. Render (and every PaaS that runs a container) reaches the
+   * service through its own proxy on a private interface, so a process bound to
+   * `127.0.0.1` is unreachable from outside even though it started cleanly.
+   * `0.0.0.0` is the default for that reason.
+   */
+  host: string;
   webUrl: string;
   apiUrl: string;
   /**
    * Exact browser origins allowed to call the API with credentials. Reflecting
    * any origin would let a page on any site ride the session cookie, so the
-   * list is explicit: WEB_URL plus anything CORS_ORIGINS adds.
+   * list is explicit: WEB_URL plus anything CORS_ORIGIN/CORS_ORIGINS adds.
    */
   corsOrigins: string[];
+  /**
+   * Session cookie attributes, from the environment rather than from
+   * NODE_ENV. On Render the API and the web service are different origins
+   * (`*.onrender.com` hosts are same-site but cross-origin), so a cross-site
+   * session needs `SameSite=None; Secure`, which browsers refuse without the
+   * Secure flag. Guessing from NODE_ENV cannot tell those two layouts apart.
+   */
+  cookie: {
+    sameSite: 'lax' | 'strict' | 'none';
+    secure: boolean;
+  };
   databaseUrl: string;
   redisUrl: string;
   ollama: {
@@ -154,6 +172,20 @@ function booleanWithDefault(env: NodeJS.ProcessEnv, key: string, fallback: boole
   return value === 'true';
 }
 
+/**
+ * `SameSite` is a closed set of three values, and a typo has to refuse rather
+ * than fall back: `samesite=none` (wrong case) silently becoming `lax` would
+ * produce a cookie the browser drops in exactly the cross-origin layout that
+ * needed `none` in the first place, and the symptom is a session that appears
+ * to work in local testing and never authenticates in production.
+ */
+export function parseSameSite(value: string | undefined): 'lax' | 'strict' | 'none' {
+  if (value === undefined || value === '') return 'lax';
+  const lower = value.toLowerCase();
+  if (lower === 'lax' || lower === 'strict' || lower === 'none') return lower;
+  throw new Error(`COOKIE_SAMESITE must be "lax", "strict" or "none", got "${value}".`);
+}
+
 function resolveRepoRoot(): string {
   let dir = __dirname;
   for (let i = 0; i < 12; i += 1) {
@@ -215,13 +247,29 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
 
   const config: AppConfig = {
     env: env.NODE_ENV || 'development',
-    port: Number(process.env.PORT || 3001),
+    port: Number(env.PORT || 3001),
+    host: env.HOST || '0.0.0.0',
     webUrl: env.WEB_URL || 'http://localhost:3002',
-    apiUrl: env.API_URL || `http://localhost:${process.env.PORT || 3001}`,
+    apiUrl: env.API_URL || `http://localhost:${env.PORT || 3001}`,
+    // CORS_ORIGIN is the single-origin form Render's dashboard is easiest to
+    // fill in; CORS_ORIGINS stays for the comma-separated multi-origin case.
+    // WEB_URL is always allowed so a local `.env` needs neither.
     corsOrigins: [
       env.WEB_URL || 'http://localhost:3002',
-      ...(env.CORS_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean),
+      ...[env.CORS_ORIGIN || '', env.CORS_ORIGINS || '']
+        .join(',')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean),
     ],
+    cookie: {
+      // Default to `lax` because that is what a same-origin local setup needs.
+      // A deployment that splits web and API onto different origins has to say
+      // `none`, and browsers reject `SameSite=None` without `Secure`, so the two
+      // are validated against each other rather than trusted.
+      sameSite: parseSameSite(env.COOKIE_SAMESITE),
+      secure: booleanWithDefault(env, 'COOKIE_SECURE', (env.NODE_ENV || 'development') === 'production'),
+    },
     databaseUrl: requireString(env, 'DATABASE_URL'),
     redisUrl: optionalString(env, 'REDIS_URL') || 'redis://localhost:6379',
     ollama: {
@@ -331,6 +379,20 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   }
   if (Number.isNaN(config.port) || config.port < 1 || config.port > 65535) {
     throw new Error(`PORT must be a valid TCP port, got "${env.PORT}".`);
+  }
+  if (config.cookie.sameSite === 'none' && !config.cookie.secure) {
+    // Chrome and Firefox both discard `SameSite=None` that is not `Secure`, so
+    // this combination is a session cookie that is set and then never sent.
+    // Failing loudly beats a deployment where sign-in appears to succeed and
+    // every request comes back unauthenticated.
+    throw new Error('COOKIE_SAMESITE=none requires COOKIE_SECURE=true, because browsers drop SameSite=None cookies without the Secure flag.');
+  }
+  for (const origin of config.corsOrigins) {
+    if (!/^https?:\/\/[^/\s]+$/.test(origin)) {
+      throw new Error(
+        `CORS origins must be bare http(s) origins like "https://app.example.com" with no path, trailing slash, query or wildcard, got "${origin}".`,
+      );
+    }
   }
   if (!Number.isInteger(config.research.maxSources) || config.research.maxSources < 1 || config.research.maxSources > 20) {
     throw new Error(`RESEARCH_MAX_SOURCES must be an integer between 1 and 20, got "${env.RESEARCH_MAX_SOURCES}".`);

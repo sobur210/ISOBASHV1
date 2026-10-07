@@ -99,6 +99,16 @@ const HEALTH_INTERVAL_MS = envNumber('SERVICE_HEALTH_INTERVAL_MS', 15_000);
 const PROBE_TIMEOUT_MS = envNumber('SERVICE_PROBE_TIMEOUT_MS', 6_000);
 const PROBE_FAILURE_THRESHOLD = envNumber('SERVICE_PROBE_FAILURE_THRESHOLD', 3);
 /**
+ * How many consecutive probe timeouts are tolerated while the service port is
+ * still accepting connections before the timeouts are treated as failures.
+ * A timeout only proves the process did not answer in 6s — Postgres stalled,
+ * Redis stalled or the event loop was busy all look identical from out here,
+ * and killing the API over that is what took the backend offline repeatedly.
+ * The port check separates "slow" from "dead"; this cap keeps a genuinely hung
+ * process from being tolerated forever.
+ */
+const SLOW_PROBE_LIMIT = envNumber('SERVICE_SLOW_PROBE_LIMIT', 6);
+/**
  * A service is not expected to answer its probe until it has finished booting.
  * Without this grace the threshold is reached purely by the boot window
  * (PROBE_FAILURE_THRESHOLD * (HEALTH_INTERVAL_MS + PROBE_TIMEOUT_MS) = 63s), so
@@ -558,6 +568,7 @@ function serviceDefinitions() {
       cwd: REPO_ROOT,
       env: {},
       probe: { url: `http://127.0.0.1:${API_PORT}/health`, expect: [200] },
+      port: API_PORT,
       critical: true,
     },
     {
@@ -581,6 +592,7 @@ function serviceDefinitions() {
       cwd: join(REPO_ROOT, 'apps', 'frontend'),
       env: WEB_MODE === 'development' ? { NODE_ENV: 'development' } : { NODE_ENV: 'production' },
       probe: { url: `http://127.0.0.1:${WEB_PORT}/`, expect: [200, 307, 302] },
+      port: WEB_PORT,
       critical: true,
     },
   ];
@@ -595,6 +607,7 @@ class ManagedService {
     this.lastError = null;
     this.startedAt = null;
     this.consecutiveProbeFailures = 0;
+    this.slowProbes = 0;
     this.lastProbeAt = null;
     this.lastProbeOk = null;
     this.nextStartAt = 0;
@@ -629,6 +642,7 @@ class ManagedService {
     this.state = 'running';
     this.startedAt = Date.now();
     this.consecutiveProbeFailures = 0;
+    this.slowProbes = 0;
     log.info(`Started ${this.name}.`, { pid: child.pid, log: logPath });
 
     child.on('exit', (code, signal) => {
@@ -686,6 +700,7 @@ class ManagedService {
       if (ok) {
         if (this.consecutiveProbeFailures > 0) log.info(`${this.name} recovered.`);
         this.consecutiveProbeFailures = 0;
+        this.slowProbes = 0;
         if (this.state !== 'running') this.state = 'running';
       } else {
         this.lastProbeAt = new Date().toISOString();
@@ -703,6 +718,23 @@ class ManagedService {
       if (booting) {
         this.consecutiveProbeFailures = 0;
         log.info(`${this.name} still booting (${error instanceof Error ? error.message : String(error)}).`);
+      } else if (this.definition.port !== undefined && (await isPortOpen(this.definition.port))) {
+        // Alive but silent. The port still accepts connections, so the process
+        // exists and its loop can still take work; only the HTTP answer was
+        // late. Counting that as a failure restarted a healthy API whenever a
+        // dependency stalled, which is exactly the outage this supervisor is
+        // supposed to prevent.
+        this.slowProbes += 1;
+        if (this.slowProbes >= SLOW_PROBE_LIMIT) {
+          log.error(
+            `${this.name} has not answered ${this.slowProbes} consecutive probes while port ${this.definition.port} stayed open; treating it as hung.`,
+          );
+          this.consecutiveProbeFailures = PROBE_FAILURE_THRESHOLD;
+        } else {
+          log.info(
+            `${this.name} probe timed out but port ${this.definition.port} is still open (slow ${this.slowProbes}/${SLOW_PROBE_LIMIT}); not counting it.`,
+          );
+        }
       } else {
         this.consecutiveProbeFailures += 1;
         log.warn(`${this.name} probe failed: ${error instanceof Error ? error.message : String(error)}`);
