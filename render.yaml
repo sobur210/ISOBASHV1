@@ -39,7 +39,9 @@ services:
     # Render disks are not available on the free plan. The disk holds generated
     # media, uploads, knowledge indexes and logs (DATA_ROOT); without it those
     # live only for the lifetime of the instance.
-    plan: starter
+    # Disks need a paid plan (free has none). `0.5c-512mb` is the cheapest
+    # plan ID that supports a disk — see render.com/docs/blueprint-spec.
+    plan: 0.5c-512mb
     buildCommand: npm ci && npx prisma generate && npm run build:backend && npx prisma migrate deploy
     startCommand: node apps/backend/dist/main.js
     healthCheckPath: /health
