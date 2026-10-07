@@ -1,0 +1,141 @@
+# ISOBASH — Render blueprint.
+#
+# This describes the existing application; it does not simplify or replace it.
+#   isobash-web  : Next.js 16 frontend (apps/frontend)
+#   isobash-api  : NestJS API (apps/backend) + its in-process BullMQ video worker
+#   isobash-db   : Render PostgreSQL (Prisma)
+#   isobash-redis: Render Key Value, Redis-compatible (BullMQ queues + rate limits)
+#
+# apps/worker is deliberately NOT deployed: it is a stub that only logs jobs on
+# the `isobash-queue` queue, while the real video-render worker runs inside the
+# API process (apps/backend/src/media/video-render.queue.ts). Deploying the stub
+# would add a service that consumes and acks jobs without doing the work.
+#
+# The public URLs are derived from the service names below. If Render reports a
+# name collision, rename the service AND the matching `value:` URL together.
+
+databases:
+  - name: isobash-db
+    databaseName: isobash
+    user: isobash
+    # `connectionString` is the private-network URL; it requires a paid plan for
+    # both the database and the API. On a free workspace, take the external URL
+    # from the Render dashboard and set DATABASE_URL by hand instead.
+
+services:
+  - type: keyvalue
+    name: isobash-redis
+    # Internal only. On a plan without private networking, use
+    # `ipAllowList: [{ source: 0.0.0.0/0, description: everywhere }]`.
+    ipAllowList: []
+    # BullMQ holds queued video renders in memory until they run: an LRU policy
+    # would evict a waiting job and silently drop the user's render.
+    maxmemoryPolicy: noeviction
+    persistenceMode: journal-snapshot
+
+  - type: web
+    name: isobash-api
+    runtime: node
+    # Render disks are not available on the free plan. The disk holds generated
+    # media, uploads, knowledge indexes and logs (DATA_ROOT); without it those
+    # live only for the lifetime of the instance.
+    plan: starter
+    buildCommand: npm ci && npx prisma generate && npm run build:backend && npx prisma migrate deploy
+    startCommand: node apps/backend/dist/main.js
+    healthCheckPath: /health
+    disk:
+      name: isobash-data
+      mountPath: /var/isobash-data
+      sizeGB: 5
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # Render injects PORT itself; the API reads it (apps/backend/src/main.ts).
+      - key: DATABASE_URL
+        fromDatabase:
+          name: isobash-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: isobash-redis
+          type: keyvalue
+          property: connectionString
+      - key: APP_SECRET
+        generateValue: true
+      # Web and API are different origins on *.onrender.com, so the session
+      # cookie has to be cross-site: SameSite=None without Secure is dropped by
+      # browsers, which is why the two are set together here.
+      - key: WEB_URL
+        value: https://isobash-web.onrender.com
+      - key: CORS_ORIGIN
+        value: https://isobash-web.onrender.com
+      - key: COOKIE_SAMESITE
+        value: none
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: DATA_ROOT
+        value: /var/isobash-data
+      - key: MODEL_ROOT
+        value: /var/isobash-data/models
+      # Feature flags must match the frontend's NEXT_PUBLIC_FEATURE_* values.
+      - key: FEATURE_PROJECTS
+        value: "false"
+      - key: FEATURE_FILES
+        value: "false"
+      - key: FEATURE_CODE_WORKSPACE
+        value: "true"
+      # Local models do not exist on Render; say so rather than probe a
+      # loopback address that will never answer.
+      - key: OLLAMA_ENABLED
+        value: "false"
+      # Provider keys are entered in the Render dashboard, never in this file.
+      - key: GEMINI_ENABLED
+        value: "true"
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_ENABLED
+        value: "false"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: BRAVE_SEARCH_API_KEY
+        sync: false
+      # Video/image providers: enable by flipping *_ENABLED to "true" once the
+      # matching sync: false key has been filled in the dashboard.
+      - key: MAGICHOUR_ENABLED
+        value: "false"
+      - key: MAGICHOUR_API_KEY
+        sync: false
+      - key: DEEPAI_ENABLED
+        value: "false"
+      - key: DEEPAI_API_KEY
+        sync: false
+      - key: JSON2VIDEO_ENABLED
+        value: "false"
+      - key: JSON2VIDEO_API_KEY
+        sync: false
+
+  - type: web
+    name: isobash-web
+    runtime: node
+    buildCommand: npm ci && npm run build:frontend
+    startCommand: npm --workspace apps/frontend run start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Read at build time (apps/frontend/lib/config.ts) for browser fetches,
+      # CSP `connect-src`, and the server-side rewrite in next.config.ts.
+      - key: NEXT_PUBLIC_API_URL
+        value: https://isobash-api.onrender.com
+      - key: NEXT_PUBLIC_WEB_URL
+        value: https://isobash-web.onrender.com
+      - key: INTERNAL_API_URL
+        value: https://isobash-api.onrender.com
+      - key: NEXT_PUBLIC_FEATURE_PROJECTS
+        value: "false"
+      - key: NEXT_PUBLIC_FEATURE_FILES
+        value: "false"
+      - key: NEXT_PUBLIC_FEATURE_CODE_WORKSPACE
+        value: "true"

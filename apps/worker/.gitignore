@@ -1,0 +1,14 @@
+# Worker build output and local environment. See the sibling file in
+# apps/backend/.gitignore for why this exists separately from the root file.
+
+# Nest / tsc output
+/dist
+build/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+!.env.example
+
+*.log

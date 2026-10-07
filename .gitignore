@@ -1,18 +1,70 @@
-node_modules
-.next
-out
+# --- Secrets -------------------------------------------------------------
+# The real environment files never reach the remote. `!.env.example` is the one
+# exception, and it must stay an exception: it is the only documentation of the
+# variable names this app reads.
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+*.asc
+*.gpg
+
+# --- Build output and dependencies ---------------------------------------
+node_modules
+.next
+out
+.turbo
+build
 coverage
 npm-debug.log*
 .DS_Store
+Thumbs.db
 /dist
 /apps/*/dist
 /apps/*/.next
 /apps/*/node_modules
+/packages/*/dist
+/packages/*/node_modules
+*.tsbuildinfo
 dev-run.log
 frontend-dev.log
+.dev-backend.lock
+
+# --- Databases, dumps and logs -------------------------------------------
+*.sql
+*.dump
+*.sqlite
+*.sqlite3
+*.db
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# `prisma/migrations/**` is DDL that `prisma migrate deploy` replays against
+# Render Postgres on every build. It is not a data dump and must stay tracked.
+!prisma/migrations/
+!prisma/migrations/**/*.sql
+
+# --- Runtime data roots (ephemeral in a Render web service) --------------
+# Uploads, generated media, caches, logs, extracted text and downloaded models.
+# Everything under the configured DATA_ROOT/MODEL_ROOT must never be committed.
+uploads/
+workspaces/
+generated/
+ISOBASH-DATA/
+ISOBASH-MODELS/
+/apps/*/storage/
+/apps/*/uploads/
+/apps/*/media/
+/apps/*/knowledge/
+/apps/*/models/
+*.tmp
 
 # Local screenshot/verification scratch space. The Chrome profile inside it is
 # a real browser data dir (Login Data, Network/Cookies, Local State), so it must

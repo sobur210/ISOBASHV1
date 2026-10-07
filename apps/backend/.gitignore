@@ -1,0 +1,23 @@
+# Backend / worker build output and local environment.
+# The root .gitignore covers the repo-wide cases; this file exists because these
+# two workspaces are compiled by tsc and `nest build` into a tracked-looking path.
+
+# Nest / tsc output
+/dist
+build/
+*.tsbuildinfo
+
+# Environment. Never commit a real .env; `.env.example` is the exception.
+.env
+.env.*
+!.env.example
+
+# Local runtime data roots, if anyone points DATA_ROOT inside the workspace.
+uploads/
+media/
+knowledge/
+models/
+cache/
+logs/
+temp/
+storage/
