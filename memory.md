@@ -23,11 +23,19 @@ Last updated: 2026-10-14
   window they spin down as before. The repo is **public**, so Actions minutes are free.
   `workflow_dispatch` is enabled; manual dispatch re-verifies the whole loop. For true 24/7,
   upgrade both web services to a paid instance instead of widening the window.
-- **Still true / to know:** the deployed API is behind the working tree — `GET /ready` returns
-  **404** on the live service (the route only exists uncommitted). `render.yaml`'s web
-  `buildCommand` now also uses `npm ci --include=dev` (defensive: the web service does not
-  declare `NODE_ENV=production`, so plain `npm ci` already installed devDeps, but the API
-  service does declare it and needs the flag).
+- **The API was stale, and this is why.** `GET /ready` (committed in `f04e8ef`, 10-07) returned
+  **404** on the live API, so the service was still running its last good build from *before*
+  `f04e8ef`. Every API deploy since had **failed**: `prisma migrate deploy` sat in the build
+  command, and a Render build environment has no route to the database's internal URL, so it
+  dies with `P1001` ("Can't reach database server") — and because *any* failed deploy command
+  aborts the deploy, the previous build keeps serving forever. The web service has no DB step,
+  which is why it deployed the same commit fine. **Fix:** `render.yaml` now runs
+  `prisma migrate deploy` in the API `startCommand` (the runtime container does have
+  private-network access, the same path `/health` already proves) instead of the build. Render's
+  usual home for migrations, the pre-deploy command, is paid-only.
+- `render.yaml`'s web `buildCommand` also uses `npm ci --include=dev` (defensive: the web service
+  does not declare `NODE_ENV=production`, so plain `npm ci` already installed devDeps, but the
+  API service does declare it and needs the flag).
 
 ### Hero cube, background and copy + dev service worker fix (2026-10-13) — uncommitted
 

@@ -54,8 +54,18 @@ services:
     # to this build: plain `npm ci` would then skip devDependencies and
     # `nest build` dies with "command not found" (127). --include=dev forces
     # them back in so the Nest CLI and TypeScript are present.
-    buildCommand: npm ci --include=dev && npx prisma generate && npm run build:backend && npx prisma migrate deploy
-    startCommand: node apps/backend/dist/main.js
+    #
+    # `prisma migrate deploy` is deliberately NOT in the build. The build
+    # environment has no route to a database's internal URL, so a build-time
+    # migration dies with P1001 ("Can't reach database server"); because ANY
+    # failed deploy command aborts the deploy and the previous build keeps
+    # serving, that pinned the API to its last good build (its /ready route was
+    # 404 on the live service long after it was committed). Migrations run in
+    # the START command instead, where the runtime container really does have
+    # private-network access to Postgres — the same path /health already proves.
+    # A Render pre-deploy command is the usual home for this, but it is paid-only.
+    buildCommand: npm ci --include=dev && npx prisma generate && npm run build:backend
+    startCommand: npx prisma migrate deploy && node apps/backend/dist/main.js
     healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
