@@ -106,7 +106,7 @@ export function HeroSideNavButtons({
         onClick={onPrev}
         aria-label="Previous background image"
         title="Previous background image"
-        className="absolute left-3 sm:left-6 lg:left-10 top-1/2 -translate-y-1/2 z-30 flex h-12 w-12 items-center justify-center rounded-full border border-border bg-surface-2/80 backdrop-blur-md text-foreground transition-all duration-300 hover:bg-primary/20 hover:border-primary/60 hover:text-primary hover:scale-110 active:scale-95 shadow-lift cursor-pointer"
+        className="absolute left-3 sm:left-6 lg:left-10 top-1/2 -translate-y-1/2 z-30 flex h-12 w-12 items-center justify-center rounded-md border border-border bg-surface-2/80 backdrop-blur-md text-foreground transition-all duration-300 hover:bg-primary/20 hover:border-primary/60 hover:text-primary cursor-pointer"
       >
         <ChevronLeftIcon className="h-6 w-6" />
       </button>
@@ -122,19 +122,19 @@ export function HeroSideNavButtons({
         onClick={onNext}
         aria-label="Next background image"
         title="Next background image"
-        className="absolute right-3 sm:right-6 lg:right-10 top-1/2 -translate-y-1/2 z-30 flex h-12 w-12 items-center justify-center rounded-full border border-primary/50 bg-surface-2/80 backdrop-blur-md text-foreground transition-all duration-300 hover:bg-primary hover:text-primary-foreground hover:scale-110 active:scale-95 shadow-glow cursor-pointer"
+        className="absolute right-3 sm:right-6 lg:right-10 top-1/2 -translate-y-1/2 z-30 flex h-12 w-12 items-center justify-center rounded-md border border-primary/50 bg-surface-2/80 backdrop-blur-md text-foreground transition-all duration-300 hover:bg-primary hover:text-primary-foreground cursor-pointer"
       >
         <ChevronRightIcon className="h-6 w-6" />
       </button>
 
       {/* Active Slide Indicator Dots */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-surface/80 backdrop-blur-md shadow-lift">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-4 py-1.5 rounded-md border border-border bg-surface/80 backdrop-blur-md">
         {HERO_SLIDES.map((_, i) => (
           <span
             key={i}
             className={`h-2.5 rounded-full transition-all duration-500 ${
               i === currentIndex
-                ? "w-7 bg-primary shadow-glow"
+                ? "w-7 bg-primary"
                 : "w-2.5 bg-muted-foreground/40"
             }`}
           />

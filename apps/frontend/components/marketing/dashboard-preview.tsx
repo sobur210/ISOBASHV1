@@ -36,21 +36,21 @@ const cards = [
 
 export function DashboardPreview() {
   return (
-    <div className="edge-light overflow-hidden rounded-[26px] border border-border-strong bg-surface/80 shadow-deep backdrop-blur-2xl">
+    <div className="edge-light overflow-hidden rounded-[26px] border border-border-strong bg-surface/80 backdrop-blur-2xl">
       <div className="flex h-12 items-center justify-between border-b border-border px-4">
         <div className="flex items-center gap-1.5" aria-hidden="true">
-          <span className="h-2 w-2 rounded-full bg-danger/60" />
-          <span className="h-2 w-2 rounded-full bg-warning/60" />
-          <span className="h-2 w-2 rounded-full bg-success/60" />
+          <span className="h-1.5 w-1.5 rounded-full bg-danger/60" />
+          <span className="h-1.5 w-1.5 rounded-full bg-warning/60" />
+          <span className="h-1.5 w-1.5 rounded-full bg-success/60" />
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-border text-muted-foreground">
+          <span className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-muted-foreground">
             <GridIcon className="h-3 w-3" />
           </span>
-          <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-border text-muted-foreground">
+          <span className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-muted-foreground">
             <SearchIcon className="h-3 w-3" />
           </span>
-          <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-border text-muted-foreground">
+          <span className="flex h-6 w-6 items-center justify-center rounded-md border border-border text-muted-foreground">
             <BellIcon className="h-3 w-3" />
           </span>
         </div>
@@ -61,7 +61,7 @@ export function DashboardPreview() {
           {sidebar.map((item) => (
             <span
               key={item.label}
-              className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[11.5px] font-medium ${
+              className={`flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[11.5px] font-medium ${
                 item.active ? "bg-primary-soft text-primary" : "text-muted-foreground"
               }`}
             >
@@ -75,9 +75,9 @@ export function DashboardPreview() {
           <p className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">Good morning, Alex</p>
           <p className="mt-1 text-[11.5px] text-muted-foreground">What would you like to create today?</p>
 
-          <div className="mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface-2 px-3.5 py-3">
+          <div className="mt-4 flex items-center gap-3 rounded-md border border-border bg-surface-2 px-3.5 py-3">
             <span className="flex-1 text-[12px] text-muted-foreground/70">Tell me what you want to create…</span>
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-glow">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <SendIcon className="h-3 w-3" />
             </span>
           </div>
@@ -86,9 +86,9 @@ export function DashboardPreview() {
             {cards.map((card) => (
               <div
                 key={card.title}
-                className="rounded-xl border border-border bg-surface-2 p-3 transition-colors hover:border-primary/30"
+                className="rounded-md border border-border bg-surface-2 p-3 transition-colors hover:border-primary/30"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-soft text-primary">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary-soft text-primary">
                   {card.icon}
                 </span>
                 <p className="mt-2.5 text-[11.5px] font-semibold text-foreground">{card.title}</p>

@@ -128,7 +128,7 @@ export function MfaSettings({ email, mfaEnabled: initialEnabled }: Props) {
         {message ? (
           <p
             role="status"
-            className="mb-5 flex items-start gap-3 rounded-xl border border-success/25 bg-success/5 px-4 py-3 text-[13.5px] text-foreground"
+            className="mb-5 flex items-start gap-3 rounded-md border border-success/25 bg-success/5 px-4 py-3 text-[13.5px] text-foreground"
           >
             <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-success" />
             {message}
@@ -137,7 +137,7 @@ export function MfaSettings({ email, mfaEnabled: initialEnabled }: Props) {
         {error ? (
           <div
             role="alert"
-            className="mb-5 flex items-start gap-3 rounded-xl border border-danger/25 bg-danger/5 px-4 py-3"
+            className="mb-5 flex items-start gap-3 rounded-md border border-danger/25 bg-danger/5 px-4 py-3"
           >
             <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
             <p className="text-[13.5px] text-foreground">{error}</p>
@@ -166,7 +166,7 @@ export function MfaSettings({ email, mfaEnabled: initialEnabled }: Props) {
             </div>
 
             {secret && otpauth ? (
-              <div className="edge-light space-y-4 rounded-xl border border-accent/25 bg-accent-soft/50 p-5">
+              <div className="edge-light space-y-4 rounded-md border border-accent/25 bg-accent-soft/50 p-5">
                 <p className="text-[13.5px] leading-6 text-muted-foreground">
                   Scan this URI with your authenticator app, or enter the secret manually for{" "}
                   <span className="font-medium text-foreground">{email}</span>:

@@ -325,7 +325,7 @@ export function AgentsPanel() {
                 </Select>
               </Field>
               <Field label="Memory" htmlFor="agent-memory">
-                <label className="flex h-11 items-center gap-2.5 rounded-xl border border-border bg-surface-2 px-4 text-[13px] text-foreground">
+                <label className="flex h-11 items-center gap-2.5 rounded-md border border-border bg-surface-2 px-4 text-[13px] text-foreground">
                   <input
                     id="agent-memory"
                     type="checkbox"
@@ -347,7 +347,7 @@ export function AgentsPanel() {
           </form>
 
           {notice ? (
-            <p className="mt-4 flex items-start gap-2.5 rounded-xl bg-success/10 px-3 py-2 text-xs text-success ring-1 ring-success/20">
+            <p className="mt-4 flex items-start gap-2.5 rounded-md bg-success/10 px-3 py-2 text-xs text-success ring-1 ring-success/20">
               <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {notice}
             </p>
@@ -355,7 +355,7 @@ export function AgentsPanel() {
           {error ? (
             <p
               role="alert"
-              className="mt-4 flex items-start gap-2.5 rounded-xl bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20"
+              className="mt-4 flex items-start gap-2.5 rounded-md bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20"
             >
               <AlertTriangleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {error}
@@ -365,15 +365,15 @@ export function AgentsPanel() {
       </Card>
 
       <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
-        <aside className="edge-light flex min-h-[18rem] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
+        <aside className="edge-light flex min-h-[18rem] flex-col overflow-hidden rounded-lg border border-border bg-surface">
           <div className="flex items-center justify-between border-b border-border px-4 py-3.5">
             <h2 className="text-[13.5px] font-semibold text-foreground">Agents ({agents.length})</h2>
           </div>
           <div aria-label="Agent list" className="flex-1 space-y-1 overflow-y-auto p-2">
             {loading ? (
               <div className="space-y-2 p-2">
-                <Skeleton className="h-14 w-full rounded-xl" />
-                <Skeleton className="h-14 w-3/4 rounded-xl" />
+                <Skeleton className="h-14 w-full rounded-md" />
+                <Skeleton className="h-14 w-3/4 rounded-md" />
               </div>
             ) : agents.length === 0 ? (
               <p className="p-4 text-xs leading-5 text-muted-foreground">
@@ -387,7 +387,7 @@ export function AgentsPanel() {
                       setActiveId(agent.id);
                       setNotice(null);
                     }}
-                    className={`min-w-0 flex-1 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                    className={`min-w-0 flex-1 rounded-md px-3 py-2.5 text-left transition-colors ${
                       activeId === agent.id
                         ? "bg-primary-soft"
                         : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
@@ -402,7 +402,7 @@ export function AgentsPanel() {
                   <button
                     aria-label={`Delete agent ${agent.name}`}
                     onClick={() => void removeAgent(agent)}
-                    className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-danger/10 hover:text-danger"
+                    className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
                   >
                     <TrashIcon className="h-3.5 w-3.5" />
                   </button>
@@ -415,7 +415,7 @@ export function AgentsPanel() {
         {!active ? (
           <Card className="min-h-[18rem]">
             <CardBody className="flex min-h-[16rem] flex-col items-center justify-center gap-3 text-center">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-surface-2 text-muted-foreground">
+              <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-surface-2 text-muted-foreground">
                 <BotIcon className="h-5 w-5" />
               </span>
               <div>
@@ -508,7 +508,7 @@ export function AgentsPanel() {
                         <li key={run.id} className="flex items-center gap-2">
                           <button
                             onClick={() => setRunId(run.id)}
-                            className={`min-w-0 flex-1 rounded-xl px-3 py-2 text-left transition-colors ${
+                            className={`min-w-0 flex-1 rounded-md px-3 py-2 text-left transition-colors ${
                               runId === run.id
                                 ? "bg-primary-soft"
                                 : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
@@ -528,7 +528,7 @@ export function AgentsPanel() {
                             <button
                               aria-label={`Cancel run ${run.id}`}
                               onClick={() => void cancel(run)}
-                              className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-danger/10 hover:text-danger"
+                              className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
                             >
                               <CloseIcon className="h-3.5 w-3.5" />
                             </button>
@@ -560,7 +560,7 @@ export function AgentsPanel() {
                             <h3 className="font-mono text-[10.5px] tracking-[0.16em] text-muted-foreground uppercase">
                               Plan
                             </h3>
-                            <pre className="mt-1.5 max-h-40 overflow-auto whitespace-pre-wrap rounded-xl bg-surface-2 px-3 py-2 font-mono text-[11px] leading-5 text-muted-foreground ring-1 ring-border">
+                            <pre className="mt-1.5 max-h-40 overflow-auto whitespace-pre-wrap rounded-md bg-surface-2 px-3 py-2 font-mono text-[11px] leading-5 text-muted-foreground ring-1 ring-border">
                               {JSON.stringify(activeRun.plan, null, 2)}
                             </pre>
                           </div>
@@ -573,7 +573,7 @@ export function AgentsPanel() {
                             </h3>
                             <ul className="mt-2 space-y-1.5">
                               {activeRun.steps.map((step) => (
-                                <li key={step.id} className="rounded-xl bg-surface-2 px-3 py-2 ring-1 ring-border">
+                                <li key={step.id} className="rounded-md bg-surface-2 px-3 py-2 ring-1 ring-border">
                                   <div className="flex flex-wrap items-center gap-2">
                                     <span className="text-[11px] text-muted-foreground">
                                       #{step.position}
@@ -608,7 +608,7 @@ export function AgentsPanel() {
                         ) : null}
 
                         {activeRun.error ? (
-                          <p className="rounded-xl bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20">
+                          <p className="rounded-md bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20">
                             {activeRun.error}
                           </p>
                         ) : null}
@@ -618,7 +618,7 @@ export function AgentsPanel() {
                             <h3 className="font-mono text-[10.5px] tracking-[0.16em] text-muted-foreground uppercase">
                               Output
                             </h3>
-                            <p className="mt-1.5 whitespace-pre-wrap rounded-xl bg-surface-2 px-3 py-2.5 text-xs leading-6 text-foreground ring-1 ring-border">
+                            <p className="mt-1.5 whitespace-pre-wrap rounded-md bg-surface-2 px-3 py-2.5 text-xs leading-6 text-foreground ring-1 ring-border">
                               {activeRun.output}
                             </p>
                           </div>

@@ -135,7 +135,13 @@ services:
     name: isobash-web
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build:frontend
+    # Same trap the API build documents: NODE_ENV=production makes plain
+    # `npm ci` skip devDependencies, and `next build` needs them — PostCSS
+    # resolves `@tailwindcss/postcss` from apps/frontend's devDependencies,
+    # and TypeScript runs during the build too. Without --include=dev the
+    # build dies with "Cannot find module '@tailwindcss/postcss'", the deploy
+    # never succeeds and the service answers 503.
+    buildCommand: npm ci --include=dev && npm run build:frontend
     startCommand: npm --workspace apps/frontend run start
     healthCheckPath: /
     envVars:

@@ -11,10 +11,8 @@ export function Card({
 }) {
   return (
     <div
-      className={`edge-light rounded-2xl border border-border bg-surface shadow-soft transition-all duration-300 ${
-        interactive
-          ? "group hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lift"
-          : ""
+      className={`edge-light rounded-lg border border-border bg-surface transition-colors duration-200 ${
+        interactive ? "group hover:border-primary/50" : ""
       } ${className}`}
     >
       {children}
@@ -36,10 +34,10 @@ export function CardHeader({
   className?: string;
 }) {
   return (
-    <div className={`flex items-start justify-between gap-4 border-b border-border px-5 py-4 ${className}`}>
+    <div className={`flex items-start justify-between gap-4 border-b border-border px-4 py-3 ${className}`}>
       <div className="flex min-w-0 items-center gap-3">
         {icon ? (
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary-soft text-primary">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary-soft text-primary">
             {icon}
           </span>
         ) : null}
@@ -54,11 +52,11 @@ export function CardHeader({
 }
 
 export function CardBody({ className = "", children }: { className?: string; children: ReactNode }) {
-  return <div className={`p-5 ${className}`}>{children}</div>;
+  return <div className={`p-4 ${className}`}>{children}</div>;
 }
 
 export function CardFooter({ className = "", children }: { className?: string; children: ReactNode }) {
   return (
-    <div className={`border-t border-border px-5 py-3.5 ${className}`}>{children}</div>
+    <div className={`border-t border-border px-4 py-3 ${className}`}>{children}</div>
   );
 }

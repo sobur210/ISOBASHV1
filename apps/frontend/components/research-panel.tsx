@@ -180,7 +180,7 @@ export function ResearchPanel() {
           </form>
 
           {capabilities && !capabilities.search.available ? (
-            <p className="mt-4 flex items-start gap-2.5 rounded-xl border border-warning/25 bg-warning/5 p-3.5 text-xs text-muted-foreground">
+            <p className="mt-4 flex items-start gap-2.5 rounded-md border border-warning/25 bg-warning/5 p-3.5 text-xs text-muted-foreground">
               <AlertTriangleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
               {capabilities.search.detail}
             </p>
@@ -188,7 +188,7 @@ export function ResearchPanel() {
           {error ? (
             <p
               role="alert"
-              className="mt-4 flex items-start gap-2.5 rounded-xl border border-danger/25 bg-danger/5 p-3.5 text-xs text-danger"
+              className="mt-4 flex items-start gap-2.5 rounded-md border border-danger/25 bg-danger/5 p-3.5 text-xs text-danger"
             >
               <AlertTriangleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {error}
@@ -198,7 +198,7 @@ export function ResearchPanel() {
       </Card>
 
       <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
-        <aside className="edge-light flex min-h-[20rem] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
+        <aside className="edge-light flex min-h-[20rem] flex-col overflow-hidden rounded-lg border border-border bg-surface">
           <div className="flex items-center justify-between border-b border-border px-4 py-3.5">
             <h2 className="text-[13.5px] font-semibold text-foreground">Sessions</h2>
             <Button
@@ -217,8 +217,8 @@ export function ResearchPanel() {
           <div aria-label="Research session list" className="flex-1 space-y-1 overflow-y-auto p-2">
             {loading ? (
               <div className="space-y-2 p-2">
-                <Skeleton className="h-14 w-full rounded-xl" />
-                <Skeleton className="h-14 w-3/4 rounded-xl" />
+                <Skeleton className="h-14 w-full rounded-md" />
+                <Skeleton className="h-14 w-3/4 rounded-md" />
               </div>
             ) : sessions.length === 0 ? (
               <p className="p-4 text-xs leading-5 text-muted-foreground">
@@ -233,7 +233,7 @@ export function ResearchPanel() {
                       setActive(session);
                       fetchResearchSession(session.id).then(setActive).catch(() => undefined);
                     }}
-                    className={`min-w-0 flex-1 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                    className={`min-w-0 flex-1 rounded-md px-3 py-2.5 text-left transition-colors ${
                       active?.id === session.id
                         ? "bg-primary-soft"
                         : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
@@ -248,7 +248,7 @@ export function ResearchPanel() {
                   <button
                     aria-label={`Delete research session: ${session.question}`}
                     onClick={() => remove(session.id)}
-                    className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-danger/10 hover:text-danger"
+                    className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
                   >
                     <TrashIcon className="h-3.5 w-3.5" />
                   </button>
@@ -261,7 +261,7 @@ export function ResearchPanel() {
         <Card className="min-h-[26rem]">
           {!active ? (
             <CardBody className="flex min-h-[24rem] flex-col items-center justify-center gap-3 text-center">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-surface-2 text-muted-foreground">
+              <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-surface-2 text-muted-foreground">
                 <SearchIcon className="h-5 w-5" />
               </span>
               <div>
@@ -295,14 +295,14 @@ export function ResearchPanel() {
               ) : null}
 
               {active.error ? (
-                <p className="flex items-start gap-2.5 rounded-xl border border-danger/25 bg-danger/5 p-3.5 text-xs text-danger">
+                <p className="flex items-start gap-2.5 rounded-md border border-danger/25 bg-danger/5 p-3.5 text-xs text-danger">
                   <AlertTriangleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   {active.error}
                 </p>
               ) : null}
 
               {active.noEvidence ? (
-                <p className="flex items-start gap-2.5 rounded-xl border border-warning/25 bg-warning/5 p-3.5 text-xs leading-5 text-muted-foreground">
+                <p className="flex items-start gap-2.5 rounded-md border border-warning/25 bg-warning/5 p-3.5 text-xs leading-5 text-muted-foreground">
                   <AlertTriangleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
                   The model read every retrieved source and reported that they do not answer this question.
                   No citations were produced, and nothing was inferred from memory.
@@ -310,7 +310,7 @@ export function ResearchPanel() {
               ) : null}
 
               {active.answer ? (
-                <div className="edge-light whitespace-pre-wrap rounded-xl border border-border bg-background p-4 text-[13.5px] leading-7 text-foreground">
+                <div className="edge-light whitespace-pre-wrap rounded-md border border-border bg-background p-4 text-[13.5px] leading-7 text-foreground">
                   {active.answer}
                 </div>
               ) : (
@@ -327,7 +327,7 @@ export function ResearchPanel() {
                 </h3>
                 <ul className="mt-3 space-y-2">
                   {active.sources.map((source) => (
-                    <li key={source.id} className="rounded-xl border border-border bg-background p-3.5">
+                    <li key={source.id} className="rounded-md border border-border bg-background p-3.5">
                       <p className="truncate text-[13px] font-medium text-foreground">
                         {source.title ?? source.url}
                       </p>
@@ -353,7 +353,7 @@ export function ResearchPanel() {
                 </h3>
                 <ul className="mt-3 space-y-2">
                   {active.citations.map((citation) => (
-                    <li key={citation.id} className="rounded-xl border border-border bg-background p-3.5">
+                    <li key={citation.id} className="rounded-md border border-border bg-background p-3.5">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-mono text-[11px] font-semibold text-primary">
                           {citation.marker}

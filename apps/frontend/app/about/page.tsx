@@ -58,7 +58,7 @@ export default function AboutPage() {
         <section className="relative isolate overflow-hidden">
           <AuroraBackdrop />
           <div className="relative mx-auto w-full max-w-4xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary-soft px-3 py-1.5 font-mono text-[10.5px] font-semibold tracking-[0.2em] text-primary uppercase">
+            <span className="inline-flex items-center gap-2 rounded-md border border-primary/25 bg-primary-soft px-3 py-1.5 font-mono text-[10.5px] font-semibold tracking-[0.2em] text-primary uppercase">
               About
             </span>
             <h1 className="mt-6 text-4xl font-bold tracking-[-0.04em] text-balance sm:text-[3.5rem] sm:leading-[1.05]">
@@ -78,9 +78,9 @@ export default function AboutPage() {
             {pillars.map((pillar) => (
               <article
                 key={pillar.title}
-                className="group edge-light rounded-2xl border border-border bg-surface p-7 shadow-soft transition-all duration-300 hover:border-primary/35 hover:shadow-lift"
+                className="group edge-light rounded-md border border-border bg-surface p-7 transition-colors duration-300 hover:border-primary/35"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/20 bg-primary-soft text-primary">
+                <span className="flex h-11 w-11 items-center justify-center rounded-md border border-primary/20 bg-primary-soft text-primary">
                   {pillar.icon}
                 </span>
                 <h2 className="mt-5 text-[15px] font-semibold tracking-[-0.01em] text-foreground">
@@ -103,7 +103,7 @@ export default function AboutPage() {
             {stack.map((item) => (
               <li
                 key={item}
-                className="rounded-full border border-border bg-surface px-4 py-2 text-[12.5px] text-muted-foreground transition-colors hover:border-primary/35 hover:text-foreground"
+                className="rounded-sm border border-border bg-surface px-4 py-2 text-[12.5px] text-muted-foreground transition-colors hover:border-primary/35 hover:text-foreground"
               >
                 {item}
               </li>
@@ -112,7 +112,7 @@ export default function AboutPage() {
         </Section>
 
         <Section className="pb-28">
-          <div className="edge-light relative overflow-hidden rounded-[28px] border border-border bg-surface p-8 shadow-deep sm:p-12">
+          <div className="edge-light relative overflow-hidden rounded-[28px] border border-border bg-surface p-8 sm:p-12">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 bg-[radial-gradient(110%_100%_at_100%_0%,color-mix(in_srgb,var(--primary)_18%,transparent),transparent_55%)]"

@@ -23,8 +23,8 @@
  * at all.
  */
 
-const CACHE = "isobash-shell-v1";
-const PRECACHE = ["/offline.html", "/manifest.webmanifest", "/logo.png"];
+const CACHE = "isobash-shell-v2";
+const PRECACHE = ["/offline.html", "/manifest.webmanifest", "/logo-v2.png"];
 
 /** Documents that carry no session-specific content. */
 const PUBLIC_PATHS = new Set(["/", "/about", "/blog", "/login", "/register"]);
@@ -33,7 +33,7 @@ function isStaticAsset(url) {
   return (
     url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/_next/image") ||
-    url.pathname === "/logo.png" ||
+    url.pathname === "/logo-v2.png" ||
     url.pathname === "/manifest.webmanifest"
   );
 }

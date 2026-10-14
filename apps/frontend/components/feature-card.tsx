@@ -25,14 +25,14 @@ export function FeatureCard({
   return (
     <Link
       href={href}
-      className="group flex flex-col rounded-xl border border-border bg-surface p-5 transition-colors hover:border-primary/40"
+      className="group flex flex-col rounded-lg border border-border bg-surface p-4 transition-colors hover:border-primary/40"
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface-2 text-primary">
+        <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface-2 text-primary">
           {icon}
         </span>
         <span
-          className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[10px] tracking-[0.1em] whitespace-nowrap uppercase ${
+          className={`inline-flex items-center gap-1.5 rounded-sm px-2 py-0.5 font-mono text-[10px] tracking-[0.1em] whitespace-nowrap uppercase ${
             live ? "bg-success/10 text-success" : "bg-surface-2 text-muted-foreground"
           }`}
         >

@@ -201,7 +201,7 @@ export function AssemblyPanel({ onAssembled }: { onAssembled?: () => void }) {
         {!capabilities ? (
           <Skeleton className="h-32 w-full" />
         ) : !available ? (
-          <p className="rounded-xl bg-warning/10 px-3 py-2.5 text-xs text-warning ring-1 ring-warning/20">
+          <p className="rounded-md bg-warning/10 px-3 py-2.5 text-xs text-warning ring-1 ring-warning/20">
             {capabilities.detail}
           </p>
         ) : (
@@ -262,7 +262,7 @@ export function AssemblyPanel({ onAssembled }: { onAssembled?: () => void }) {
                 />
               </Field>
 
-              <div className="rounded-xl bg-surface-2 px-3 py-2.5 ring-1 ring-border">
+              <div className="rounded-md bg-surface-2 px-3 py-2.5 ring-1 ring-border">
                 <p className="text-[13px] font-medium text-foreground">
                   {scenes.length} scene{scenes.length === 1 ? "" : "s"} from this report
                 </p>
@@ -316,7 +316,7 @@ export function AssemblyPanel({ onAssembled }: { onAssembled?: () => void }) {
               </div>
 
               <p
-                className={`rounded-xl px-3 py-2.5 text-xs ring-1 ${
+                className={`rounded-md px-3 py-2.5 text-xs ring-1 ${
                   overPlan || overGrant
                     ? "bg-danger/10 text-danger ring-danger/20"
                     : "bg-surface-2 text-muted-foreground ring-border"
@@ -332,7 +332,7 @@ export function AssemblyPanel({ onAssembled }: { onAssembled?: () => void }) {
           ) : null}
 
           {error ? (
-            <p className="rounded-xl bg-danger/10 px-3 py-2.5 text-xs text-danger ring-1 ring-danger/20">{error}</p>
+            <p className="rounded-md bg-danger/10 px-3 py-2.5 text-xs text-danger ring-1 ring-danger/20">{error}</p>
           ) : null}
 
           <Button type="submit" disabled={blocked || busy} variant="accent">
@@ -352,7 +352,7 @@ export function AssemblyPanel({ onAssembled }: { onAssembled?: () => void }) {
         </form>
 
         {result ? (
-          <div className="space-y-2 rounded-xl bg-surface-2 px-3 py-3 ring-1 ring-border">
+          <div className="space-y-2 rounded-md bg-surface-2 px-3 py-3 ring-1 ring-border">
             <p className="text-[13px] font-medium text-foreground">
               Assembled, and stored as ISOBASH&apos;s own copy. JSON2Video project {result.projectId}.
             </p>
@@ -361,7 +361,7 @@ export function AssemblyPanel({ onAssembled }: { onAssembled?: () => void }) {
               controls
               preload="metadata"
               playsInline
-              className="w-full rounded-lg bg-surface-3"
+              className="w-full rounded-md bg-surface-3"
             >
               <track kind="captions" />
             </video>

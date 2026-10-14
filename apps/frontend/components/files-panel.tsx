@@ -257,7 +257,7 @@ export function FilesPanel() {
             </Field>
           </div>
 
-          <div className="rounded-xl border border-dashed border-border-strong bg-surface-2 px-4 py-6 text-center">
+          <div className="rounded-md border border-dashed border-border-strong bg-surface-2 px-4 py-6 text-center">
             <input
               ref={fileInput}
               type="file"
@@ -286,13 +286,13 @@ export function FilesPanel() {
           </div>
 
           {notice ? (
-            <p className="flex items-start gap-2 rounded-xl bg-success/10 px-3 py-2 text-xs text-success ring-1 ring-success/20">
+            <p className="flex items-start gap-2 rounded-md bg-success/10 px-3 py-2 text-xs text-success ring-1 ring-success/20">
               <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {notice}
             </p>
           ) : null}
           {error ? (
-            <p className="flex items-start gap-2 rounded-xl bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20">
+            <p className="flex items-start gap-2 rounded-md bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20">
               <AlertTriangleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {error}
             </p>
@@ -330,7 +330,7 @@ export function FilesPanel() {
                   label="Chunking"
                   value={`${capabilities.extraction.chunkSize} characters with ${capabilities.extraction.chunkOverlap} overlapping, at most ${capabilities.extraction.maxChunksPerFile} chunks`}
                 />
-                <div className="rounded-xl bg-surface-2 px-3 py-2.5 ring-1 ring-border">
+                <div className="rounded-md bg-surface-2 px-3 py-2.5 ring-1 ring-border">
                   <div className="mb-1 flex items-center gap-2">
                     <StatusChip
                       tone={embedding?.available ? "success" : "warning"}
@@ -380,7 +380,7 @@ export function FilesPanel() {
                     {results.hits.length} hit(s) from {results.candidatesConsidered} candidate(s) in {results.tookMs} ms
                   </span>
                 </div>
-                <p className="rounded-xl bg-surface-2 px-3 py-2 text-xs text-muted-foreground ring-1 ring-border">
+                <p className="rounded-md bg-surface-2 px-3 py-2 text-xs text-muted-foreground ring-1 ring-border">
                   {results.detail}
                 </p>
                 {results.hits.length === 0 ? (
@@ -390,7 +390,7 @@ export function FilesPanel() {
                 ) : (
                   <ul className="space-y-2">
                     {results.hits.map((hit) => (
-                      <li key={hit.chunkId} className="rounded-xl bg-surface-2 px-3 py-2.5 ring-1 ring-border">
+                      <li key={hit.chunkId} className="rounded-md bg-surface-2 px-3 py-2.5 ring-1 ring-border">
                         <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                           <Badge tone={hit.matchedBy === "keyword" ? "neutral" : "accent"}>{hit.matchedBy}</Badge>
                           <span className="truncate font-medium text-foreground">{hit.fileName}</span>
@@ -432,7 +432,7 @@ export function FilesPanel() {
                 {files.map((file) => (
                   <li
                     key={file.id}
-                    className={`rounded-xl px-3 py-2.5 ring-1 transition-colors ${
+                    className={`rounded-md px-3 py-2.5 ring-1 transition-colors ${
                       active?.id === file.id ? "bg-primary/8 ring-primary/30" : "bg-surface-2 ring-border"
                     }`}
                   >
@@ -512,18 +512,18 @@ export function FilesPanel() {
                 </div>
 
                 {active.chunks?.length ? (
-                  <div className="rounded-xl bg-surface-2 px-3 py-2 text-[11px] text-muted-foreground ring-1 ring-border">
+                  <div className="rounded-md bg-surface-2 px-3 py-2 text-[11px] text-muted-foreground ring-1 ring-border">
                     {active.chunks.length} chunk(s), {active.chunks.filter((c) => c.embeddedAt).length} embedded
                     {active.chunks[0] ? ` · first chunk ~${active.chunks[0].tokenEstimate} tokens` : ""}
                   </div>
                 ) : null}
 
                 {active.status === "FAILED" ? (
-                  <p className="rounded-xl bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20">
+                  <p className="rounded-md bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20">
                     {active.error ?? "Processing failed."}
                   </p>
                 ) : PENDING_STATUSES.includes(active.status) ? (
-                  <p className="flex items-center gap-2 rounded-xl bg-primary/10 px-3 py-2 text-xs text-primary ring-1 ring-primary/20">
+                  <p className="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-2 text-xs text-primary ring-1 ring-primary/20">
                     <ClockIcon className="h-3.5 w-3.5" /> Indexing on the server…
                   </p>
                 ) : preview && preview.text ? (
@@ -533,7 +533,7 @@ export function FilesPanel() {
                         Showing the first {preview.text.length} of {preview.characters} characters.
                       </p>
                     ) : null}
-                    <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-xl bg-surface-2 px-3 py-2.5 text-xs leading-5 text-muted-foreground ring-1 ring-border">
+                    <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-md bg-surface-2 px-3 py-2.5 text-xs leading-5 text-muted-foreground ring-1 ring-border">
                       {preview.text}
                     </pre>
                   </>

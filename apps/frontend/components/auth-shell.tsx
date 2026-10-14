@@ -38,7 +38,7 @@ export function AuthShell({
           <ul className="mt-8 space-y-3">
             {assurances.map((item) => (
               <li key={item} className="flex items-start gap-3 text-[13.5px] text-muted-foreground">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-success/30 bg-success/10 text-success">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border border-success/30 bg-success/10 text-success">
                   <CheckIcon className="h-3 w-3" />
                 </span>
                 {item}

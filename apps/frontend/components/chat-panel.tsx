@@ -223,7 +223,7 @@ export function ChatPanel() {
 
   return (
     <div className="grid gap-5 lg:grid-cols-[290px_1fr]">
-      <aside className="edge-light flex min-h-[24rem] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
+      <aside className="edge-light flex min-h-[24rem] flex-col overflow-hidden rounded-lg border border-border bg-surface">
         <div className="border-b border-border p-3.5">
           <Button onClick={newChat} disabled={streaming} className="w-full">
             <PlusIcon className="h-4 w-4" />
@@ -234,9 +234,9 @@ export function ChatPanel() {
         <div aria-label="Conversation list" className="flex-1 space-y-1 overflow-y-auto p-2">
           {loadingList ? (
             <div className="space-y-2 p-2">
-              <Skeleton className="h-14 w-full rounded-xl" />
-              <Skeleton className="h-14 w-full rounded-xl" />
-              <Skeleton className="h-14 w-3/4 rounded-xl" />
+              <Skeleton className="h-14 w-full rounded-md" />
+              <Skeleton className="h-14 w-full rounded-md" />
+              <Skeleton className="h-14 w-3/4 rounded-md" />
             </div>
           ) : conversations.length === 0 ? (
             <div className="flex flex-col items-start gap-2 p-4">
@@ -263,7 +263,7 @@ export function ChatPanel() {
                     }
                   }}
                   aria-current={active ? "true" : undefined}
-                  className={`group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 transition-colors ${
+                  className={`group flex cursor-pointer items-center gap-2 rounded-md px-3 py-2.5 transition-colors ${
                     active
                       ? "bg-primary-soft"
                       : "hover:bg-surface-2 focus-visible:bg-surface-2"
@@ -288,7 +288,7 @@ export function ChatPanel() {
                       e.stopPropagation();
                       void removeConversation(conversation.id);
                     }}
-                    className="rounded-lg p-1.5 text-muted-foreground transition-all hover:bg-danger/10 hover:text-danger focus-visible:opacity-100 group-hover:opacity-70 group-hover:hover:opacity-100"
+                    className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger focus-visible:opacity-100 group-hover:opacity-70 group-hover:hover:opacity-100"
                   >
                     <TrashIcon className="h-3.5 w-3.5" />
                   </button>
@@ -299,10 +299,10 @@ export function ChatPanel() {
         </div>
       </aside>
 
-      <section className="edge-light flex min-h-[34rem] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
+      <section className="edge-light flex min-h-[34rem] flex-col overflow-hidden rounded-lg border border-border bg-surface">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary-soft text-primary">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary-soft text-primary">
               <ChatIcon className="h-4 w-4" />
             </span>
             <div className="min-w-0">
@@ -355,15 +355,15 @@ export function ChatPanel() {
           {loadingThread ? (
             <div className="space-y-4">
               <div className="flex justify-end">
-                <Skeleton className="h-12 w-2/3 rounded-2xl" />
+                <Skeleton className="h-12 w-2/3 rounded-lg" />
               </div>
               <div className="flex justify-start">
-                <Skeleton className="h-16 w-2/3 rounded-2xl" />
+                <Skeleton className="h-16 w-2/3 rounded-lg" />
               </div>
             </div>
           ) : messages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-4 px-4 text-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary-soft text-primary">
+              <span className="flex h-14 w-14 items-center justify-center rounded-lg border border-primary/20 bg-primary-soft text-primary">
                 <BotIcon className="h-6 w-6" />
               </span>
               <div>
@@ -425,8 +425,8 @@ function MessageBubble({ message }: { message: LocalMessage }) {
       <div
         className={`max-w-[85%] px-4 py-3 text-[13.5px] leading-6 ${
           isUser
-            ? "rounded-2xl rounded-br-md bg-primary text-primary-foreground shadow-glow"
-            : "edge-light rounded-2xl rounded-bl-md border border-border bg-surface-2 text-foreground"
+            ? "rounded-lg rounded-br-md bg-primary text-primary-foreground"
+            : "edge-light rounded-lg rounded-bl-md border border-border bg-surface-2 text-foreground"
         }`}
       >
         <p className="whitespace-pre-wrap">

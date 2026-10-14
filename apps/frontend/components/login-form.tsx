@@ -55,7 +55,7 @@ export function LoginForm() {
       {error ? (
         <div
           role="alert"
-          className="mt-6 flex items-start gap-3 rounded-xl border border-danger/25 bg-danger/8 px-4 py-3"
+          className="mt-6 flex items-start gap-3 rounded-md border border-danger/25 bg-danger/8 px-4 py-3"
         >
           <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
           <p className="text-[13.5px] text-foreground">{error}</p>
@@ -64,7 +64,7 @@ export function LoginForm() {
 
       <form
         onSubmit={(event) => void submit(event)}
-        className="edge-light mt-8 space-y-4 rounded-2xl border border-border bg-surface p-6 shadow-soft"
+        className="edge-light mt-8 space-y-4 rounded-md border border-border bg-surface p-6"
       >
         {mfaToken ? (
           <Field

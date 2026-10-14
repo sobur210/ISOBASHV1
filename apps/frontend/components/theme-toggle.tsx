@@ -66,7 +66,7 @@ export function ThemeToggle({
       onClick={toggle}
       aria-label={isLight ? "Switch to dark mode" : "Switch to light mode"}
       title={isLight ? "Switch to dark mode" : "Switch to light mode"}
-      className={`inline-flex items-center justify-center gap-2 rounded-full border border-border bg-surface-2 p-2 text-muted-foreground transition-all hover:border-primary/40 hover:bg-surface-3 hover:text-primary active:scale-95 cursor-pointer ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-md border border-border bg-surface-2 p-2 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-surface-3 hover:text-primary cursor-pointer ${className}`}
     >
       {isLight ? (
         <SunIcon className="h-4 w-4 text-amber-500 transition-transform duration-300 hover:rotate-90" />

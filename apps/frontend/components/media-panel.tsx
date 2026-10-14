@@ -316,7 +316,7 @@ export function MediaPanel() {
           {!capabilities ? (
             <Skeleton className="h-32 w-full" />
           ) : !available ? (
-            <p className="rounded-xl bg-warning/10 px-3 py-2.5 text-xs text-warning ring-1 ring-warning/20">
+            <p className="rounded-md bg-warning/10 px-3 py-2.5 text-xs text-warning ring-1 ring-warning/20">
               {generation?.detail}
             </p>
           ) : null}
@@ -436,7 +436,7 @@ export function MediaPanel() {
                     : "No text model is registered, so this is off."
                 }
               >
-                <label className="flex h-11 items-center gap-2.5 rounded-xl border border-border bg-surface-2 px-4 text-[13px] text-foreground">
+                <label className="flex h-11 items-center gap-2.5 rounded-md border border-border bg-surface-2 px-4 text-[13px] text-foreground">
                   <input
                     id="media-enhance"
                     type="checkbox"
@@ -469,13 +469,13 @@ export function MediaPanel() {
           </form>
 
           {notice ? (
-            <p className="flex items-start gap-2 rounded-xl bg-success/10 px-3 py-2 text-xs text-success ring-1 ring-success/20">
+            <p className="flex items-start gap-2 rounded-md bg-success/10 px-3 py-2 text-xs text-success ring-1 ring-success/20">
               <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {notice}
             </p>
           ) : null}
           {error ? (
-            <p className="flex items-start gap-2 rounded-xl bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20">
+            <p className="flex items-start gap-2 rounded-md bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20">
               <AlertTriangleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {error}
             </p>
@@ -532,7 +532,7 @@ export function MediaPanel() {
                   value={`${capabilities.usage.generations} generation(s) · ${capabilities.usage.assets} asset(s) · ${formatBytes(capabilities.usage.storedBytes)}`}
                 />
 
-                <div className="rounded-xl bg-surface-2 px-3 py-2.5 ring-1 ring-border">
+                <div className="rounded-md bg-surface-2 px-3 py-2.5 ring-1 ring-border">
                   <div className="mb-1 flex items-center gap-2">
                     <Badge tone="neutral">moderation</Badge>
                     <span>{capabilities.moderation.enforced}</span>
@@ -540,7 +540,7 @@ export function MediaPanel() {
                   <p>{capabilities.moderation.detail}</p>
                 </div>
 
-                <div className="rounded-xl bg-surface-2 px-3 py-2.5 ring-1 ring-border">
+                <div className="rounded-md bg-surface-2 px-3 py-2.5 ring-1 ring-border">
                   <div className="mb-1 flex items-center gap-2">
                     <Badge tone={capabilities.video.available ? "success" : "warning"}>video</Badge>
                     <StatusChip
@@ -555,7 +555,7 @@ export function MediaPanel() {
                 </div>
 
                 {capabilities.lastFailure ? (
-                  <div className="rounded-xl bg-danger/8 px-3 py-2.5 ring-1 ring-danger/20">
+                  <div className="rounded-md bg-danger/8 px-3 py-2.5 ring-1 ring-danger/20">
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                       <Badge tone="danger">{capabilities.lastFailure.errorCode ?? "FAILED"}</Badge>
                       <span>{formatWhen(capabilities.lastFailure.createdAt)}</span>
@@ -588,7 +588,7 @@ export function MediaPanel() {
             ) : (
               <ul className="space-y-2">
                 {generations.map((generation) => (
-                  <li key={generation.id} className="rounded-xl bg-surface-2 px-3 py-2.5 ring-1 ring-border">
+                  <li key={generation.id} className="rounded-md bg-surface-2 px-3 py-2.5 ring-1 ring-border">
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusChip tone={toneByStatus[generation.status]} label={generation.status.toLowerCase()} />
                       {generation.aspectRatio ? <Badge tone="neutral">{generation.aspectRatio}</Badge> : null}
@@ -611,7 +611,7 @@ export function MediaPanel() {
                         <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
                           Prompt sent to the renderer
                         </summary>
-                        <p className="mt-1 rounded-lg bg-surface-3 px-2.5 py-2 text-[11px] leading-5 text-muted-foreground">
+                        <p className="mt-1 rounded-md bg-surface-3 px-2.5 py-2 text-[11px] leading-5 text-muted-foreground">
                           {generation.enhancedPrompt}
                         </p>
                       </details>
@@ -672,7 +672,7 @@ export function MediaPanel() {
           ) : (
             <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {assets.map((asset) => (
-                <li key={asset.id} className="overflow-hidden rounded-xl bg-surface-2 ring-1 ring-border">
+                <li key={asset.id} className="overflow-hidden rounded-md bg-surface-2 ring-1 ring-border">
                   {asset.kind === "VIDEO" ? (
                     <div className="relative aspect-video bg-surface-3">
                       {/**
@@ -762,7 +762,7 @@ export function MediaPanel() {
           {!capabilities ? (
             <Skeleton className="h-32 w-full" />
           ) : !videoAvailable ? (
-            <p className="rounded-xl bg-warning/10 px-3 py-2.5 text-xs text-warning ring-1 ring-warning/20">
+            <p className="rounded-md bg-warning/10 px-3 py-2.5 text-xs text-warning ring-1 ring-warning/20">
               {video?.detail}
             </p>
           ) : null}
@@ -877,7 +877,7 @@ export function MediaPanel() {
               </Field>
 
               <Field label="Audio" htmlFor="video-audio" hint="A provider without an audio track ignores this.">
-                <label className="flex h-11 items-center gap-2.5 rounded-xl border border-border bg-surface-2 px-4 text-[13px] text-foreground">
+                <label className="flex h-11 items-center gap-2.5 rounded-md border border-border bg-surface-2 px-4 text-[13px] text-foreground">
                   <input
                     id="video-audio"
                     type="checkbox"
@@ -910,13 +910,13 @@ export function MediaPanel() {
           </form>
 
           {notice ? (
-            <p className="flex items-start gap-2 rounded-xl bg-success/10 px-3 py-2 text-xs text-success ring-1 ring-success/20">
+            <p className="flex items-start gap-2 rounded-md bg-success/10 px-3 py-2 text-xs text-success ring-1 ring-success/20">
               <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {notice}
             </p>
           ) : null}
           {error ? (
-            <p className="flex items-start gap-2 rounded-xl bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20">
+            <p className="flex items-start gap-2 rounded-md bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20">
               <AlertTriangleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {error}
             </p>
@@ -984,7 +984,7 @@ export function MediaPanel() {
                 />
 
                 {capabilities.lastVideoFailure ? (
-                  <div className="rounded-xl bg-danger/8 px-3 py-2.5 ring-1 ring-danger/20">
+                  <div className="rounded-md bg-danger/8 px-3 py-2.5 ring-1 ring-danger/20">
                     <div className="mb-1 flex flex-wrap items-center gap-2">
                       <Badge tone="danger">{capabilities.lastVideoFailure.errorCode ?? "FAILED"}</Badge>
                       <span>{formatWhen(capabilities.lastVideoFailure.createdAt)}</span>
@@ -1017,7 +1017,7 @@ export function MediaPanel() {
             ) : (
               <ul className="space-y-2">
                 {videoRuns.map((run) => (
-                  <li key={run.id} className="rounded-xl bg-surface-2 px-3 py-2.5 ring-1 ring-border">
+                  <li key={run.id} className="rounded-md bg-surface-2 px-3 py-2.5 ring-1 ring-border">
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusChip tone={toneByStatus[run.status]} label={run.status.toLowerCase()} />
                       {run.aspectRatio ? <Badge tone="neutral">{run.aspectRatio}</Badge> : null}
@@ -1039,7 +1039,7 @@ export function MediaPanel() {
                           controls
                           preload="none"
                           playsInline
-                          className="mt-2 w-full rounded-lg bg-surface-3"
+                          className="mt-2 w-full rounded-md bg-surface-3"
                         >
                           <track kind="captions" />
                         </video>

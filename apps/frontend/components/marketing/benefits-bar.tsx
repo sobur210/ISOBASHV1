@@ -27,7 +27,7 @@ const items = [
 export function BenefitsBar() {
   return (
     <Section className="pb-28">
-      <div className="edge-light relative overflow-hidden rounded-[28px] border border-border bg-surface p-7 shadow-deep sm:p-10 lg:p-14">
+      <div className="edge-light relative overflow-hidden rounded-[28px] border border-border bg-surface p-7 sm:p-10 lg:p-14">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_100%_at_0%_0%,color-mix(in_srgb,var(--primary)_16%,transparent),transparent_58%)]"
@@ -40,7 +40,7 @@ export function BenefitsBar() {
                 index > 0 ? "lg:border-l lg:border-border lg:pl-8" : "lg:pr-8"
               }`}
             >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/25 bg-primary-soft text-primary">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-primary/25 bg-primary-soft text-primary">
                 {item.icon}
               </span>
               <div className="min-w-0">

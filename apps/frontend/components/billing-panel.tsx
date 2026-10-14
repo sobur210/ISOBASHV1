@@ -130,7 +130,7 @@ export function BillingPanel() {
         </Card>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-1">
           <CardHeader
             title="Your plan"
@@ -140,7 +140,7 @@ export function BillingPanel() {
               <button
                 type="button"
                 onClick={onRefresh}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 <RefreshIcon className="h-3 w-3" />
                 Refresh
@@ -165,7 +165,7 @@ export function BillingPanel() {
                 </div>
 
                 {subscription?.grantedBy ? (
-                  <div className="rounded-xl border border-border bg-surface-2 px-3 py-2.5">
+                  <div className="rounded-md border border-border bg-surface-2 px-3 py-2.5">
                     <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
                       Granted by
                     </p>
@@ -188,7 +188,7 @@ export function BillingPanel() {
                     type="button"
                     onClick={onDowngrade}
                     disabled={working}
-                    className="w-full rounded-xl border border-border px-4 py-2.5 text-[13px] font-medium text-foreground transition-colors hover:border-danger/50 hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full rounded-md border border-border px-4 py-2.5 text-[13px] font-medium text-foreground transition-colors hover:border-danger/50 hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {working ? "Working…" : "Return to the Free plan"}
                   </button>
@@ -235,9 +235,9 @@ export function BillingPanel() {
                             )}
                           </span>
                         </div>
-                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
+                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-sm bg-surface-2">
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${
+                            className={`h-full rounded-sm transition-all duration-500 ${
                               metric.atLimit ? "bg-danger" : percent !== null && percent > 75 ? "bg-warning" : "bg-primary"
                             }`}
                             style={{ width: `${percent ?? 0}%` }}
@@ -262,7 +262,7 @@ export function BillingPanel() {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-3">
         <Card>
           <CardHeader
             title="Payment"
@@ -320,7 +320,7 @@ export function BillingPanel() {
               capabilities.plans.map((entry) => (
                 <div
                   key={entry.key}
-                  className={`rounded-xl border px-3 py-3 ${
+                  className={`rounded-md border px-3 py-3 ${
                     entry.key === plan ? "border-primary/50 bg-primary-soft" : "border-border"
                   }`}
                 >

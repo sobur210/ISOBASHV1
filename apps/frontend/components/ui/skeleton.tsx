@@ -4,7 +4,7 @@ export function Skeleton({ className = "" }: { className?: string }) {
   return (
     <div
       aria-hidden="true"
-      className={`relative overflow-hidden rounded-lg bg-foreground/[0.07] ${className}`}
+      className={`relative overflow-hidden rounded-md bg-foreground/[0.07] ${className}`}
     >
       <div className="absolute inset-0 -translate-x-full animate-pulse bg-gradient-to-r from-transparent via-foreground/[0.07] to-transparent motion-reduce:animate-none" />
     </div>
@@ -26,12 +26,12 @@ export function SkeletonRows({ count = 4, className = "" }: { count?: number; cl
     <div className={`space-y-4 ${className}`}>
       {Array.from({ length: count }).map((_, index) => (
         <div key={index} className="flex items-center gap-3.5">
-          <Skeleton className="h-10 w-10 rounded-xl" />
+          <Skeleton className="h-9 w-9 rounded-md" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-3.5 w-1/3" />
             <Skeleton className="h-3 w-2/3" />
           </div>
-          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-5 w-16 rounded-sm" />
         </div>
       ))}
     </div>
@@ -42,9 +42,9 @@ export function SkeletonCards({ count = 6, className = "" }: { count?: number; c
   return (
     <div className={`grid gap-5 sm:grid-cols-2 lg:grid-cols-3 ${className}`}>
       {Array.from({ length: count }).map((_, index) => (
-        <div key={index} className="edge-light rounded-2xl border border-border bg-surface p-6 shadow-soft">
-          <Skeleton className="h-11 w-11 rounded-xl" />
-          <Skeleton className="mt-5 h-4 w-2/5" />
+        <div key={index} className="edge-light rounded-lg border border-border bg-surface p-5">
+          <Skeleton className="h-10 w-10 rounded-md" />
+          <Skeleton className="mt-4 h-4 w-2/5" />
           <div className="mt-3 space-y-2">
             <Skeleton className="h-3 w-full" />
             <Skeleton className="h-3 w-4/5" />
@@ -67,7 +67,7 @@ export function SkeletonHeader({ className = "" }: { className?: string }) {
 
 export function SkeletonPanel({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`edge-light rounded-2xl border border-border bg-surface p-5 shadow-soft ${className}`}>
+    <div className={`edge-light rounded-lg border border-border bg-surface p-4 ${className}`}>
       {children}
     </div>
   );

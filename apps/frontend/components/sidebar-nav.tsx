@@ -47,7 +47,7 @@ export function SidebarNav({
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`group relative flex items-center gap-2.5 rounded-lg py-2 pr-2.5 pl-3 text-[13px] transition-colors ${
+                className={`group relative flex items-center gap-2.5 rounded-md py-1.5 pr-2.5 pl-3 text-[13px] transition-colors ${
                   active
                     ? "bg-surface-2 font-medium text-foreground"
                     : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground"
@@ -56,7 +56,7 @@ export function SidebarNav({
                 {/* Left rail marks the active route. */}
                 <span
                   aria-hidden="true"
-                  className={`absolute top-1/2 -left-0.5 h-4 w-[2px] -translate-y-1/2 rounded-full bg-primary transition-opacity duration-150 ${
+                  className={`absolute top-1/2 -left-0.5 h-3.5 w-px -translate-y-1/2 bg-primary transition-opacity duration-150 ${
                     active ? "opacity-100" : "opacity-0"
                   }`}
                 />

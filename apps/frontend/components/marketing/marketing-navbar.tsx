@@ -11,7 +11,7 @@ export function MarketingNavbar() {
     <header className="relative z-50 w-full">
       <div className="mx-auto flex h-[72px] w-full max-w-[1440px] items-center justify-between gap-6 px-5 sm:h-[80px] sm:px-8 lg:px-10">
         <Link href="/" className="flex shrink-0 items-center" aria-label="ISOBASH home">
-          <BrandLogo className="h-8 w-auto sm:h-9" priority />
+          <BrandLogo className="h-7 w-auto sm:h-8" priority />
         </Link>
 
         <div className="flex items-center gap-3 sm:gap-4">
@@ -30,7 +30,7 @@ export function MarketingNavbar() {
           <ButtonLink
             href="/register"
             size="sm"
-            className="group h-11 rounded-full bg-blue-600 px-6 text-[15px] font-medium text-white shadow-[0_14px_36px_-18px_rgba(37,99,235,0.8)] hover:bg-blue-500"
+            className="group h-11 rounded-md bg-blue-600 px-6 text-[15px] font-medium text-white hover:bg-blue-500"
           >
             Get started free
             <ArrowRightIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />

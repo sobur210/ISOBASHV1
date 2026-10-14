@@ -61,7 +61,7 @@ export function AdminShellPanel() {
           <div className="flex items-stretch gap-2">
             <span
               aria-hidden="true"
-              className="flex select-none items-center rounded-lg border border-border bg-surface-2 px-3 font-mono text-[12px] text-accent"
+              className="flex select-none items-center rounded-md border border-border bg-surface-2 px-3 font-mono text-[12px] text-accent"
             >
               $
             </span>
@@ -71,7 +71,7 @@ export function AdminShellPanel() {
               onChange={(event) => setCommand(event.target.value)}
               spellCheck={false}
               autoComplete="off"
-              className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 font-mono text-[12.5px] text-foreground transition-colors placeholder:text-muted-foreground/70 hover:border-border-strong focus:border-primary/60 focus:outline-none"
+              className="h-10 min-w-0 flex-1 rounded-md border border-border bg-background px-3 font-mono text-[12.5px] text-foreground transition-colors placeholder:text-muted-foreground/70 hover:border-border-strong focus:border-primary/60 focus:outline-none"
               placeholder="pwd"
             />
             <ActionButton

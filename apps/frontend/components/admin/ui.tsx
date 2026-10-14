@@ -23,7 +23,7 @@ export function Panel({
 }) {
   return (
     <section
-      className={`overflow-hidden rounded-xl border border-border bg-surface ${className}`}
+      className={`overflow-hidden rounded-md border border-border bg-surface ${className}`}
     >
       {children}
     </section>
@@ -49,7 +49,7 @@ export function PanelHeader({
 }) {
   return (
     <header
-      className={`flex flex-wrap items-start justify-between gap-x-4 gap-y-3 border-b border-border px-5 py-4 ${className}`}
+      className={`flex flex-wrap items-start justify-between gap-x-4 gap-y-3 border-b border-border px-4 py-3 ${className}`}
     >
       <div className="flex min-w-0 items-start gap-3">
         {icon ? <span className="mt-0.5 shrink-0 text-muted-foreground">{icon}</span> : null}
@@ -76,7 +76,7 @@ export function PanelBody({
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={`px-5 py-4 ${className}`}>{children}</div>;
+  return <div className={`px-4 py-3 ${className}`}>{children}</div>;
 }
 
 export function PanelFooter({
@@ -87,7 +87,7 @@ export function PanelFooter({
   className?: string;
 }) {
   return (
-    <footer className={`border-t border-border px-5 py-3 ${className}`}>{children}</footer>
+    <footer className={`border-t border-border px-4 py-2.5 ${className}`}>{children}</footer>
   );
 }
 
@@ -234,7 +234,7 @@ export function Notice({
   return (
     <div
       role="status"
-      className={`flex items-start gap-2.5 rounded-lg border px-3.5 py-2.5 text-[12.5px] leading-5 ${tones[tone]} ${className}`}
+      className={`flex items-start gap-2.5 rounded-md border px-3 py-2 text-[12.5px] leading-5 ${tones[tone]} ${className}`}
     >
       <Icon className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${iconTone}`} />
       <p className="min-w-0 break-words">{children}</p>
@@ -280,7 +280,7 @@ export const Tr = ({ children, className = "" }: { children: ReactNode; classNam
 /** Table shell: scrolls horizontally on small screens instead of squashing columns. */
 export function TableWrap({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`-mx-5 overflow-x-auto px-5 ${className}`}>
+    <div className={`-mx-4 overflow-x-auto px-4 ${className}`}>
       <table className="w-full min-w-[760px] border-collapse">{children}</table>
     </div>
   );
@@ -308,7 +308,7 @@ export function Console({
   }[tone];
 
   return (
-    <div className={`overflow-hidden rounded-lg border border-border bg-background ${className}`}>
+    <div className={`overflow-hidden rounded-md border border-border bg-background ${className}`}>
       <div className="flex items-center justify-between gap-3 border-b border-border bg-surface-2 px-3 py-2">
         <span className="flex min-w-0 items-center gap-2 font-mono text-[11.5px] text-foreground">
           <span aria-hidden="true" className={`h-3.5 w-[2px] shrink-0 rounded-full ${accent}`} />
@@ -340,7 +340,7 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={`rounded-lg border border-dashed border-border px-5 py-8 text-center ${className}`}>
+    <div className={`rounded-md border border-dashed border-border px-5 py-8 text-center ${className}`}>
       <p className="text-[13px] font-medium text-foreground">{title}</p>
       <p className="mx-auto mt-1.5 max-w-md text-[12.5px] leading-5 text-muted-foreground">
         {description}

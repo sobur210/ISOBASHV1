@@ -73,6 +73,7 @@ ISOBASH-MODELS/
 
 # Brand design sources duplicated at the repo root; the app assets are tracked
 # (apps/frontend/public/logo.png, apps/frontend/app/icon.png).
+/logo.png
 /Futuristic Blue-Violet Monogram Icon.png
 /Glossy Blue ISOBASH Logo.png
 

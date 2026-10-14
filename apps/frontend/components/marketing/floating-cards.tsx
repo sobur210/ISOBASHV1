@@ -31,7 +31,7 @@ function FloatCard({
 }) {
   return (
     <div
-      className={`edge-light animate-float-slow absolute overflow-hidden rounded-2xl border border-border-strong bg-surface/90 shadow-deep backdrop-blur-xl ${delay} ${className}`}
+      className={`edge-light animate-float-slow absolute overflow-hidden rounded-md border border-border-strong bg-surface/90 backdrop-blur-xl ${delay} ${className}`}
     >
       {children}
     </div>
@@ -85,7 +85,7 @@ function VideoCard() {
         <span className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#04070f] shadow-lg">
           <PlayIcon className="h-4 w-4 translate-x-[1px]" />
         </span>
-        <span className="absolute right-2 bottom-2 rounded-md bg-black/70 px-1.5 py-0.5 font-mono text-[9.5px] text-white">
+        <span className="absolute right-2 bottom-2 rounded-sm bg-black/70 px-1.5 py-0.5 font-mono text-[9.5px] text-white">
           0:24
         </span>
       </div>

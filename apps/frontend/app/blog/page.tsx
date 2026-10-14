@@ -20,7 +20,7 @@ export default function BlogPage() {
         <section className="relative isolate overflow-hidden">
           <AuroraBackdrop />
           <div className="relative mx-auto w-full max-w-4xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
-            <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary-soft px-3 py-1.5 font-mono text-[10.5px] font-semibold tracking-[0.2em] text-primary uppercase">
+            <span className="inline-flex items-center gap-2 rounded-md border border-primary/25 bg-primary-soft px-3 py-1.5 font-mono text-[10.5px] font-semibold tracking-[0.2em] text-primary uppercase">
               Blog
             </span>
             <h1 className="mt-6 text-4xl font-bold tracking-[-0.04em] text-balance sm:text-[3.5rem] sm:leading-[1.05]">
@@ -35,7 +35,7 @@ export default function BlogPage() {
 
         <Section className="pb-28">
           <div className="edge-light flex flex-col items-center rounded-[28px] border border-dashed border-border-strong bg-surface/60 px-8 py-20 text-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-surface-2 text-muted-foreground">
+            <span className="flex h-14 w-14 items-center justify-center rounded-md border border-border bg-surface-2 text-muted-foreground">
               <FileIcon className="h-6 w-6" />
             </span>
             <h2 className="mt-6 text-lg font-semibold tracking-[-0.01em] text-foreground">

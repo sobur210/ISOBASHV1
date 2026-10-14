@@ -75,7 +75,7 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-12 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6">
           <Link href="/app" className="inline-flex shrink-0 items-center" aria-label="ISOBASH workspace">
             <BrandLogo className="h-6 w-auto" priority />
           </Link>
@@ -108,9 +108,9 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1400px] gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[212px_minmax(0,1fr)] lg:py-8">
+      <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-4 py-5 sm:px-6 lg:grid-cols-[208px_minmax(0,1fr)] lg:py-6">
         <aside className="hidden lg:block">
-          <div className="sticky top-20">
+          <div className="sticky top-[68px]">
             <p className="mb-4 px-2.5 font-mono text-[10px] font-medium tracking-[0.16em] text-muted-foreground uppercase">
               Workspace
             </p>

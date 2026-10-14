@@ -223,7 +223,7 @@ export function ProjectsPanel() {
           </form>
 
           {notice ? (
-            <p className="mt-4 flex items-start gap-2.5 rounded-xl bg-success/10 px-3 py-2 text-xs text-success ring-1 ring-success/20">
+            <p className="mt-4 flex items-start gap-2.5 rounded-md bg-success/10 px-3 py-2 text-xs text-success ring-1 ring-success/20">
               <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {notice}
             </p>
@@ -231,7 +231,7 @@ export function ProjectsPanel() {
           {error ? (
             <p
               role="alert"
-              className="mt-4 flex items-start gap-2.5 rounded-xl bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20"
+              className="mt-4 flex items-start gap-2.5 rounded-md bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-danger/20"
             >
               <AlertTriangleIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {error}
@@ -241,15 +241,15 @@ export function ProjectsPanel() {
       </Card>
 
       <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
-        <aside className="edge-light flex min-h-[18rem] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
+        <aside className="edge-light flex min-h-[18rem] flex-col overflow-hidden rounded-lg border border-border bg-surface">
           <div className="flex items-center justify-between border-b border-border px-4 py-3.5">
             <h2 className="text-[13.5px] font-semibold text-foreground">Projects ({projects.length})</h2>
           </div>
           <div aria-label="Project list" className="flex-1 space-y-1 overflow-y-auto p-2">
             {loading ? (
               <div className="space-y-2 p-2">
-                <Skeleton className="h-14 w-full rounded-xl" />
-                <Skeleton className="h-14 w-3/4 rounded-xl" />
+                <Skeleton className="h-14 w-full rounded-md" />
+                <Skeleton className="h-14 w-3/4 rounded-md" />
               </div>
             ) : projects.length === 0 ? (
               <p className="p-4 text-xs leading-5 text-muted-foreground">
@@ -263,7 +263,7 @@ export function ProjectsPanel() {
                       setActiveId(project.id);
                       setNotice(null);
                     }}
-                    className={`min-w-0 flex-1 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                    className={`min-w-0 flex-1 rounded-md px-3 py-2.5 text-left transition-colors ${
                       activeId === project.id
                         ? "bg-primary-soft"
                         : "text-muted-foreground hover:bg-surface-2 hover:text-foreground"
@@ -278,7 +278,7 @@ export function ProjectsPanel() {
                   <button
                     aria-label={`Delete project ${project.name}`}
                     onClick={() => void removeProject(project)}
-                    className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-danger/10 hover:text-danger"
+                    className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
                   >
                     <TrashIcon className="h-3.5 w-3.5" />
                   </button>
@@ -291,7 +291,7 @@ export function ProjectsPanel() {
         {!active ? (
           <Card className="min-h-[18rem]">
             <CardBody className="flex min-h-[16rem] flex-col items-center justify-center gap-3 text-center">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-surface-2 text-muted-foreground">
+              <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-surface-2 text-muted-foreground">
                 <FolderIcon className="h-5 w-5" />
               </span>
               <div>
@@ -381,7 +381,7 @@ export function ProjectsPanel() {
                 ) : (
                   <ul className="space-y-2">
                     {tasks.map((task) => (
-                      <li key={task.id} className="rounded-xl bg-surface-2 px-3 py-2.5 ring-1 ring-border">
+                      <li key={task.id} className="rounded-md bg-surface-2 px-3 py-2.5 ring-1 ring-border">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
                             {task.title}
@@ -403,7 +403,7 @@ export function ProjectsPanel() {
                           <button
                             aria-label={`Delete task ${task.title}`}
                             onClick={() => void removeTask(task)}
-                            className="rounded-lg p-1.5 text-muted-foreground transition-all hover:bg-danger/10 hover:text-danger"
+                            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
                           >
                             <TrashIcon className="h-3.5 w-3.5" />
                           </button>
@@ -412,7 +412,7 @@ export function ProjectsPanel() {
                           <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{task.description}</p>
                         ) : null}
                         {task.result ? (
-                          <p className="mt-1.5 whitespace-pre-wrap rounded-lg bg-background px-2.5 py-2 text-[11px] leading-5 text-muted-foreground">
+                          <p className="mt-1.5 whitespace-pre-wrap rounded-md bg-background px-2.5 py-2 text-[11px] leading-5 text-muted-foreground">
                             {task.result}
                           </p>
                         ) : null}

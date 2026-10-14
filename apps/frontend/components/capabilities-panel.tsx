@@ -71,11 +71,11 @@ export function CapabilitiesPanel() {
       />
       <PanelBody className="px-0 py-0">
         {error ? (
-          <div className="px-5 py-4">
+          <div className="px-5 py-3">
             <Notice tone="danger">{error}</Notice>
           </div>
         ) : !capabilities ? (
-          <div className="grid gap-x-5 gap-y-4 px-5 py-4 sm:grid-cols-2">
+          <div className="grid gap-x-5 gap-y-4 px-5 py-3 sm:grid-cols-2">
             {Array.from({ length: 6 }).map((_, index) => (
               <SkeletonTextRow key={index} />
             ))}

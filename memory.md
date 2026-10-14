@@ -1,8 +1,72 @@
 # ISOBASH Project Memory
 
-Last updated: 2026-10-03
+Last updated: 2026-10-14
 
 ## Current status
+
+### Render 503 was free-tier cold start, not a build bug — keep-alive added (2026-10-14) — uncommitted
+
+- **Symptom:** both `https://isobash-web.onrender.com` and `https://isobash-api.onrender.com`
+  answered HTTP 503 in a browser. It is **not** a build or runtime failure: once warm, both
+  return **200** in ~1.1 s and the API `/health` reports `components: database ok, redis ok`.
+- **Cause:** Render Free web services spin down after 15 minutes without inbound traffic and
+  take ~1 minute to wake; the first request during that wake-up can be answered with 503
+  (`render.com/docs/free`). The web build's devDependency trap that used to break deploys is
+  already fixed in `render.yaml` (`npm ci --include=dev`), and the local `build:frontend` is
+  green, so no code change was needed for the 503 itself.
+- **The fix respects the free-hour budget.** A workspace gets **750 Free instance-hours per
+  calendar month, shared by every free web service**, and Render **suspends all of them** for
+  the rest of the month once it is spent. Keeping BOTH awake 24/7 would cost ~1,460 h and
+  suspend them mid-month — worse than the cold starts. So
+  `.github/workflows/keep-alive.yml` pings both services every 10 minutes inside an **11 h
+  UTC window** (cron `*/10 6-16 * * *`) ≈ 675 h/month, leaving a safe margin. Outside the
+  window they spin down as before. The repo is **public**, so Actions minutes are free.
+  `workflow_dispatch` is enabled; manual dispatch re-verifies the whole loop. For true 24/7,
+  upgrade both web services to a paid instance instead of widening the window.
+- **Still true / to know:** the deployed API is behind the working tree — `GET /ready` returns
+  **404** on the live service (the route only exists uncommitted). `render.yaml`'s web
+  `buildCommand` now also uses `npm ci --include=dev` (defensive: the web service does not
+  declare `NODE_ENV=production`, so plain `npm ci` already installed devDeps, but the API
+  service does declare it and needs the flag).
+
+### Hero cube, background and copy + dev service worker fix (2026-10-13) — uncommitted
+
+- **The working tree is the only consistent hero.** `components/marketing/marketing-hero.tsx`
+  renders text beside `components/marketing/hero-cube.tsx` → `hero-cube-canvas.tsx`: a
+  Resend-style 3×3×3 glossy **blue/white** Rubik's cube (three.js, `next/dynamic` +
+  `ssr:false`, so it never server-renders and three.js stays out of the landing bundle).
+  Committed `HEAD` `marketing-hero.tsx` imports `hero-backdrop.tsx`, a file that **no longer
+  exists** — HEAD is inconsistent, so never trust `git checkout` of that file; the uncommitted
+  working tree is the good state. The 2026-10-03 hero entry below is stale.
+- **Copy** (content-only, layout untouched): H1 `Think bigger. Create more.` + one blue
+  (`text-primary`) phrase `Get things done.`; support `Your ideas, powered by AI.`; description
+  `From writing and coding to creative projects, research, and everyday problem-solving, ISOBASH
+  brings powerful AI tools together to help you turn ideas into results.`; primary CTA
+  `Start creating free` → `/register`; secondary `Explore ISOBASH` → `#features`
+  (`FeatureSection` owns `id="features"`, so the anchor resolves); labels `AI-powered creation` /
+  `Research` / `Coding and building`. The old `No vendor lock-in` / `Runs offline` /
+  `Nothing simulated` / `Multi-provider routing` trust points were dropped because three of
+  them are claims this deployment cannot back.
+- **Background:** `public/bg.png` (1376×768, moved here from the repo root) is fetched with
+  `next/image` `fill` + `object-cover` behind the content, under a `bg-background/50` scrim for
+  legibility. **This intentionally overrides the old "no background photographs" rule.**
+- Verified over the DevTools protocol at 1440×900 and 390×844: desktop two columns
+  (`591px | 569px`), mobile single column, no text/cube overlap, `scrollWidth === innerWidth`
+  (no horizontal overflow), h1 65.6px / 38.4px. `typecheck` and `eslint` clean.
+- **Dev service worker made every edit need a refresh — fixed.** `service-worker-registration.tsx`
+  registered `/sw.js` in every environment; the worker's `cacheFirst` answers `/_next/static/*`
+  without revalidating, and turbopack dev chunk names are stable across edits, so the first-cached
+  chunk won. Now registration is `process.env.NODE_ENV === "production"`; in dev the component
+  **unregisters any existing worker and deletes all caches**. A worker already controlling the
+  page needs one more refresh to be evicted. Production `sw.js` unchanged — content-hashed
+  filenames make cache-first safe there. Same class of bug as the stale-SW login incident
+  recorded under Troubleshooting.
+- **Frontend on 3002 runs `next dev`**, not a production build (HTML references the
+  `next-devtools` chunk; `.next/dev/` exists), and it is owned by the SYSTEM service, so it
+  cannot be restarted from a normal shell.
+- **Working tree state:** many frontend files modified + untracked
+  (`components/marketing/hero-cube*.tsx`, `components/code/`, `public/bg.png`). Do not
+  `git stash` / `reset --hard` casually; commit the good state first if an agent is about to.
 
 ### Phase 16 (billing) + Phase 17 (admin center) — implemented, `verify:phase16-17` **55/55**
 

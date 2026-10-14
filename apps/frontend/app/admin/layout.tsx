@@ -39,7 +39,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-12 w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <Link href="/admin" className="inline-flex shrink-0 items-center" aria-label="ISOBASH admin">
               <BrandLogo className="h-6 w-auto" priority />
@@ -76,9 +76,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1400px] gap-8 px-4 py-6 sm:px-6 lg:grid-cols-[212px_minmax(0,1fr)] lg:py-8">
+      <div className="mx-auto grid w-full max-w-[1400px] gap-6 px-4 py-5 sm:px-6 lg:grid-cols-[208px_minmax(0,1fr)] lg:py-6">
         <aside className="hidden lg:block">
-          <div className="sticky top-20">
+          <div className="sticky top-[68px]">
             <SidebarNav groups={adminNav} />
           </div>
         </aside>

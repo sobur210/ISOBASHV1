@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   // No `icons` override: `app/icon.png` is the square monogram and Next serves
   // it at /icon.png by convention, stamping sizes from the file (512x512).
-  // Pointing this at `/logo.png` instead handed the browser the 2051x767
+  // Pointing this at `/logo.png` instead handed the browser the 2134x737
   // wordmark, which rendered as a squashed, unreadable tab icon.
   title: {
     default: "ISOBASH: Your AI. Your Agents. Your Workspace.",

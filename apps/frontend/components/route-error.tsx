@@ -13,8 +13,8 @@ export function RouteError({
   label?: string;
 }) {
   return (
-    <div className="edge-light flex flex-col items-start gap-5 rounded-2xl border border-danger/25 bg-danger/5 p-8">
-      <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-danger/25 bg-danger/10 text-danger">
+    <div className="edge-light flex flex-col items-start gap-5 rounded-lg border border-danger/25 bg-danger/5 p-6">
+      <span className="flex h-10 w-10 items-center justify-center rounded-md border border-danger/25 bg-danger/10 text-danger">
         <AlertTriangleIcon className="h-5 w-5" />
       </span>
       <div>

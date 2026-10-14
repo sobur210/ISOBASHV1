@@ -15,7 +15,7 @@ export default async function SettingsPage() {
         status="Phase 8"
       />
       <MfaSettings email={user.email} mfaEnabled={user.mfaEnabled} />
-      <div className="rounded-2xl border border-border bg-surface p-6">
+      <div className="rounded-lg border border-border bg-surface p-5">
         <p className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.24em] text-accent">
           <SettingsIcon className="h-3.5 w-3.5" />
           Preferences

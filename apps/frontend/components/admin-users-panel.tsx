@@ -168,7 +168,7 @@ export function AdminUsersPanel() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="email or name"
-                className="h-9 rounded-lg border border-border bg-surface-2 px-3 text-[12.5px] text-foreground transition-colors placeholder:text-muted-foreground/70 hover:border-border-strong focus:border-primary/60 focus:outline-none"
+                className="h-9 rounded-md border border-border bg-surface-2 px-3 text-[12.5px] text-foreground transition-colors placeholder:text-muted-foreground/70 hover:border-border-strong focus:border-primary/60 focus:outline-none"
               />
             </label>
             <label className="flex flex-col gap-1.5">
@@ -187,7 +187,7 @@ export function AdminUsersPanel() {
             </label>
             <button
               type="submit"
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-3.5 text-[12.5px] font-medium text-foreground transition-colors hover:border-primary/50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-surface-2 px-3.5 text-[12.5px] font-medium text-foreground transition-colors hover:border-primary/50"
             >
               <SearchIcon className="h-3.5 w-3.5" />
               Apply
@@ -200,7 +200,7 @@ export function AdminUsersPanel() {
                   setSearch("");
                   setRole("");
                 }}
-                className="h-9 rounded-lg px-2 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
+                className="h-9 rounded-md px-2 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
               >
                 Clear
               </button>

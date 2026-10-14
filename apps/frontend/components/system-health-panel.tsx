@@ -122,11 +122,11 @@ export function SystemHealthPanel() {
       />
       <PanelBody className="px-0 py-0">
         {error ? (
-          <div className="px-5 py-4">
+          <div className="px-5 py-3">
             <Notice tone="danger">{error}</Notice>
           </div>
         ) : loading && !data ? (
-          <div className="px-5 py-4">
+          <div className="px-5 py-3">
             <SkeletonRows count={6} />
           </div>
         ) : (

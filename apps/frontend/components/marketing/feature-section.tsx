@@ -87,14 +87,14 @@ function FeatureBento() {
       {features.map((feature) => (
         <article
           key={feature.title}
-          className={`group edge-light relative overflow-hidden rounded-2xl border border-border bg-surface p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-primary/35 hover:shadow-lift sm:p-7 ${feature.span}`}
+          className={`group edge-light relative overflow-hidden rounded-md border border-border bg-surface p-6 transition-colors duration-300 hover:border-primary/35 sm:p-7 ${feature.span}`}
         >
           {/* Tint wash that grows on hover. */}
           <div
             aria-hidden="true"
             className={`pointer-events-none absolute -top-24 -right-16 h-48 w-48 rounded-full bg-gradient-to-br ${feature.tone} to-transparent opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100`}
           />
-          <span className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-primary/20 bg-primary-soft text-primary transition-transform duration-300 group-hover:scale-105">
+          <span className="relative flex h-11 w-11 items-center justify-center rounded-md border border-primary/20 bg-primary-soft text-primary">
             {feature.icon}
           </span>
           <h3 className="relative mt-5 text-[15px] font-semibold tracking-[-0.01em] text-foreground">

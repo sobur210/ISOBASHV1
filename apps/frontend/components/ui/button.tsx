@@ -5,13 +5,11 @@ type Variant = "primary" | "accent" | "outline" | "ghost" | "subtle" | "danger";
 type Size = "sm" | "md" | "lg" | "icon";
 
 const base =
-  "group/btn relative inline-flex shrink-0 items-center justify-center gap-2 rounded-full font-medium whitespace-nowrap transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.985] disabled:pointer-events-none disabled:opacity-45";
+  "group/btn relative inline-flex shrink-0 items-center justify-center gap-2 rounded-md font-medium whitespace-nowrap transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-45";
 
 const variants: Record<Variant, string> = {
-  primary:
-    "bg-primary text-primary-foreground shadow-glow hover:bg-primary-hover hover:shadow-lift",
-  accent:
-    "bg-accent text-primary-foreground shadow-[0_14px_36px_-16px_var(--accent)] hover:brightness-110",
+  primary: "bg-primary text-primary-foreground hover:bg-primary-hover",
+  accent: "bg-accent text-primary-foreground hover:brightness-110",
   outline:
     "border border-border-strong bg-transparent text-foreground hover:border-primary/60 hover:bg-primary-soft hover:text-primary",
   ghost: "text-muted-foreground hover:bg-surface-3 hover:text-foreground",
@@ -20,10 +18,10 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-8 px-3.5 text-[13px]",
-  md: "h-10 px-5 text-sm",
-  lg: "h-12 px-7 text-[15px]",
-  icon: "h-10 w-10",
+  sm: "h-8 px-3 text-[12.5px]",
+  md: "h-9 px-4 text-[13px]",
+  lg: "h-11 px-6 text-sm",
+  icon: "h-9 w-9",
 };
 
 function classes(variant: Variant, size: Size, className: string) {
