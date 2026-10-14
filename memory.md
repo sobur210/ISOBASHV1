@@ -4,7 +4,7 @@ Last updated: 2026-10-14
 
 ## Current status
 
-### Render 503 was free-tier cold start, not a build bug — keep-alive added (2026-10-14) — uncommitted
+### Render 503 was free-tier cold start, not a build bug — keep-alive added (2026-10-14) — committed
 
 - **Symptom:** both `https://isobash-web.onrender.com` and `https://isobash-api.onrender.com`
   answered HTTP 503 in a browser. It is **not** a build or runtime failure: once warm, both
@@ -23,16 +23,14 @@ Last updated: 2026-10-14
   window they spin down as before. The repo is **public**, so Actions minutes are free.
   `workflow_dispatch` is enabled; manual dispatch re-verifies the whole loop. For true 24/7,
   upgrade both web services to a paid instance instead of widening the window.
-- **The API was stale, and this is why.** `GET /ready` (committed in `f04e8ef`, 10-07) returned
-  **404** on the live API, so the service was still running its last good build from *before*
-  `f04e8ef`. Every API deploy since had **failed**: `prisma migrate deploy` sat in the build
-  command, and a Render build environment has no route to the database's internal URL, so it
-  dies with `P1001` ("Can't reach database server") — and because *any* failed deploy command
-  aborts the deploy, the previous build keeps serving forever. The web service has no DB step,
-  which is why it deployed the same commit fine. **Fix:** `render.yaml` now runs
-  `prisma migrate deploy` in the API `startCommand` (the runtime container does have
-  private-network access, the same path `/health` already proves) instead of the build. Render's
-  usual home for migrations, the pre-deploy command, is paid-only.
+- **The readiness route is `/health/ready`, not `/ready`** (`@Controller('health')` +
+  `@Get('ready')`). Probing `/ready` returns 404 and reads exactly like a missing route, so a
+  "the API is stale" conclusion drawn from that 404 is wrong — it cost a false diagnosis and a
+  reverted `render.yaml` change (moving `prisma migrate deploy` from the build into the start
+  command). The API had the route all along: `GET /health/ready` is **200** live, and the backend
+  has not changed since `f04e8ef`, so the deployed API is current. Build-time
+  `prisma migrate deploy` works on this setup; keep it in the build (it runs once per deploy, not
+  once per free-tier wake).
 - `render.yaml`'s web `buildCommand` also uses `npm ci --include=dev` (defensive: the web service
   does not declare `NODE_ENV=production`, so plain `npm ci` already installed devDeps, but the
   API service does declare it and needs the flag).
